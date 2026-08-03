@@ -31,6 +31,8 @@
 | POST | `/auth/login` | Public | `{ email, password }` → `{ accessToken, refreshToken, expiresIn, user }`. |
 | POST | `/auth/refresh` | Public | `{ refreshToken }` → new access token. |
 | POST | `/auth/logout` | Authenticated | Invalidate refresh token (server-side blacklist in Redis). |
+| POST | `/auth/forgot-password` | Public | `{ email }` → always `202` regardless of whether the email exists (no account enumeration). If the account exists, generates a single-use, short-lived (30 min) reset token, stores its hash (never the raw token) against the user, and emails a link `{FRONTEND_URL}/reset-password?token=...`. |
+| POST | `/auth/reset-password` | Public | `{ token, newPassword }`. Validates token (unexpired, unused, hash match) → updates `password_hash`, marks token used, invalidates all existing refresh tokens for the user (forces re-login everywhere). `400` for invalid/expired/already-used token. |
 | GET | `/users/me` | Authenticated | Current user profile. |
 | PATCH | `/users/me` | Authenticated | Update own `fullName`, `department`, notification prefs. |
 | POST | `/users/me/change-password` | Authenticated | `{ oldPassword, newPassword }`. |

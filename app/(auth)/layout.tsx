@@ -8,7 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import bgImage from "@/assets/Login-Background.png";
 import { LogoWithText } from "@/components/LogoWithText";
 
-const ROUTE_ORDER = ["/login", "/register"];
+const ROUTE_ORDER = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 const variants = {
   enter: { opacity: 0, y: 16 },

@@ -49,6 +49,23 @@ CREATE INDEX idx_users_department ON users (department) WHERE department IS NOT 
 
 > If `citext` is unavailable/undesired, replace with `varchar(255) NOT NULL` + `CREATE UNIQUE INDEX idx_users_email_lower ON users (LOWER(email));` and enforce lowercasing at the application layer.
 
+### 1.1a `password_reset_tokens` (FR-1; backs `POST /auth/forgot-password` / `/auth/reset-password`)
+
+```sql
+CREATE TABLE password_reset_tokens (
+    id          bigserial PRIMARY KEY,
+    user_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash  text NOT NULL UNIQUE,          -- SHA-256 of the raw token; raw value only ever exists in the emailed link
+    expires_at  timestamptz NOT NULL,          -- created_at + 30 min
+    used_at     timestamptz,                   -- set on successful reset; NULL = still redeemable
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens (user_id);
+```
+
+> One-time use, short TTL. On successful reset, all rows for the user (or at least all their refresh tokens) should be invalidated so a leaked old session can't survive a password change.
+
 ### 1.2 `semesters` (FR-2)
 
 ```sql

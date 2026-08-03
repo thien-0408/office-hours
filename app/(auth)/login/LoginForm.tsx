@@ -18,6 +18,7 @@ export default function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const justRegistered = searchParams.get("registered") === "1";
+  const justReset = searchParams.get("reset") === "1";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,6 +45,11 @@ export default function LoginForm() {
       {justRegistered && !error && (
         <p className="text-xs text-emerald-300 mb-3">
           Account created — log in to continue.
+        </p>
+      )}
+      {justReset && !error && (
+        <p className="text-xs text-emerald-300 mb-3">
+          Password reset — log in with your new password.
         </p>
       )}
       {error && (

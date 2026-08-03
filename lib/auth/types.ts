@@ -28,6 +28,15 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
 // RFC 7807 problem detail, per capstone-api-endpoints.md §0 Conventions
 export interface ProblemDetail {
   status: number;
