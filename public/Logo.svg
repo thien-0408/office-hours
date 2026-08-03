@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 160 120"
+     width="160"
+     height="120"
+     fill="none">
+
+  <defs>
+    <!-- Accent Gradient -->
+    <linearGradient id="chosenPointGradIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+
+    <!-- Soft Glow -->
+    <filter id="softGlowIcon" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <g id="logo-mark">
+
+    <!-- Queue Column 1 -->
+    <circle cx="26" cy="24" r="5.5" fill="#94a3b8" opacity="0.45"/>
+    <circle cx="26" cy="48" r="5.5" fill="#94a3b8" opacity="0.45"/>
+    <circle cx="26" cy="72" r="5.5" fill="#94a3b8" opacity="0.45"/>
+    <circle cx="26" cy="96" r="5.5" fill="#94a3b8" opacity="0.45"/>
+
+    <!-- Queue Column 2 -->
+    <circle cx="58" cy="36" r="6" fill="#64748b" opacity="0.65"/>
+    <circle cx="58" cy="60" r="6" fill="#64748b" opacity="0.65"/>
+    <circle cx="58" cy="84" r="6" fill="#64748b" opacity="0.65"/>
+
+    <!-- Queue Column 3 -->
+    <circle cx="90" cy="48" r="6.5" fill="#475569" opacity="0.85"/>
+    <circle cx="90" cy="72" r="6.5" fill="#475569" opacity="0.85"/>
+
+    <!-- Queue Flow -->
+    <path
+      d="M26 24 L130 60
+         M26 96 L130 60"
+      stroke="#cbd5e1"
+      stroke-width="1"
+      stroke-dasharray="2 3"
+      opacity="0.4"/>
+
+    <!-- Chosen Point -->
+    <circle
+      cx="130"
+      cy="60"
+      r="14"
+      fill="url(#chosenPointGradIcon)"
+      filter="url(#softGlowIcon)"/>
+
+  </g>
+
+</svg>

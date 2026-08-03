@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+
+  /* Brand — sampled from login-form.png gradient, see docs/DESIGN.md */
+  --brand-50: #eff4ff;
+  --brand-100: #dce7ff;
+  --brand-200: #b7ceff;
+  --brand-300: #8fb0ff;
+  --brand-400: #5c8af0;
+  --brand-500: #3465e0;
+  --brand-600: #274fc0;
+  --brand-700: #1d3b98;
+  --brand-800: #142a6e;
+  --brand-900: #0b1b49;
+  --brand-950: #071230;
+
+  /* Neutrals */
+  --paper-0: #ffffff;
+  --paper-50: #f6f8fc;
+  --paper-100: #edf1f8;
+  --paper-200: #dce2ed;
+  --ink-300: #b7bfce;
+  --ink-400: #8d96aa;
+  --ink-500: #6b7488;
+  --ink-600: #4e566a;
+  --ink-700: #383f52;
+  --ink-800: #262b3b;
+  --ink-900: #171a26;
+  --ink-950: #0b0d14;
+
+  /* Status */
+  --success-500: #1e9e6b;
+  --success-100: #d7f4e8;
+  --success-700: #12704a;
+  --warning-500: #d9822b;
+  --warning-100: #fbead4;
+  --warning-700: #a15e17;
+  --danger-500: #e24c4c;
+  --danger-100: #fbdede;
+  --danger-700: #a62f2f;
+  --info-500: #7c5cff;
+  --info-100: #e8e1ff;
+  --info-700: #5433c4;
+
+  /* Semantic roles (light default) */
+  --bg-canvas: var(--paper-50);
+  --bg-surface: var(--paper-0);
+  --bg-surface-raised: var(--paper-0);
+  --border-subtle: var(--paper-200);
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-600);
+  --text-on-brand: var(--paper-0);
+  --accent: var(--brand-500);
+  --accent-hover: var(--brand-600);
+  --focus-ring: var(--brand-400);
+
+  /* Glass — auth/landing + chrome only, see docs/DESIGN.md */
+  --glass-bg: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.32);
+  --glass-sheen: rgba(255, 255, 255, 0.45);
+}
+
+@theme inline {
+  --color-bg-canvas: var(--bg-canvas);
+  --color-bg-surface: var(--bg-surface);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-archivo);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-canvas: var(--ink-950);
+    --bg-surface: var(--ink-900);
+    --bg-surface-raised: var(--ink-800);
+    --border-subtle: var(--ink-700);
+    --text-primary: var(--paper-50);
+    --text-secondary: var(--ink-300);
+    --accent: var(--brand-400);
+    --accent-hover: var(--brand-300);
+    --focus-ring: var(--brand-300);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg-canvas: var(--ink-950);
+  --bg-surface: var(--ink-900);
+  --bg-surface-raised: var(--ink-800);
+  --border-subtle: var(--ink-700);
+  --text-primary: var(--paper-50);
+  --text-secondary: var(--ink-300);
+  --accent: var(--brand-400);
+  --accent-hover: var(--brand-300);
+  --focus-ring: var(--brand-300);
+}
+:root[data-theme="light"] {
+  --bg-canvas: var(--paper-50);
+  --bg-surface: var(--paper-0);
+  --bg-surface-raised: var(--paper-0);
+  --border-subtle: var(--paper-200);
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-600);
+  --accent: var(--brand-500);
+  --accent-hover: var(--brand-600);
+  --focus-ring: var(--brand-400);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}

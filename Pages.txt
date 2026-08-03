@@ -1,0 +1,48 @@
+Public (no auth)
+
+1. Landing / Home — brief pitch + login/register links
+2. Public Office Hours listing (/public/office-hours) — read-only, filterable by department
+
+Auth (shared)
+
+3. Register — email, password, full name, role select, department
+4. Login
+5. Forgot/reset password flow (implied by change-password endpoint; confirm if in scope)
+
+Shared (all authenticated roles)
+
+6. My Profile — view/edit fullName, department, notification prefs, change password
+7. Notifications center — list, mark read, unread filter, live updates via SSE
+8. My Bookings — list with status filter (role-dependent view: student's own vs lecturer's to-review)
+9. Booking Detail — status, timeline, actions depend on role (confirm/decline/cancel/reschedule/complete/no-show/meeting-record)
+
+Student
+
+10. Find a Lecturer / Browse Lecturers — search by department, links to their slots
+11. Lecturer Slot Picker (/lecturers/{id}/slots) — weekly calendar view of bookable slots, conflict-filtered
+12. Book a Slot — form/modal: topic, optional participants (group)
+13. Group Booking management — add/remove participants on an existing booking
+14. Recurring Booking setup — day/time/semester picker, view series + cancel series
+15. My Waitlist — entries, position/status, accept/decline offered slots
+
+Lecturer
+
+16. Availability Rules manager — weekly recurring rules CRUD (day, time range, slot length, effective dates)
+17. Availability Exceptions manager — one-off BLOCK/ADD entries on a calendar
+18. My Schedule (busy blocks) — view imported/manual teaching schedule (read-mostly, admin edits)
+19. Bookings to Review — pending bookings queue: confirm/decline
+20. Slot Waitlist view — queue transparency per slot
+21. Meeting Record entry — attended + notes, per completed booking
+
+Admin
+
+22. User management — list/search/filter, view/edit role & department, deactivate
+23. Semester management — CRUD + activate
+24. Schedule Import — CSV upload, job status polling, import history table
+25. Manual Schedule Entry editor — fallback single-entry add/delete
+26. Slot search/ops view — cross-lecturer slot browser
+27. Allocation Policies manager — list, create/edit config (weights), activate one
+28. Allocation Events audit log — filterable table + detail drawer (score, seed, override info)
+29. Manual Override action — assign freed slot to a specific student, with reason (likely a modal from slot/waitlist view)
+30. Analytics dashboard — advisor load, no-show rate, equity (Gini), policy comparison (live demo view)
+31. Research tools (stretch, may be dev-only, maybe skip in FE scope) — synthetic demand generator, experiment runner, experiment results/export
