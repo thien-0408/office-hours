@@ -160,6 +160,9 @@ export default function LandingPage() {
             <a href="#for-lecturers" className="hover:text-blue-600 transition-colors">
               For lecturers
             </a>
+            <Link href="/public/office-hours" className="hover:text-blue-600 transition-colors">
+              Browse office hours
+            </Link>
           </div>
           <div className="flex items-center gap-[18px]">
             <Link
@@ -465,7 +468,7 @@ export default function LandingPage() {
         <div className="max-w-[1180px] mx-auto flex items-center justify-between gap-3 text-[12.5px] text-slate-500">
           <span>OfficeHours — built for the pilot semester.</span>
           <div className="flex gap-5">
-            <Link href="/office-hours" className="text-slate-500 no-underline hover:text-slate-900">
+            <Link href="/public/office-hours" className="text-slate-500 no-underline hover:text-slate-900">
               Public listing
             </Link>
             <Link href="/login" className="text-slate-500 no-underline hover:text-slate-900">

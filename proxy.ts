@@ -6,7 +6,7 @@ const PUBLIC_PATHS = [
   "/",
   "/login",
   "/register",
-  "/office-hours",
+  "/public/office-hours",
   "/forgot-password",
   "/reset-password",
 ];
@@ -14,7 +14,7 @@ const PUBLIC_PATHS = [
 function isPublicPath(pathname: string) {
   return (
     PUBLIC_PATHS.includes(pathname) ||
-    pathname.startsWith("/office-hours/") ||
+    pathname.startsWith("/public/office-hours/") ||
     pathname.startsWith("/api/auth/")
   );
 }

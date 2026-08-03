@@ -15,7 +15,7 @@ Shared (all authenticated roles)
 7. Notifications center — list, mark read, unread filter, live updates via SSE
 8. My Bookings — list with status filter (role-dependent view: student's own vs lecturer's to-review)
 9. Booking Detail — status, timeline, actions depend on role (confirm/decline/cancel/reschedule/complete/no-show/meeting-record)
-
+ 
 Student
 
 10. Find a Lecturer / Browse Lecturers — search by department, links to their slots

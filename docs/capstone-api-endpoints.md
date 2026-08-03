@@ -201,7 +201,7 @@ Maps to `NOTIFICATIONS`.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/public/office-hours` | Public (no auth) | "Office hours this week" — read-only listing of open slots across all lecturers, `?department=`. No student/lecturer PII beyond lecturer name/department. |
+| GET | `/public/office-hours` | Public (no auth) | "Office hours this week" — read-only listing of open (`slots.status = 'OPEN'`) slots across all lecturers, bounded to the current week, `?department=` (exact match, optional) `&page=&size=` (§0 pagination convention). Returns `{ content: PublicSlot[], totalElements, totalPages, page, size }` where `PublicSlot = { lecturerName, department, startAt, endAt }`. No student/lecturer PII beyond lecturer name/department — no email, no booking/student data joined in. |
 
 ---
 

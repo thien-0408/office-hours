@@ -15,8 +15,8 @@ export default function SchedulingHeroBackground() {
 
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#f8fafc");
-    scene.fog = new THREE.FogExp2("#f8fafc", 0.04);
+    scene.background = new THREE.Color("#f6f8fc"); // --paper-50
+    scene.fog = new THREE.FogExp2("#f6f8fc", 0.04);
 
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -36,51 +36,84 @@ export default function SchedulingHeroBackground() {
     const ambientLight = new THREE.AmbientLight("#ffffff", 1.4);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight("#3b82f6", 3.5, 50);
+    const pointLight = new THREE.PointLight("#3465e0", 3.5, 50); // --brand-500
     pointLight.position.set(10, 10, 10);
     scene.add(pointLight);
 
-    // 4. Create 3D Floating Time Slots
+    // 4. Create a loose 3D week grid of office-hours slots — each cell is a day
+    // column x time-of-day row, so the shape reads as a calendar (not random
+    // clutter), colored by the same three states the real booking flow uses.
     const slotsGroup = new THREE.Group();
-    const count = 35;
+    const DAYS = 7;
+    const SLOTS_PER_DAY = 5;
     const geometry = new THREE.BoxGeometry(1.6, 1.0, 0.15);
+    const edgeGeometry = new THREE.EdgesGeometry(geometry);
+
+    type SlotStatus = "OPEN" | "BOOKED" | "PENDING";
+
+    function pickStatus(): SlotStatus {
+      const r = Math.random();
+      if (r < 0.15) return "PENDING";
+      if (r < 0.45) return "BOOKED";
+      return "OPEN";
+    }
 
     const slotInstances: {
-      mesh: THREE.Mesh;
+      mesh: THREE.Mesh | THREE.LineSegments;
       baseY: number;
       speed: number;
       rotSpeed: number;
     }[] = [];
 
-    for (let i = 0; i < count; i++) {
-      const isHighlighted = Math.random() > 0.75;
-      const material = new THREE.MeshStandardMaterial({
-        color: isHighlighted ? "#2563eb" : "#bfdbfe",
-        transparent: true,
-        opacity: isHighlighted ? 0.6 : 0.35,
-        roughness: 0.2,
-        metalness: 0.1,
-      });
+    const spacingX = 3.6;
+    const spacingY = 3.2;
 
-      const mesh = new THREE.Mesh(geometry, material);
-      const x = (Math.random() - 0.5) * 26;
-      const y = (Math.random() - 0.5) * 16;
-      const z = (Math.random() - 0.5) * 12 - 2;
+    for (let day = 0; day < DAYS; day++) {
+      for (let slot = 0; slot < SLOTS_PER_DAY; slot++) {
+        const status = pickStatus();
 
-      mesh.position.set(x, y, z);
-      mesh.rotation.set(
-        Math.random() * 0.4,
-        Math.random() * 0.4,
-        Math.random() * 0.2
-      );
+        const gridX = (day - (DAYS - 1) / 2) * spacingX;
+        const gridY = ((SLOTS_PER_DAY - 1) / 2 - slot) * spacingY;
+        const x = gridX + (Math.random() - 0.5) * 0.6;
+        const y = gridY + (Math.random() - 0.5) * 0.5;
+        const z = (Math.random() - 0.5) * 6 - 2;
 
-      slotsGroup.add(mesh);
-      slotInstances.push({
-        mesh,
-        baseY: y,
-        speed: 0.005 + Math.random() * 0.008,
-        rotSpeed: (Math.random() - 0.5) * 0.005,
-      });
+        let mesh: THREE.Mesh | THREE.LineSegments;
+        if (status === "PENDING") {
+          // Awaiting confirmation: outline only, no fill.
+          mesh = new THREE.LineSegments(
+            edgeGeometry,
+            new THREE.LineBasicMaterial({ color: "#5c8af0", transparent: true, opacity: 0.75 })
+          );
+        } else {
+          const isBooked = status === "BOOKED";
+          mesh = new THREE.Mesh(
+            geometry,
+            new THREE.MeshStandardMaterial({
+              color: isBooked ? "#3465e0" : "#b7ceff",
+              transparent: true,
+              opacity: isBooked ? 0.58 : 0.22,
+              roughness: 0.2,
+              metalness: 0.1,
+            })
+          );
+        }
+
+        mesh.position.set(x, y, z);
+        mesh.rotation.set(
+          Math.random() * 0.4,
+          Math.random() * 0.4,
+          Math.random() * 0.2
+        );
+
+        slotsGroup.add(mesh);
+        slotInstances.push({
+          mesh,
+          baseY: y,
+          speed: 0.005 + Math.random() * 0.008,
+          rotSpeed: (Math.random() - 0.5) * 0.005,
+        });
+      }
     }
 
     scene.add(slotsGroup);
@@ -135,6 +168,11 @@ export default function SchedulingHeroBackground() {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
+      slotInstances.forEach(({ mesh }) => {
+        (mesh.material as THREE.Material).dispose();
+      });
+      geometry.dispose();
+      edgeGeometry.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
