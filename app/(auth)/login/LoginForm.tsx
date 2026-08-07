@@ -26,7 +26,7 @@ export default function LoginForm() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      router.push(searchParams.get("redirectTo") || "/");
+      router.push(searchParams.get("redirectTo") || "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -56,6 +56,18 @@ export default function LoginForm() {
         <p className="text-xs text-red-300 mb-3" role="alert">
           {error}
         </p>
+      )}
+
+      {process.env.NODE_ENV !== "production" && (
+        <div className="mb-4 rounded-lg border border-white/25 bg-white/10 px-3.5 py-2.5 text-[11.5px] text-white/85">
+          <p className="font-semibold text-white mb-1">Dev test accounts (no backend yet)</p>
+          <ul className="space-y-0.5 font-mono">
+            <li>student@officehours.dev</li>
+            <li>lecturer@officehours.dev</li>
+            <li>admin@officehours.dev</li>
+          </ul>
+          <p className="mt-1 text-white/60">Password: password123</p>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">

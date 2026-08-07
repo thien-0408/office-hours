@@ -16,9 +16,27 @@
 |---|---|
 | Auth pages (Login, Register) | **Full glass**: brand-500→950 gradient background, glass card (`--glass-bg` / `--glass-border` / `backdrop-filter: blur`), white text. This is where the glassmorphism actually performs. Implemented as `app/(auth)/layout.tsx` + `login/` + `register/`, background is `assets/Login-Background.png` (chosen over `Glass Effect Login Page - Blue.png` for its more balanced shape placement around a centered card). The two routes share one persistent layout so Framer Motion can animate the glass card between them — `layout` prop auto-animates the height difference (register is taller), `AnimatePresence` cross-fades/slides the inner content, direction-aware (login→register vs. reverse) via React's "derive state during render" pattern, not a ref mutation (the React Compiler ESLint rule `react-hooks/refs` forbids writing `ref.current` mid-render). Respects `prefers-reduced-motion` via `useReducedMotion()`. |
 | Landing page (`/`) | **Editorial/collage**, referenced from `assets/Slingshot.png`: bold uppercase display headline (Archivo 900), organic paper-cutout blobs (irregular `border-radius` shapes in brand-300/warning-500) behind an arch-topped photo, a hand-drawn wobble badge (SVG `feTurbulence`/`feDisplacementMap`, not a hand-authored path). Same brand-blue token set as the rest of the app — only the *structure* is borrowed from Slingshot, not its terracotta/mustard palette. Dark hero + CTA band use `--brand-900`/`--brand-950` directly (not theme-toggled, a deliberate fixed-dark choice like the reference). No glass on this page. |
-| App shell (dashboard, calendars, tables, admin) | **Restrained**: flat `--bg-canvas` / `--bg-surface`, `--accent` used only for buttons/links/focus rings. Reserve glass for chrome only — top nav, modals, dropdowns — never as the base layer under dense content (calendar grids, booking tables, audit logs). |
+| App shell (dashboard, calendars, tables, admin) | **Restrained**, revised — see §1.2: flat `--bg-canvas` / `--bg-surface` structure unchanged, glass still chrome-only. Color is no longer blue-exclusive: a validated decorative accent palette (coral/rose/mint) now carries icon chips, the featured-card CTA, calendar selection, and nav active-state — `--accent` (blue) still owns default buttons/links/focus rings, and booking-status semantics (§4) are untouched. |
 
 Reasoning: heavy `backdrop-blur` + busy gradient backgrounds hurt readability and perf on scroll-heavy, data-dense pages (weekly slot calendars, allocation audit logs, analytics). Apple itself reserves glass for chrome, not content-dense screens. Landing gets its own editorial energy because it's a one-shot marketing surface, not a form or a data view — same reasoning that keeps glass off the app shell also keeps it off a page that's mostly headline + photo.
+
+### 1.2 App shell color revision — decorative accent palette
+
+The app shell was originally blue-only ("`--accent` used only for buttons/links/focus rings," §1 table above, v1). Revised after a reference dashboard (`learn.brosky`) showed the restrained blue-only treatment reading flat/monotone next to a livelier pastel-accented layout — the team chose to bring in color, deliberately, rather than leave it implicit.
+
+**What changed:** a new decorative accent set — `--coral-*`, `--rose-*`, `--mint-*` (§3) — used for:
+- Stat-tile icon chips and other purely quantitative metrics (e.g. "Upcoming bookings," "Active users").
+- `FeaturedActionCard`'s background/button treatment (coral, replacing solid brand-500).
+- `MiniCalendar`'s selected-date pill (rose/magenta, replacing brand-500).
+- `DashboardShell`'s notification bell (solid coral circle) and active-nav-item indicator (left accent bar, not a filled pill).
+- `TaskList`'s checked state (brand blue, unchanged — this one stayed blue to match the reference).
+
+**What deliberately did NOT change:**
+- **Booking-status hues (§4)** — `PENDING`/`CONFIRMED`/`DECLINED`/etc. stay on their existing warning/success/danger/info/brand mapping. A stat tile that represents a real status (e.g. "Pending confirmation," "No-show rate") keeps its semantic hue instead of taking a decorative one — only tiles with no status meaning (raw counts) moved to the accent palette. Don't repaint a status tile decoratively; check `lib/ui/status-hues.ts` first.
+- **`ActivityChart`** — stayed on the brand-300/brand-500 highlight pair validated in the original build. Every orange-based alternative tried either read too light against the white surface or too close to its own highlight shade to tell apart (`dataviz` skill's CVD-separation check) — re-theming it to match the reference's true multi-color bars (a different color per bar with no data meaning) was rejected outright, since that's an unvalidated rainbow-bars pattern the skill's anti-patterns explicitly warn against. If a future redesign wants the chart to carry the accent palette too, it needs its own validation pass, not a copy-paste of these tokens.
+- **`--accent`** itself — still blue, still the only color for default interactive chrome (primary buttons outside the featured card, links, focus rings) not called out above.
+
+**Validation:** `coral`/`rose`/`mint` + `brand` validated together as a 4-hue set — `node scripts/validate_palette.js "#F97316,#EC4899,#22C55E,#3465E0" --mode light` (dataviz skill) — all checks pass. The surface-contrast WARN (expected for saturated color on a near-white background) is resolved the same way status badges already handle it: color is always paired with an icon + text label, never used alone to carry meaning.
 
 Landing page implementation: `app/page.tsx` + `app/landing.module.css`. Placeholder hero photo is hotlinked from `images.unsplash.com` (Unsplash License, free tier — not a premium/paid asset) pending real campus photography; `next.config.ts` allows that remote host. Swap for real photography before launch.
 
@@ -112,6 +130,12 @@ Full ramp — copy directly into `app/globals.css`.
   --warning-500: #D9822B; --warning-100: #FBEAD4; --warning-700: #A15E17;
   --danger-500:  #E24C4C; --danger-100:  #FBDEDE; --danger-700:  #A62F2F;
   --info-500:    #7C5CFF; --info-100:    #E8E1FF; --info-700:    #5433C4;
+
+  /* Dashboard accent palette — decorative only, see §1.2. Not status semantics,
+     not a second primary color. Validated with --brand-500 as a 4-hue set. */
+  --coral-100: #FFEDD5; --coral-500: #F97316; --coral-600: #EA580C; --coral-700: #C2410C;
+  --rose-100:  #FCE7F3; --rose-500:  #EC4899; --rose-600:  #DB2777; --rose-700:  #BE185D;
+  --mint-100:  #DCFCE7; --mint-500:  #22C55E; --mint-600:  #16A34A; --mint-700:  #15803D;
 
   /* Semantic roles (light default) */
   --bg-canvas: var(--paper-50);

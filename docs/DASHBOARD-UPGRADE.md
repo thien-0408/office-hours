@@ -1,0 +1,161 @@
+# Dashboard Upgrade — Style Extraction & Implementation Plan
+
+Reference: `learn.brosky` e-learning dashboard (three-column, card-based, white+blue with
+soft pastel accents). This doc extracts its reusable patterns and maps them onto OfficeHours'
+existing design system (`docs/DESIGN.md`) — **without** breaking that system's rules.
+
+> Guardrail up front (Phases 1–5): the reference leans on orange CTAs, a magenta calendar
+> selection, and hand-drawn doodle accents around the avatar. DESIGN.md kept **blue primary**,
+> reserved **rough.js / hand-drawn accents for the landing page only**, and restricted badge
+> hues to the §4 status table. Phases 1–5 borrowed the reference's *structure and interaction
+> patterns*, not its palette.
+>
+> **Superseded by Phase 6** — the palette guardrail above was explicitly revisited and loosened
+> (not overridden accidentally): the dashboard now uses a validated decorative accent palette
+> (coral/rose/mint) for non-status surfaces, matching the reference's orange CTA and magenta
+> calendar selection. See `docs/DESIGN.md` §1.2 for exactly what changed and what stayed blue.
+> The hand-drawn-accents-on-landing-only rule is untouched — that part of the guardrail still stands.
+
+---
+
+## 1. Style extraction (what to adopt)
+
+| Pattern in the reference | Adopt as | OfficeHours mapping |
+|---|---|---|
+| **Three-column layout** (sidebar / fluid center / right rail) | Add a right rail to the shell | Rail holds profile card, this-week mini-calendar, upcoming bookings, action items |
+| **Time-aware greeting** ("Morning, Cecillia 🌤️") | Greeting header | "Morning/Afternoon/Evening, {firstName}" — warmth without new colors |
+| **Search pill + circular bell** in header | Keep (bell already in shell) | Add a global search pill (find lecturers) |
+| **Stat tiles** — soft-tint icon chip + big number + label | Reusable `StatTile` | Per-role metrics; icon-chip tint drawn from §4 status hues, not arbitrary pastels |
+| **Chart card** ("Time spends", rounded bars, one highlighted + tooltip) | Reusable `ActivityChart` | "Booking activity" per weekday (student), "advisor load" (admin) |
+| **Featured action card** (peach "Course code" join form) | Featured CTA card | "Find a lecturer" / "Book a slot" primary action, brand-blue not peach |
+| **Meta rows** (icon + "19 lessons", icon + "2h 4m") | `MetaRow` primitive | "30 min", "Offline · AG07 Hall", department, etc. |
+| **Sortable table** ("Your assignment") | `BookingsTable` | Upcoming bookings — reuses `Booking` type + `StatusBadge` |
+| **Right-rail info card** (Years / Major / GPA label→value) | `ProfileCard` | Role / Department / Email label→value rows |
+| **Month calendar strip** (chevrons, selected date pill) | `MiniCalendar` | This week's office hours; selected date in **brand-500**, not magenta |
+| **"Upcoming class"** colored left-border list | `UpcomingList` | Upcoming bookings, left-border tinted by status hue |
+| **"To Do List"** checkboxes + emoji | `TaskList` | Role action items (student: prep/confirm; lecturer: bookings to review) |
+| Soft 1px borders, `rounded-2xl`, very soft shadows, generous whitespace | Card system | Matches DESIGN.md "Restrained" app-shell treatment |
+
+**Color discipline (the important part):** the friendly, multi-color feel comes from the §4
+**status hues** used semantically — `success` (confirmed), `warning` (pending), `info` (offered),
+`brand` (completed) — as icon-chip tints and left-borders. Blue stays the only interactive/primary
+color. No orange buttons, no magenta, no new hues.
+
+---
+
+## 2. Libraries
+
+| Library | Status | Why | React 19 |
+|---|---|---|---|
+| **lucide-react** `1.28.0` | ✅ **installed** | Replaces the 11 hand-rolled SVGs in `DashboardShell` and supplies the ~20 icons the richer dashboard needs (stat chips, calendar nav, checkboxes, meta rows). Tree-shakeable. | ✅ |
+| **recharts** `3.10.x` | ⏳ recommended — Phase 3 | The "Booking activity" bar card, and — more importantly — the **research analytics** (Gini coefficient, policy-comparison, advisor-load) that are the capstone's core deliverable. Install when building the first chart; the `dataviz` skill governs its styling. | ✅ |
+| **react-day-picker** `10.x` | ⏳ recommended — with the slot picker | The right-rail mini-calendar, and reused by the **Lecturer Slot Picker** (`/lecturers/{id}/slots`, a weekly calendar). Building calendar date-math once, in a maintained lib, beats hand-rolling it twice. | ✅ |
+| framer-motion | already present | Card entrance stagger, number count-up on stat tiles. | — |
+| ~~dnd-kit~~ | skipped | Only needed for to-do reordering — not worth a dependency yet. | — |
+
+Nothing new is required to *start*; lucide-react unblocks Phases 1–2. Recharts and
+react-day-picker are deliberately deferred to the phase that first needs them so we don't
+carry unused deps.
+
+**Audit note:** the 3 pre-existing high-severity advisories are transitive `postcss`/`sharp`
+issues from the Next/Tailwind toolchain — unrelated to lucide-react. Don't `audit fix --force`
+(it would try to move Next/Tailwind majors).
+
+---
+
+## 3. Implementation plan (phased)
+
+### Phase 1 — Foundation (shell + primitives) ✅ done
+- Replaced the 11 hand-rolled SVGs in `DashboardShell.tsx` with lucide-react (`LayoutDashboard`, `Search`, `CalendarDays`, `Clock`, `SlidersHorizontal`, `BookOpen`, `Users`, `Shuffle`, `BarChart3`, `Bell`, `ChevronDown`, `LogOut`).
+- Three-column layout: **decided against** a `rightRail` prop on `DashboardShell` — `app/(dashboard)/layout.tsx` only ever receives `children`, so a page-specific rail can't prop-drill through the shared layout without Context/portal machinery. Instead widened `<main>` (1180px → 1400px) and added `components/dashboard/DashboardColumns.tsx`, a page-level composition primitive (`<DashboardColumns rail={...}>content</DashboardColumns>`) that pages opt into individually.
+- Built reusable primitives in `components/dashboard/`: `Card`, `SectionHeader` (title + "See all"), `IconChip`, `StatTile` (icon chip + value + label), `MetaRow`. All token-driven (literal `--brand-*`/`--paper-*`/`--ink-*`, not the dark-reactive semantic layer), restrained (no glass on content).
+- Extracted `HUE_TOKENS`/`Hue` out of `StatusBadge` into `lib/ui/status-hues.ts` so `IconChip`/`StatTile` share the same §4 hue mapping instead of duplicating it.
+
+### Phase 2 — Student dashboard content ✅ done
+- **Greeting header** (time-aware: Morning/Afternoon/Evening) + a global search pill added to `DashboardShell`'s topbar (chrome, so glass) — submits to `/dashboard/lecturers?q=...` (that route doesn't exist yet, same "expected 404 at this stage" as the nav links).
+- **Stat tiles row** (`StatTile`): Upcoming bookings (brand) · Pending confirmation (warning) · Open slots this week (info) — hues from `BOOKING_STATUS_CONFIG`/`HUE_TOKENS`, slots-this-week count reuses `getMockOfficeHours`.
+- **Featured CTA card** (`FeaturedActionCard`): "Find a Lecturer," brand-blue with soft white circle accents — replaced the old two-card quick-action grid.
+- **Bookings table** (`BookingsTable`): client-side sortable by lecturer/date/status, `StatusBadge`, `tabular-nums` on the date/time column (DESIGN.md §2).
+- **Right rail**, composed via `DashboardColumns` (the Phase 1 primitive) at the page level: `ProfileCard` (avatar, role/department/email) → `MiniCalendar` (self-contained 5-day strip, no external lib yet) → `UpcomingList` (status-hue left border) → `TaskList` (local-only checkboxes).
+- Consolidated `BOOKING_STATUS_CONFIG` (label+hue per status) into `lib/ui/status-hues.ts` alongside `HUE_TOKENS`, so `StatusBadge` and `UpcomingList` read one source instead of two copies.
+
+### Phase 3 — Activity chart ✅ done
+- Read the `dataviz` skill first, then installed `recharts` (3.10.1, React 19 ✅).
+- **Validated the palette before writing chart code**, per the skill's non-negotiable: `node scripts/validate_palette.js "#8FB0FF,#3465E0" --mode light` (brand-300 base / brand-500 highlight). `brand-200` was tried first and **failed** (lightness/chroma/contrast) — too light to read as a bar against white; brand-300 passes every check except a non-dismissable surface-contrast WARN, which the component resolves with visible relief (not color alone): a direct label on the highlighted bar + an always-available "View as table" toggle (also satisfies the skill's hard "a table view exists" requirement).
+- `ActivityChart` (`components/dashboard/ActivityChart.tsx`): single-hue highlight bar chart, not a multi-series categorical palette — one measure (bookings), one bar drawn out via `highlightKey` (defaults to the max value if omitted). Thin bars, 4px rounded top corners, per-bar hover tooltip styled to tokens (not recharts' default theme), recessive axis.
+- Reused for **both** roles the plan called for for: `getMockWeeklyActivity()` → student's "Booking activity this week" (highlights today); `getMockAdvisorLoad()` → admin's "Advisor load this week" (highlights the busiest lecturer, since there's no "today" concept there) — this replaced the Phase-4 placeholder card now that the chart actually exists.
+
+### Phase 4 — Lecturer & Admin dashboards ✅ done (chart deferred)
+- Reused every Phase-1/2 primitive; swapped data + metrics:
+  - **Lecturer**: To-review / Confirmed today / No-show rate stat tiles; `BookingsTable` filtered to pending, `perspective="lecturer"`; rail swaps `UpcomingList` for `SlotsTodayList` (today's still-open slots, reusing `buildMockSlots`) + lecturer-flavored `TaskList`.
+  - **Admin**: Active users / Bookings this week / Utilization % stat tiles; `BookingsTable` with a new `perspective="admin"` (shows both lecturer and student); equity teaser card linking to `/dashboard/admin/analytics`.
+  - **Advisor-load chart intentionally NOT built** — stubbed as a dashed placeholder card instead. Phase 3 (recharts + the mandatory `dataviz` skill read) hasn't happened yet; faking a chart without that gate would violate the plan's own guardrail.
+- Generalized two primitives rather than forking them: `BookingsTable` gained a `perspective: "student" | "lecturer" | "admin"` prop (picks the name column instead of hardcoding "Lecturer"), and `TaskList` gained an optional `tasks` prop (`DEFAULT_TASKS` for student, `LECTURER_TASKS`/`ADMIN_TASKS` passed in from `page.tsx`).
+- `Booking` (types.ts) now carries both `lecturerName` and `studentName` — matches the real `bookings` table having both `lecturer_id`/`student_id` (capstone-db-schema.md §3.2); mock data updated accordingly (`getMockLecturerBookings`, `getMockAdminOverview`, `getMockLecturerSlotsToday` added to `mock-data.ts`).
+
+### Phase 5 — Polish ✅ done
+- **Motion**: `StaggerGroup`/`StaggerItem` (new) give every dashboard section a cascading entrance; `StatTile` count-up animates numeric values (string values like `"68%"` render statically, no parsing). Both gate on `useReducedMotion()` — falls back to plain divs / the final value with no animation, matching `AuthLayout`'s existing convention.
+- **Empty states**: already covered in Phase 2/4 (`BookingsTable`, `UpcomingList`, `SlotsTodayList` all have one) — nothing new needed here.
+- **Loading skeleton**: replaced the layout's plain "Loading…" text with `DashboardSkeleton`, shaped like the real shell (sidebar/topbar/content) so there's no layout jump once it mounts. This is the one real async loading state on the route (`useAuth()`'s initial `/api/auth/me`) — no skeletons were invented for the (synchronous, mock) dashboard content itself.
+- **Mobile nav**: the sidebar was `hidden` below `md` with nothing replacing it — a real gap, not hypothetical. Added a hamburger button + slide-in drawer (Framer Motion, backdrop, closes on link click/backdrop click/route change) to `DashboardShell`. Extracted `NavLinks` so the sidebar and drawer render the same list from one source instead of two copies.
+- Fixed two `react-hooks/set-state-in-effect` violations (the same React Compiler rule `AuthLayout` already works around) by deriving state during render instead of calling `setState` synchronously inside `useEffect`.
+
+### Phase 6 — Decorative accent palette ✅ done
+User-directed: the restrained blue-only app shell read flat next to the reference's livelier
+pastel accents; explicitly chose "full reference match" over a decorative-only middle ground.
+- **New tokens** (`app/globals.css`, mirrored in `docs/DESIGN.md` §3): `--coral-*` (orange),
+  `--rose-*` (pink/magenta), `--mint-*` (green) — 100/500/600/700 steps each.
+- **Validated as a set before use**: `node scripts/validate_palette.js "#F97316,#EC4899,#22C55E,#3465E0" --mode light` (dataviz skill) — coral/rose/mint/brand all pass; the surface-contrast WARN is resolved the same way status badges handle it, color always paired with an icon + label.
+- **New `lib/ui/accent-palette.ts`** — `ACCENT_TOKENS` (decorative), kept deliberately separate from `lib/ui/status-hues.ts` (booking-status semantics, untouched).
+- **`IconChip`/`StatTile` generalized**: `hue: Hue` → `tone: { bg; text }`, so callers pick either `HUE_TOKENS` (semantic) or `ACCENT_TOKENS` (decorative) explicitly per tile. Applied per-tile judgment, not blanket recoloring: tiles with real status meaning (Pending/warning, Confirmed/success, No-show/danger) kept their semantic hue; pure-count tiles (Upcoming, Active users, Utilization, …) moved to the accent palette.
+- **Reskinned**: `FeaturedActionCard` (solid blue → peach/coral gradient + coral button, matching the reference's "Course code" card), `MiniCalendar` (selected date: blue → rose/magenta pill), `DashboardShell` (bell: ghost → solid coral circle; active nav item: filled pill → left accent bar), `TaskList` (checked state: green → blue, matching the reference).
+- **`ActivityChart` restyled in a follow-up pass** — the Phase 6 write-up above originally kept it on brand-300/500, reasoning the base/highlight pair as a 2-slot *categorical* set (same lens as the icon-chip palette). That was the wrong lens: re-checked against the dataviz skill's own scope note ("for a lone status/text color check WCAG text contrast" — categorical CVD checks are for genuinely distinct categories, not a muted/inactive bar). Re-validated each accent as a standalone highlight color (`node scripts/validate_palette.js "#EC4899" --mode light` → PASS; `"#F97316"` / `"#22C55E"` → WARN, same as brand-500 originally was) and switched the base bars to a plain neutral (`--paper-200` fill / `--ink-300` stroke, closer to the reference's actual muted gray bars) with a per-chart `accent` prop (`ChartAccent`) for the highlight. Student's chart now highlights in `rose` (matches its "Upcoming bookings" tile + calendar selection), admin's in `coral` (matches its "Active users" tile). Still rejected: literal per-bar rainbow coloring with no data meaning — that remains an anti-pattern regardless of which hues are available.
+- Booking-status hues (§4) and `--accent` itself (default buttons/links/focus rings) are untouched.
+- Full writeup of the decision and what stayed blue: `docs/DESIGN.md` §1.2.
+
+### Phase 7 — Collapsible sidebar & glass confirm modal ✅ done
+- **Collapsible sidebar**: `DashboardShell`'s desktop `<aside>` toggles between `w-64` and `w-[76px]` via a `PanelLeftClose`/`PanelLeftOpen` button in the sidebar header. `NavLinks` gained a `collapsed` prop (icon-only, centered, `title` attr for a native tooltip since there's no room for a label). Collapsed state is component-local (not persisted to storage) to avoid an SSR/hydration mismatch — resets on reload. The logo crops down to just its mark (`w-8 h-6 overflow-hidden` around `LogoWithText`, whose mark ends ~30% into its viewBox — verified before relying on it) rather than needing a second logo asset. Mobile drawer is unaffected — it always renders full-width regardless of desktop collapse state.
+- **`ConfirmModal`** (new, `components/ConfirmModal.tsx`, top-level not dashboard-only since it's a generic confirm/destructive-action primitive): glassmorphism dialog — dark `--brand-950` backdrop + blur, frosted card reusing the *existing* `--glass-bg`/`--glass-border` tokens from the auth pages rather than inventing new ones. No `DESIGN.md` conflict here — §1 already reserves glass for "top nav, modals, dropdowns," this is just the first modal to actually exist. Generic props (icon/title/description/labels), not logout-specific, so cancel-booking/decline-request can reuse it later.
+- Wired into the sidebar's existing "Log out" button — clicking it now opens the confirm modal instead of logging out immediately, matching the reference screenshot's exact use case.
+
+### Phase 8 — Shared authenticated pages (Profile, Notifications, My Bookings, Booking Detail) ✅ done
+Planned with Opus (via the `Plan` agent) before implementation; closes Pages.txt #6–9, the highest-leverage
+404s since every nav link and `SectionHeader href` on the dashboard home already pointed at one of them.
+Tracked page-by-page in the new `docs/PAGES-PROGRESS.md`.
+
+- **Route nesting note**: all four live under `app/(dashboard)/dashboard/...` (not `app/(dashboard)/...`) — the `(dashboard)` route group's literal URL segment is `dashboard`, matching the existing home page's path, so e.g. `app/(dashboard)/dashboard/profile/page.tsx` → `/dashboard/profile`.
+- **Types/mock-data added** (`lib/office-hours/types.ts`, `mock-data.ts`): `Notification`/`NotificationType`/`NotificationPrefs`, `BookingTimelineEvent`; `getMockNotifications`, `getMockNotificationPrefs`, `getMockAllBookings` (student + lecturer + a few other-lecturer rows, so the admin cross-lecturer view isn't just the same seeded lecturer again), `getMockBookingById`, `getMockBookingTimeline` (derived from status + startAt, not hand-authored per id, so it always agrees with whatever booking it's called on).
+- **New shared primitives** (`components/dashboard/`): `FilterTabs` (generic segmented control — status filter on My Bookings, All/Unread on Notifications), `FormField`/`TextInput`, `ToggleSwitch`, `NotificationItem`, `BookingTimeline`. Plus `lib/ui/notification-config.ts` (`NOTIFICATION_TYPE_CONFIG`, the notification analogue of `BOOKING_STATUS_CONFIG` — maps onto the same `HUE_TOKENS`, invents no new hues) and `lib/ui/relative-time.ts`.
+- **`BookingsTable` got one additive prop**: `getRowHref?: (booking) => string` — when passed, wraps the name cell in a `Link`. Backward-compatible; the dashboard home's usages are untouched.
+- **My Bookings** (`.../dashboard/bookings/page.tsx`): role → `{bookings, perspective, heading}` mapping, reusing `BookingsTable` as-is. Lecturers default to a Pending filter (the "to-review" view) via a `useState` initializer function, not an effect — this is also how Pages.txt #19 "Bookings to Review" is satisfied without a separate route.
+- **Booking Detail** (`.../dashboard/bookings/[id]/page.tsx`): `useParams()` (client hook, not the async `params` prop, since the page is `"use client"`) + the store-previous-value re-seed pattern (same technique as `DashboardShell`'s route-close effect) so the local mutable booking copy re-seeds if the id changes without a setState-in-effect. Header card + `BookingTimeline` + role-dependent action bar (student: cancel/reschedule-stub; lecturer: confirm/decline when pending, complete/no-show when confirmed-and-past, meeting-record notes when completed; admin: read-only). Cancel/Decline/No-show route through `ConfirmModal`; Confirm/Complete apply directly (non-destructive).
+- **Notifications** (`.../dashboard/notifications/page.tsx`): mark-read/mark-all-read, All/Unread `FilterTabs`. SSE (`GET /notifications/stream`) is explicitly **stubbed, not faked** — a static "Live updates soon" affordance with a `title` tooltip, no `EventSource`, no polling interval, per the plan's instruction not to fabricate a live connection with no backend behind it. `DashboardShell`'s bell button now links to this page (was previously inert).
+- **My Profile** (`.../dashboard/profile/page.tsx`): identity form (name/department, email read-only), notification-prefs toggles, change-password with client-side validation (min length + match, derived during render) gated behind `ConfirmModal`. No persistence — there's no backend and no `updateUser` on `auth-context` — "Save" only updates local state; commented as the `PATCH /users/me` + `refreshUser()` wiring point for later, not silently faked as if it worked.
+- **Lint trap avoided throughout**: every filter/derived list/default (status filters, unread count, role→data mapping, `isPast`) computed during render, not via `useEffect`. One real catch during verification — `react-hooks/purity` flagged a direct `Date.now()` call in Booking Detail's `isPast` check and in `relative-time.ts` (impure-during-render); fixed by switching to `new Date().getTime()`, which the codebase already uses elsewhere in render (e.g. `dashboard/page.tsx`'s `isToday`) without issue — the lint rule specifically targets `Date.now`/`Math.random`-style APIs, not `new Date()`.
+- Verified: `npx tsc --noEmit` (clean, same one pre-existing unrelated `app/page.tsx` error), `npx eslint` clean across all new/changed files, and `curl` confirms all four new routes still 307-redirect to `/login` when unauthenticated (`proxy.ts` gating unaffected).
+- **Two pre-existing token bugs found and fixed while verifying**: `ToggleSwitch` (Phase 8) referenced `--paper-300`, which doesn't exist in `globals.css` (only 0/50/100/200) — silently rendered with no background. Booking Detail's three destructive buttons referenced `--danger-200` (only 100/500/700 exist) — silently rendered borderless. Both fixed to the nearest real step (`--paper-200`, `--danger-100`). Neither had a visible failure mode (undefined CSS vars just no-op), which is why they slipped through Phase 8's own verification — worth remembering that `bg-[var(--x)]`/`border-[var(--x)]` typos don't throw anywhere in this stack.
+
+### Phase 9 — Student booking flow (Pages.txt #10–15) ✅ done
+Planned with Opus (`Plan` agent), implemented in Sonnet 5. Closes the two remaining student-nav
+404s (`/dashboard/lecturers`, `/dashboard/waitlist`) plus the full book → group → recurring path.
+
+- **Data layer**: `MOCK_LECTURERS` (`mock-data.ts`) gained stable `id`/`slug`/`blurb` fields — purely additive, the three pre-existing callers (`getMockOfficeHours`, `getMockLecturerSlotsToday`, `getMockAdvisorLoad`) only ever read `name`/`department`/`photoUrl` so nothing broke. New: `getMockLecturers({department, q})`, `getMockLecturerById`, `getMockLecturerWeekSlots(lecturerId, weekOffset)` (deterministic per-lecturer week grid, `conflict` flag from a plain overlap check against the student's own bookings — not a real conflict engine), `getMockRecurringSeries`, `getMockWaitlistEntries`. New types in `types.ts`: `BookableSlot`, `BookingParticipant` (+ optional `participants?` on `Booking`), `RecurringSeries`/`RecurringOccurrence`/`RecurringStatus`, `WaitlistEntry`/`WaitlistStatus`. `WAITLIST_STATUS_CONFIG` added to `status-hues.ts` — maps onto the **existing** hue set, no new colors, same pattern as `BOOKING_STATUS_CONFIG`.
+- **#10 Find a Lecturer** (`app/(dashboard)/dashboard/lecturers/`): search box seeded from `?q=` (topbar search pill already targets this), department `FilterTabs`, new `LecturerCard`. Client component wrapped in `<Suspense>` in `page.tsx` since it reads `useSearchParams()` — same pattern as the existing login/reset-password forms.
+- **#11 Lecturer Slot Picker** (`.../lecturers/[id]/slots/`): new `WeekSlotGrid` (5-day-column grid of time buttons, muted+disabled for unavailable/conflicting slots with a title tooltip). Week navigation via a plain `weekOffset` state, prev/next chevrons. `useParams()` (client hook, matches Booking Detail's pattern).
+- **#12 Book a Slot**: new `BookSlotModal` — deliberately a **restrained white card, not glass** (`ConfirmModal` stays the one sanctioned glass surface, reserved for confirmations, not data entry). Topic field + embedded `ParticipantManager`, inline "request sent" success state, no persistence (comment marks the `POST /bookings` wiring point).
+- **#13 Group Booking management**: new `ParticipantManager` (add-by-email, remove-with-`ConfirmModal`), shared by `BookSlotModal` and available to extend Booking Detail. Explicitly commented as **not wired to a real bookings-participants model** — the actual schema isn't known from this repo, so this is a UI/interaction demo, not a faked-persistent feature.
+- **#14 Recurring Booking** (`.../bookings/recurring/`): setup form (day-of-week `FilterTabs`, time, semester, lecturer prefilled via `?lecturer=` from the slot picker's "Make this a weekly booking" link) with a **derived-during-render** occurrence preview (pure date math, no effect); existing-series list with per-occurrence `StatusBadge`s and a `ConfirmModal`-gated cancel. No inbound nav link existed for this page per the plan — added one from the slot picker and a "Set up recurring" link in My Bookings' header (student only) so it isn't orphaned. Clearly marked "preview only — not wired to a real recurrence engine."
+- **#15 My Waitlist** (`.../waitlist/`): new `WaitlistStatusBadge`, `StatTile`s for queue/offer counts (offer count uses `HUE_TOKENS.info` since it's a real status; queue count uses `ACCENT_TOKENS` since it's a plain count — same semantic/decorative split as Phase 6/8), accept (direct) / decline (`ConfirmModal`) on `OFFERED` entries with an expiry countdown. The `WAITLIST_OFFERED` notification type (Phase 8) now routes here when clicked.
+- **Two pre-existing bugs fixed as part of this phase's verification pass** (see the Phase 8 entry above — found while re-checking token usage before adding more danger-hue-bordered buttons in Waitlist).
+- **Lint traps avoided**: all date/"now" comparisons use `new Date().getTime()`, never `Date.now()` (the Phase 8 `react-hooks/purity` catch); new ids (participants, series, booked-slot tracking) are generated inside event handlers, never during render; the slot grid and recurring preview are pure functions of component state, no `useEffect` syncing.
+- Verified: `npx tsc --noEmit` clean, `npx eslint` clean across `app/(dashboard)`, `components`, `lib`. Restarted the dev server (had stopped) and confirmed all four new routes 307-redirect to `/login` unauthenticated, then logged in as the seeded student account via `POST /api/auth/login` and confirmed all four render 200 with no error markers.
+
+---
+
+## 4. DESIGN.md guardrails checklist (apply to every phase)
+- [x] ~~Blue is the only primary/interactive color — no orange CTA, no magenta selection.~~ Revised Phase 6 — see DESIGN.md §1.2 for the new decorative-accent rule and what deliberately stayed blue.
+- [ ] Glass only on chrome (sidebar, topbar, dropdowns, modals) — content cards stay flat.
+- [ ] No rough.js / hand-drawn accents on the app shell (landing page only).
+- [ ] Badge & chip hues come from the §4 status table — don't invent per-screen colors.
+- [ ] `tabular-nums` on any column of aligned digits (dates, times, counts).
+- [ ] Light-locked (`data-theme="light"` on `<html>`) — consistent with the rest of the app.

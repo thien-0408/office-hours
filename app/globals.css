@@ -44,6 +44,27 @@
   --info-100: #e8e1ff;
   --info-700: #5433c4;
 
+  /* Dashboard accent palette — decorative only (icon chips, featured-card CTA,
+     calendar selection, nav active-state); NOT status semantics (those stay on
+     the ramps above) and NOT a second primary/interactive color (--accent
+     still owns buttons/links/focus rings by default). See docs/DESIGN.md §1.2.
+     Validated as a set with --brand-500: dataviz skill,
+     validate_palette.js "#F97316,#EC4899,#22C55E,#3465E0" --mode light — all
+     checks pass (surface-contrast WARN resolved via icon+label pairing, not
+     color alone, same as the status badges). */
+  --coral-100: #ffedd5;
+  --coral-500: #f97316;
+  --coral-600: #ea580c;
+  --coral-700: #c2410c;
+  --rose-100: #fce7f3;
+  --rose-500: #ec4899;
+  --rose-600: #db2777;
+  --rose-700: #be185d;
+  --mint-100: #dcfce7;
+  --mint-500: #22c55e;
+  --mint-600: #16a34a;
+  --mint-700: #15803d;
+
   /* Semantic roles (light default) */
   --bg-canvas: var(--paper-50);
   --bg-surface: var(--paper-0);

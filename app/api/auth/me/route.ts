@@ -6,6 +6,7 @@ import {
   getRefreshToken,
   setSessionCookies,
 } from "@/lib/auth/session";
+import { decodeMockToken } from "@/lib/auth/mock-accounts";
 import type { AuthUser } from "@/lib/auth/types";
 
 interface RefreshResponse {
@@ -19,6 +20,12 @@ export async function GET() {
 
   if (!accessToken) {
     return NextResponse.json({ user: null }, { status: 200 });
+  }
+
+  // Seeded local session (lib/auth/mock-accounts.ts) — nothing to call, decode and return.
+  const mockUser = decodeMockToken(accessToken);
+  if (mockUser) {
+    return NextResponse.json({ user: mockUser });
   }
 
   try {
