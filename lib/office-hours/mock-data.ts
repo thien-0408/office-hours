@@ -1,12 +1,24 @@
 import type {
+  AdminScheduleEntry,
+  AdminUserRow,
+  AllocationEvent,
+  AllocationPolicy,
+  AvailabilityException,
+  AvailabilityRule,
   BookableSlot,
   Booking,
   BookingTimelineEvent,
+  EquityMetrics,
   Notification,
   NotificationPrefs,
+  PolicyComparisonRow,
   PublicOfficeHoursResponse,
   PublicSlot,
   RecurringSeries,
+  ScheduleBlock,
+  ScheduleImportHistoryEntry,
+  Semester,
+  SlotWaitlistGroup,
   WaitlistEntry,
 } from "./types";
 
@@ -663,5 +675,324 @@ export function getMockWaitlistEntries(): WaitlistEntry[] {
       position: 4,
       status: "WAITING",
     },
+  ];
+}
+
+// Stands in for GET /lecturers/me/availability-rules — the seeded lecturer's
+// weekly recurring office-hours rules (Pages.txt #16).
+export function getMockAvailabilityRules(): AvailabilityRule[] {
+  return [
+    {
+      id: 1,
+      dayOfWeek: 1,
+      startTime: "09:00",
+      endTime: "11:00",
+      slotLengthMinutes: 30,
+      effectiveFrom: "2026-08-01",
+      effectiveTo: null,
+      active: true,
+    },
+    {
+      id: 2,
+      dayOfWeek: 2,
+      startTime: "13:00",
+      endTime: "15:00",
+      slotLengthMinutes: 30,
+      effectiveFrom: "2026-08-01",
+      effectiveTo: null,
+      active: true,
+    },
+    {
+      id: 3,
+      dayOfWeek: 4,
+      startTime: "10:00",
+      endTime: "12:00",
+      slotLengthMinutes: 15,
+      effectiveFrom: "2026-08-01",
+      effectiveTo: "2026-12-19",
+      active: true,
+    },
+    {
+      id: 4,
+      dayOfWeek: 5,
+      startTime: "09:00",
+      endTime: "10:00",
+      slotLengthMinutes: 30,
+      effectiveFrom: "2026-08-01",
+      effectiveTo: null,
+      active: false,
+    },
+  ];
+}
+
+// Stands in for GET /lecturers/me/availability-exceptions — one-off BLOCK/ADD
+// entries layered on top of the weekly rules above (Pages.txt #17).
+export function getMockAvailabilityExceptions(): AvailabilityException[] {
+  const now = new Date();
+  function daysFromNow(d: number): string {
+    const date = new Date(now);
+    date.setDate(date.getDate() + d);
+    return date.toISOString().slice(0, 10);
+  }
+
+  return [
+    {
+      id: 1,
+      date: daysFromNow(3),
+      type: "BLOCK",
+      startTime: "09:00",
+      endTime: "11:00",
+      reason: "Faculty meeting",
+    },
+    {
+      id: 2,
+      date: daysFromNow(6),
+      type: "ADD",
+      startTime: "15:00",
+      endTime: "16:00",
+      reason: "Extra hours before midterm",
+    },
+    {
+      id: 3,
+      date: daysFromNow(10),
+      type: "BLOCK",
+      startTime: "13:00",
+      endTime: "15:00",
+      reason: null,
+    },
+  ];
+}
+
+// Stands in for GET /lecturers/me/schedule — imported/manual teaching
+// schedule, read-mostly for the lecturer (admin edits, Pages.txt #18).
+export function getMockScheduleBlocks(): ScheduleBlock[] {
+  return [
+    { id: 1, title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 2, title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 3, title: "CS 410 — Capstone Seminar", dayOfWeek: 2, startTime: "09:00", endTime: "10:30", source: "IMPORTED" },
+    { id: 4, title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
+    { id: 5, title: "Thesis committee — B. Nguyen", dayOfWeek: 5, startTime: "13:00", endTime: "14:00", source: "MANUAL" },
+  ];
+}
+
+// Stands in for GET /lecturers/me/slot-waitlist — per-slot queue transparency
+// (Pages.txt #20), read-only. Requested-at timestamps derived relative to now
+// so the demo stays stable across reloads without a real backend.
+export function getMockSlotWaitlistGroups(): SlotWaitlistGroup[] {
+  const now = new Date();
+  function daysAgo(d: number): string {
+    const date = new Date(now);
+    date.setDate(date.getDate() - d);
+    return date.toISOString();
+  }
+
+  return [
+    {
+      id: 1,
+      slotLabel: "Mondays, 9:00–9:30 AM",
+      queue: [
+        { studentName: "Linh Pham", position: 1, requestedAt: daysAgo(4) },
+        { studentName: "Huy Tran", position: 2, requestedAt: daysAgo(2) },
+        { studentName: "Anh Vu", position: 3, requestedAt: daysAgo(1) },
+      ],
+    },
+    {
+      id: 2,
+      slotLabel: "Tuesdays, 1:00–1:30 PM",
+      queue: [{ studentName: "Bao Nguyen", position: 1, requestedAt: daysAgo(3) }],
+    },
+  ];
+}
+
+// Stands in for GET /admin/users — a platform-wide account list (Pages.txt
+// #22), separate from mock-accounts.ts's 3 login-only seed accounts. Includes
+// rows matching those 3 seeded accounts so the data reads as consistent with
+// what you can actually log in as.
+export function getMockAdminUsers(): AdminUserRow[] {
+  return [
+    { id: 1001, fullName: "Minh Nguyen", email: "student@officehours.dev", role: "STUDENT", department: "Computer Science", active: true },
+    { id: 2001, fullName: "Dr. Amara Chen", email: "lecturer@officehours.dev", role: "LECTURER", department: "Computer Science", active: true },
+    { id: 3001, fullName: "Huong Tran", email: "admin@officehours.dev", role: "ADMIN", department: null, active: true },
+    { id: 1002, fullName: "Linh Pham", email: "linh.pham@student.eiu.edu.vn", role: "STUDENT", department: "Computer Science", active: true },
+    { id: 1003, fullName: "Huy Tran", email: "huy.tran@student.eiu.edu.vn", role: "STUDENT", department: "Mathematics", active: true },
+    { id: 1004, fullName: "Anh Vu", email: "anh.vu@student.eiu.edu.vn", role: "STUDENT", department: "Physics", active: false },
+    { id: 2002, fullName: "Prof. Daniel Reyes", email: "daniel.reyes@eiu.edu.vn", role: "LECTURER", department: "Computer Science", active: true },
+    { id: 2003, fullName: "Dr. Priya Nair", email: "priya.nair@eiu.edu.vn", role: "LECTURER", department: "Mathematics", active: true },
+    { id: 2004, fullName: "Prof. Michael Osei", email: "michael.osei@eiu.edu.vn", role: "LECTURER", department: "Physics", active: true },
+    { id: 2005, fullName: "Dr. Laura Bianchi", email: "laura.bianchi@eiu.edu.vn", role: "LECTURER", department: "Economics", active: false },
+    { id: 3002, fullName: "Khoa Dang", email: "khoa.dang@eiu.edu.vn", role: "ADMIN", department: null, active: true },
+  ];
+}
+
+// Stands in for GET /admin/semesters — CRUD + activate (Pages.txt #23).
+// Exactly one row is active; enforced by the page's "Activate" action, not
+// here (this is just the seed).
+export function getMockSemesters(): Semester[] {
+  return [
+    { id: 1, name: "Spring 2026", startDate: "2026-01-12", endDate: "2026-05-15", active: false },
+    { id: 2, name: "Summer 2026", startDate: "2026-05-25", endDate: "2026-07-31", active: false },
+    { id: 3, name: "Fall 2026", startDate: "2026-08-24", endDate: "2026-12-19", active: true },
+    { id: 4, name: "Spring 2027", startDate: "2027-01-11", endDate: "2027-05-14", active: false },
+  ];
+}
+
+// Stands in for GET /admin/schedule-entries — the admin-wide analogue of
+// getMockScheduleBlocks() (Phase 10's lecturer-scoped /dashboard/schedule),
+// spanning multiple lecturers so Manual Entry/Import previews have real rows
+// to list and delete.
+export function getMockAdminScheduleEntries(): AdminScheduleEntry[] {
+  return [
+    { id: 1, lecturerName: "Dr. Amara Chen", title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 2, lecturerName: "Dr. Amara Chen", title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 3, lecturerName: "Dr. Amara Chen", title: "CS 410 — Capstone Seminar", dayOfWeek: 2, startTime: "09:00", endTime: "10:30", source: "IMPORTED" },
+    { id: 4, lecturerName: "Prof. Daniel Reyes", title: "CS 220 — Data Structures", dayOfWeek: 2, startTime: "13:30", endTime: "15:00", source: "IMPORTED" },
+    { id: 5, lecturerName: "Dr. Priya Nair", title: "MATH 210 — Linear Algebra", dayOfWeek: 4, startTime: "08:00", endTime: "09:30", source: "IMPORTED" },
+    { id: 6, lecturerName: "Dr. Amara Chen", title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
+  ];
+}
+
+// Stands in for GET /admin/schedule-imports — past PDF import "jobs" (Pages.txt
+// #24's import history table). No real backend job to poll, so this is just
+// the seed history; the Import tab appends session-added rows on top.
+export function getMockScheduleImportHistory(): ScheduleImportHistoryEntry[] {
+  const now = new Date();
+  function daysAgo(d: number): string {
+    const date = new Date(now);
+    date.setDate(date.getDate() - d);
+    return date.toISOString();
+  }
+
+  return [
+    { id: 1, fileName: "cs-department-fall2026.pdf", importedAt: daysAgo(12), rowCount: 24, status: "SUCCESS" },
+    { id: 2, fileName: "math-department-fall2026.pdf", importedAt: daysAgo(9), rowCount: 18, status: "SUCCESS" },
+    { id: 3, fileName: "physics-department-fall2026.pdf", importedAt: daysAgo(2), rowCount: 0, status: "FAILED" },
+  ];
+}
+
+// Stands in for GET /allocation-policies (Pages.txt #27). Matches
+// capstone-db-schema.md §4.2 — HYBRID is active, matching the "tuned HYBRID
+// weighting" example in capstone-api-endpoints.md §7.
+export function getMockAllocationPolicies(): AllocationPolicy[] {
+  return [
+    { id: 1, name: "FCFS", config: {}, active: false },
+    { id: 2, name: "NEED", config: { needWeight: 1 }, active: false },
+    { id: 3, name: "ROUND_ROBIN", config: {}, active: false },
+    { id: 4, name: "HYBRID", config: { needWeight: 0.5, waitTimeWeight: 0.3, fairnessWeight: 0.2 }, active: true },
+  ];
+}
+
+// Stands in for GET /allocation-events (Pages.txt #28). Every candidate
+// considered gets a row (capstone-db-schema.md §4.3's design note), not just
+// winners — several SKIPPED rows share a slot/seed with their SELECTED
+// sibling. Two OVERRIDDEN rows seed Manual Override's (#29) audit trail.
+export function getMockAllocationEvents(): AllocationEvent[] {
+  const now = new Date();
+  function hoursAgo(h: number): string {
+    const d = new Date(now);
+    d.setHours(d.getHours() - h);
+    return d.toISOString();
+  }
+
+  return [
+    { id: 1, slotLabel: "Dr. Amara Chen — Tue 10:00", studentName: "Linh Pham", decision: "SELECTED", policyName: "HYBRID", computedScore: 0.87, randomSeed: 4821, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(2) },
+    { id: 2, slotLabel: "Dr. Amara Chen — Tue 10:00", studentName: "Huy Tran", decision: "SKIPPED", policyName: "HYBRID", computedScore: 0.61, randomSeed: 4821, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(2) },
+    { id: 3, slotLabel: "Dr. Amara Chen — Tue 10:00", studentName: "Anh Vu", decision: "SKIPPED", policyName: "HYBRID", computedScore: 0.44, randomSeed: 4821, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(2) },
+    { id: 4, slotLabel: "Prof. Daniel Reyes — Wed 14:00", studentName: "Bao Nguyen", decision: "SELECTED", policyName: "HYBRID", computedScore: 0.79, randomSeed: 5190, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(9) },
+    { id: 5, slotLabel: "Prof. Daniel Reyes — Wed 14:00", studentName: "Chi Le", decision: "SKIPPED", policyName: "HYBRID", computedScore: 0.52, randomSeed: 5190, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(9) },
+    { id: 6, slotLabel: "Dr. Priya Nair — Thu 09:00", studentName: "Duc Hoang", decision: "SELECTED", policyName: "HYBRID", computedScore: 0.91, randomSeed: 2207, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(20) },
+    { id: 7, slotLabel: "Dr. Priya Nair — Thu 09:00", studentName: "Thao Bui", decision: "SKIPPED", policyName: "HYBRID", computedScore: 0.68, randomSeed: 2207, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(20) },
+    { id: 8, slotLabel: "Dr. Priya Nair — Thu 09:00", studentName: "Khoa Dang", decision: "SKIPPED", policyName: "HYBRID", computedScore: 0.33, randomSeed: 2207, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(20) },
+    { id: 9, slotLabel: "Prof. Michael Osei — Fri 11:00", studentName: "Minh Nguyen", decision: "OVERRIDDEN", policyName: null, computedScore: null, randomSeed: null, overriddenByName: "Huong Tran", overrideReason: "Deadline conflict — student has a thesis defense during the originally offered slot.", allocatedAt: hoursAgo(30) },
+    { id: 10, slotLabel: "Dr. Laura Bianchi — Mon 15:00", studentName: "Linh Pham", decision: "SELECTED", policyName: "NEED", computedScore: 0.72, randomSeed: 9931, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(48) },
+    { id: 11, slotLabel: "Dr. Laura Bianchi — Mon 15:00", studentName: "Anh Vu", decision: "SKIPPED", policyName: "NEED", computedScore: 0.41, randomSeed: 9931, overriddenByName: null, overrideReason: null, allocatedAt: hoursAgo(48) },
+    { id: 12, slotLabel: "Prof. Samuel Okafor — Wed 13:00", studentName: "Huy Tran", decision: "OVERRIDDEN", policyName: null, computedScore: null, randomSeed: null, overriddenByName: "Huong Tran", overrideReason: "Manual reassignment after a data-entry error flagged by the lecturer.", allocatedAt: hoursAgo(60) },
+  ];
+}
+
+// Stands in for GET /admin/analytics/no-show-rate — derived from
+// getMockAllBookings() (Phase 8) rather than hand-authored, so it always
+// agrees with whatever booking data exists. Reuses ActivityPoint (below) so
+// ActivityChart needs no new props to render it.
+export function getMockNoShowRateByLecturer(): ActivityPoint[] {
+  const byLecturer = new Map<string, { completed: number; noShow: number }>();
+  for (const b of getMockAllBookings()) {
+    if (b.status !== "COMPLETED" && b.status !== "NO_SHOW") continue;
+    const entry = byLecturer.get(b.lecturerName) ?? { completed: 0, noShow: 0 };
+    if (b.status === "NO_SHOW") entry.noShow += 1;
+    else entry.completed += 1;
+    byLecturer.set(b.lecturerName, entry);
+  }
+
+  return Array.from(byLecturer.entries())
+    .filter(([, { completed, noShow }]) => completed + noShow > 0)
+    .map(([lecturerName, { completed, noShow }]) => ({
+      key: lecturerName,
+      label: lecturerName.replace(/^(Dr\.|Prof\.)\s*/, ""),
+      value: Math.round((noShow / (completed + noShow)) * 100),
+    }));
+}
+
+// Standard mean-absolute-difference Gini formula (1-indexed, ascending
+// input): (2 * sum(i * x_i) - (n+1) * sum(x_i)) / (n * sum(x_i)). Shared by
+// getMockEquityMetrics and getMockPolicyComparison so headline numbers are
+// always computed, never hand-picked to match a chart.
+export function giniCoefficient(values: number[]): number {
+  const n = values.length;
+  if (n === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const total = sorted.reduce((sum, v) => sum + v, 0);
+  if (total === 0) return 0;
+  const weightedSum = sorted.reduce((sum, v, i) => sum + (i + 1) * v, 0);
+  return (2 * weightedSum) / (n * total) - (n + 1) / n;
+}
+
+// Stands in for GET /admin/analytics/equity (Pages.txt #30) — a synthetic,
+// deliberately skewed slots-per-student / lecturer-access-per-student
+// distribution (most students get few, a handful get many), so the Lorenz
+// curve shows real inequality rather than a flat diagonal. Both the Gini
+// numbers and the curve derive from the same arrays, so they can't disagree.
+export function getMockEquityMetrics(): EquityMetrics {
+  const n = 20;
+
+  const slotsPerStudent = Array.from({ length: n }, (_, i) => {
+    const rank = i / (n - 1);
+    return Math.max(1, Math.round(1 + rank * rank * 11));
+  }).sort((a, b) => a - b);
+
+  const lecturerAccessPerStudent = Array.from({ length: n }, (_, i) => {
+    const rank = i / (n - 1);
+    return Math.max(1, Math.round(1 + rank * rank * 3));
+  }).sort((a, b) => a - b);
+
+  const total = slotsPerStudent.reduce((sum, v) => sum + v, 0);
+  let cumulativeSlots = 0;
+  const lorenzCurve = [{ cumulativeStudentsPct: 0, cumulativeSlotsPct: 0 }];
+  slotsPerStudent.forEach((v, i) => {
+    cumulativeSlots += v;
+    lorenzCurve.push({
+      cumulativeStudentsPct: Math.round(((i + 1) / n) * 100),
+      cumulativeSlotsPct: Math.round((cumulativeSlots / total) * 100),
+    });
+  });
+
+  return {
+    giniSlotsPerStudent: Math.round(giniCoefficient(slotsPerStudent) * 100) / 100,
+    giniLecturerAccess: Math.round(giniCoefficient(lecturerAccessPerStudent) * 100) / 100,
+    lorenzCurve,
+  };
+}
+
+// Stands in for GET /admin/analytics/policy-comparison (Pages.txt #30) — one
+// row per getMockAllocationPolicies() entry. These four metrics are
+// illustrative demo constants (no real allocation simulation runs client-side
+// to derive them from), same status as getMockAdminOverview's platform
+// stats — not computed from getMockAllocationEvents, which is a small seeded
+// log, not a full simulation.
+export function getMockPolicyComparison(): PolicyComparisonRow[] {
+  return [
+    { policyName: "FCFS", giniSlotsPerStudent: 0.42, giniLecturerAccess: 0.38, utilizationPct: 71, avgWaitMinutes: 38 },
+    { policyName: "NEED", giniSlotsPerStudent: 0.27, giniLecturerAccess: 0.24, utilizationPct: 68, avgWaitMinutes: 52 },
+    { policyName: "ROUND_ROBIN", giniSlotsPerStudent: 0.19, giniLecturerAccess: 0.21, utilizationPct: 64, avgWaitMinutes: 61 },
+    { policyName: "HYBRID", giniSlotsPerStudent: 0.24, giniLecturerAccess: 0.22, utilizationPct: 73, avgWaitMinutes: 45 },
   ];
 }

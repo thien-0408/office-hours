@@ -52,6 +52,7 @@ color. No orange buttons, no magenta, no new hues.
 | **react-day-picker** `10.x` | ⏳ recommended — with the slot picker | The right-rail mini-calendar, and reused by the **Lecturer Slot Picker** (`/lecturers/{id}/slots`, a weekly calendar). Building calendar date-math once, in a maintained lib, beats hand-rolling it twice. | ✅ |
 | framer-motion | already present | Card entrance stagger, number count-up on stat tiles. | — |
 | ~~dnd-kit~~ | skipped | Only needed for to-do reordering — not worth a dependency yet. | — |
+| **pdfjs-dist** `6.2.108` | ✅ **installed** — Phase 11 | Admin **Schedule Import** (`lib/timetable/parse-pdf.ts`) — parses an EIU timetable PDF client-side, porting the user-supplied `TimeTableScanner.txt` reference tool. Worker wired via `new URL(..., import.meta.url)`, not a CDN. | ✅ |
 
 Nothing new is required to *start*; lucide-react unblocks Phases 1–2. Recharts and
 react-day-picker are deliberately deferred to the phase that first needs them so we don't
@@ -149,6 +150,194 @@ Planned with Opus (`Plan` agent), implemented in Sonnet 5. Closes the two remain
 - **Two pre-existing bugs fixed as part of this phase's verification pass** (see the Phase 8 entry above — found while re-checking token usage before adding more danger-hue-bordered buttons in Waitlist).
 - **Lint traps avoided**: all date/"now" comparisons use `new Date().getTime()`, never `Date.now()` (the Phase 8 `react-hooks/purity` catch); new ids (participants, series, booked-slot tracking) are generated inside event handlers, never during render; the slot grid and recurring preview are pure functions of component state, no `useEffect` syncing.
 - Verified: `npx tsc --noEmit` clean, `npx eslint` clean across `app/(dashboard)`, `components`, `lib`. Restarted the dev server (had stopped) and confirmed all four new routes 307-redirect to `/login` unauthenticated, then logged in as the seeded student account via `POST /api/auth/login` and confirmed all four render 200 with no error markers.
+
+### Phase 10 — Lecturer-facing pages (Pages.txt #16–21) ✅ done
+Planned with Opus (`Plan` agent) before implementation, implemented in Sonnet 5. Closes the two
+remaining lecturer-nav 404s (`/dashboard/availability`, `/dashboard/schedule`).
+
+- **Scope correction before building anything**: #19 (Bookings to Review) and #21 (Meeting
+  Record entry) were already done — #19 by the shared My Bookings route (Phase 8), #21 by
+  Booking Detail's existing "Meeting record" card (attended + notes, shown to a lecturer once a
+  booking is COMPLETED) — neither was checked off in `PAGES-PROGRESS.md`, now fixed. So this
+  phase's actual net-new build was #16/#17/#18/#20, two routes not five.
+- **#20 placement** (user-decided, since Pages.txt gives Slot Waitlist view no nav slot of its
+  own): folded into `/dashboard/availability` as a third tab rather than a new nav item or a
+  bolt-on to My Schedule — thematically it's about the slots Rules/Exceptions define, not the
+  imported teaching-schedule data My Schedule shows.
+- **`/dashboard/availability`** (`app/(dashboard)/dashboard/availability/page.tsx`): single
+  client page, `FilterTabs`-driven Rules / Exceptions / Waitlist tabs (no `useSearchParams`, so
+  no `<Suspense>` needed — matches the Waitlist page's pattern, not the Suspense-wrapped
+  Lecturers browser).
+  - **Rules**: inline add/edit form (day via `FilterTabs` reusing `RecurringBookingClient`'s
+    Mon–Fri `DAY_OPTIONS` convention, start/end time, slot-length `<select>`, effective-from/to
+    dates) over a list of rule cards; edit re-populates the same form instead of a separate
+    modal; delete gated behind `ConfirmModal`.
+  - **Exceptions**: one-off BLOCK/ADD entries (date, type via `FilterTabs`, time range, optional
+    reason); BLOCK badges pull `HUE_TOKENS.danger`, ADD pulls `HUE_TOKENS.success` — no new
+    hues invented, matching DESIGN.md §4's "don't invent per-screen colors" rule; delete gated
+    behind `ConfirmModal`.
+  - **Waitlist**: read-only, grouped by slot, `tabular-nums` position + relative "requested"
+    time (`Intl.RelativeTimeFormat`) — no allocation actions, since Pages.txt frames this as
+    transparency and Manual Override (#29) is explicit Admin scope.
+- **`/dashboard/schedule`** (`app/(dashboard)/dashboard/schedule/page.tsx`): read-mostly per
+  Pages.txt ("admin edits") — day-column layout echoing `WeekSlotGrid`'s visual language but
+  static info cards (title, time range, Imported/Manual source badge) instead of bookable
+  buttons; a banner note points corrections at the future Admin Schedule Import/Manual Entry
+  pages (#24/#25) rather than faking an "Edit" button with nothing behind it.
+- **Data layer** (`lib/office-hours/types.ts`, `mock-data.ts`, purely additive): `AvailabilityRule`,
+  `AvailabilityException`/`ExceptionType`, `ScheduleBlock`, `SlotWaitlistGroup`/
+  `SlotWaitlistQueueEntry`; `getMockAvailabilityRules`, `getMockAvailabilityExceptions`,
+  `getMockScheduleBlocks`, `getMockSlotWaitlistGroups` — all seeded for "Dr. Amara Chen," the
+  same lecturer account every other lecturer-facing page already uses.
+- No new shared primitives — reused `Card`, `SectionHeader`, `FilterTabs`, `FormField`/
+  `TextInput`, `ConfirmModal`, `StatTile`, `HUE_TOKENS`/`ACCENT_TOKENS` as-is. Small
+  subcomponents (`RuleCard`, `ExceptionCard`, `WaitlistTab`, schedule's `SourceBadge`) stay
+  inline in their page files, matching the existing convention (`WaitlistEntryCard`,
+  `SeriesCard`) rather than being extracted to `components/dashboard/` prematurely.
+- Verified: `npx tsc --noEmit` clean (same pre-existing unrelated `app/page.tsx` error as every
+  prior phase), `npx eslint` clean on all new/changed files. `curl` confirms both new routes
+  307-redirect unauthenticated and return 200 with no error markers when logged in as the
+  seeded lecturer account. Playwright is present only as a cached CLI shim, not an installed
+  project dependency, so visual verification stayed at the same curl/tsc/eslint rigor prior
+  phases used rather than adding a new dependency for one screenshot pass.
+
+### Phase 11 — Admin CRUD/data-entry pages (Pages.txt #22–26) ✅ done
+Planned with Opus (`Plan` agent) before implementation, implemented in Sonnet 5. First half of
+the Admin block, split from #27–30 (Allocation/Analytics, the heavier-dataviz half deferred to
+Phase 12) per the user's confirmed call — same "split a big block, plan each half separately"
+pattern the Lecturer phase didn't need but Admin's size warranted.
+
+- **New admin nav item**: `DashboardShell.tsx`'s `"ADMIN"` case gained **Schedule** (between
+  Users and Allocation), reusing the already-imported `CalendarDays` icon. Admin nav is now
+  Dashboard · Users · Schedule · Allocation · Analytics.
+- **`/dashboard/admin/users`** (existing nav link, previously 404) — `FilterTabs`-driven Users /
+  Semesters tabs, same tabbed-page shape Phase 10 established for Availability.
+  - **Users** (#22): search + role filter over `getMockAdminUsers()` (a new platform-wide
+    account list, ~10 rows spanning all three roles/departments — distinct from
+    `mock-accounts.ts`'s 3 login-only seeds, though it includes matching rows for each so the
+    data reads as consistent with what you can actually log in as). Row-level inline edit
+    (role `<select>` + department `TextInput`, same "inline form replaces the row, no modal"
+    convention as Phase 10's Rules tab) and deactivate via `ConfirmModal`.
+  - **Semesters** (#23): `getMockSemesters()` seed (4 rows: one past, one active, two future) +
+    add-semester form + per-row Activate (deactivates whichever other semester was active,
+    enforcing "exactly one active" client-side) + delete via `ConfirmModal`.
+- **`/dashboard/admin/schedule`** (new route) — Import / Manual Entry / Slot Search tabs.
+  - **Import** (#24): the user handed over a real EIU timetable PDF (`TimeTable.pdf`) and a
+    working standalone HTML tool (`TimeTableScanner.txt`, pdf.js + X-coordinate day-column
+    clustering + `Phòng:`-anchor row clustering) as a reference. Per the user's confirmed
+    choice, this **ports that parser** rather than building the CSV-upload flow Pages.txt's
+    text originally described — `lib/timetable/parse-pdf.ts` is a behavior-preserving TS
+    translation (same regexes, same `cleanStr` cleanup, same day-sort) of the reference tool's
+    algorithm, verified against the actual `TimeTable.pdf` (a standalone Node script using
+    `pdfjs-dist/legacy/build/pdf.mjs` reproduced the same 7-row extraction the algorithm
+    produces, confirming the port before wiring it into the page). New dependency:
+    **`pdfjs-dist` 6.2.108** — installed the same "add it when the feature that needs it is
+    actually built" way `recharts`/`react-day-picker` were (§2); worker wired via
+    `new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url)` (the standard
+    bundler-native pattern) rather than the reference tool's cdnjs URL, since the app already
+    has a bundler and this avoids an external runtime dependency. The page shows a parse
+    status line, a preview table, an "Import N entries" button that appends mapped rows into
+    the shared `AdminScheduleEntry[]` state, and an import-history table
+    (`getMockScheduleImportHistory()` + session-added rows) standing in for the "job status
+    polling" Pages.txt describes — no real async job exists (client-side parse is synchronous),
+    so this is presented as a history log, not a fake polling UI (same "stub, don't fake a live
+    connection" rule Phase 8 applied to the notifications SSE stub).
+  - **Manual Entry** (#25): fallback single-entry add/delete, sharing the same
+    `AdminScheduleEntry[]` state as Import (lecturer `<select>` from `getMockLecturers()`, title,
+    day `FilterTabs`, start/end time).
+  - **Slot Search** (#26): cross-lecturer browser reusing `getMockOfficeHours()` as-is (already
+    department-filterable, the same function the public listing and dashboard stat tiles read)
+    plus a new lecturer-name text filter — no new mock data needed, UI-only addition.
+- **Data layer** (`lib/office-hours/types.ts`, `mock-data.ts`, purely additive): `AdminUserRow`
+  (reuses `UserRole` from `lib/auth/types.ts` rather than redefining it), `Semester`,
+  `AdminScheduleEntry` (extends Phase 10's `ScheduleBlock` with `lecturerName`),
+  `ParsedTimetableRow`, `ScheduleImportHistoryEntry`; `getMockAdminUsers`, `getMockSemesters`,
+  `getMockAdminScheduleEntries`, `getMockScheduleImportHistory`.
+- No new shared UI primitives — reused `Card`, `SectionHeader`, `FilterTabs`, `FormField`/
+  `TextInput`, `ConfirmModal`, `HUE_TOKENS`. Small subcomponents (`UserEditRow`, `SemesterCard`,
+  `SourceBadge`, per-tab components) stay inline in their page files, matching the established
+  convention.
+- **Checked, not changed**: `proxy.ts` only gates on session-existence, not role — no route in
+  this app enforces role beyond hiding nav links (true for the existing Lecturer routes too).
+  Phase 11 follows that same convention rather than adding new role-enforcement machinery.
+- Verified: `npx tsc --noEmit` clean (same one pre-existing unrelated `app/page.tsx` error every
+  phase has had), `npx eslint` clean after fixing two `react/no-unescaped-entities` catches
+  (a literal `"` and `'` in JSX text) on first pass. `curl` confirms both new routes 307-redirect
+  unauthenticated and return 200 with no error markers when logged in as the seeded admin
+  account. The parser was verified against the real `TimeTable.pdf` via a standalone Node
+  script (not just code review) before being wired into the page — see the Import bullet above.
+
+### Phase 12 — Admin allocation & analytics pages (Pages.txt #27-30) ✅ done
+Planned with Opus (`Plan` agent) before implementation, implemented in Sonnet 5. Closes the
+Admin block entirely — the dashboard's admin nav no longer has any 404 links, and the Pages.txt
+31-page list is done except #31 Research tools (explicitly out of scope).
+
+- **Schema grounding**: read `docs/capstone-db-schema.md` §4.2-4.3 and
+  `docs/capstone-api-endpoints.md` §7/§9 (the real backend spec) before designing the mock
+  types, rather than inventing shapes from the Pages.txt one-liners alone. `AllocationEvent`
+  mirrors the DB's mutually-exclusive field groups (`SELECTED`/`SKIPPED` carry
+  `policyName`/`computedScore`/`randomSeed`; `OVERRIDDEN` instead carries
+  `overriddenByName`/`overrideReason`) — same shape as the schema's CHECK constraint, not a
+  simplified version of it.
+- **`/dashboard/admin/allocation`** (existing nav link, previously 404) — `FilterTabs` Policies
+  / Events tabs, same tabbed-page shape every phase since 10 has used.
+  - **Policies** (#27): register/activate/delete over `getMockAllocationPolicies()` (4 named
+    policies — FCFS/NEED/ROUND_ROBIN/HYBRID, HYBRID active). The add form's weight fields
+    change per policy type (none for FCFS/ROUND_ROBIN, one for NEED, three for HYBRID) —
+    matches the real `config` JSON shape the API doc describes, not a one-size-fits-all form.
+  - **Events** (#28) **+ Manual Override** (#29): filterable audit table (policy, decision) +
+    a "New override" action that opens an inline form (not `ConfirmModal` — needs real inputs,
+    same distinction `BookSlotModal` drew from `ConfirmModal` back in Phase 9) and appends an
+    `OVERRIDDEN` row. **Placement decision (user-confirmed)**: rather than a modal on Phase
+    11's Slot Search tab (a different route — would need cross-route shared state no other
+    phase uses), Override lives as a standalone action on this page, writing into its own
+    page-local `useState` list. Same convention every prior phase has used; avoids introducing
+    the first global-state mechanism in the app for one feature.
+- **`/dashboard/admin/analytics`** (existing nav link, previously 404) — four stacked sections,
+  no tabs (matches Pages.txt's "live demo view" framing and the admin dashboard home's existing
+  `FeaturedActionCard` that already links here):
+  1. **Advisor load** — reused `ActivityChart` + `getMockAdvisorLoad()` exactly as built in
+     Phase 6, just placed on this page too (the dashboard home keeps its own copy).
+  2. **No-show rate by lecturer** — new `getMockNoShowRateByLecturer()`, *derived* from
+     `getMockAllBookings()` (Phase 8) grouped by lecturer, not hand-authored numbers.
+  3. **Equity** — two Gini headline stats (`giniCoefficient()`, a small pure
+     mean-absolute-difference helper added to `mock-data.ts`, shared by this section and Policy
+     Comparison so numbers are computed once, not duplicated by hand) plus a **Lorenz curve**
+     (`recharts` `LineChart`): the actual cumulative-distribution line in `rose` (an
+     already-validated standalone accent, no new palette validation needed) against a plain
+     dashed neutral-gray equality diagonal — treated as a fixed geometric reference, not a
+     second data-driven series, so it doesn't need a legend or a CVD-pair check. Table-view
+     toggle included (dataviz skill non-negotiable). `getMockEquityMetrics()`'s Gini numbers
+     and Lorenz points both derive from the same synthetic skewed distribution, so they can't
+     disagree with each other.
+  4. **Policy comparison** — four independent small-multiple `ActivityChart`s (Gini
+     slots-per-student, Gini lecturer-access, utilization %, avg wait time), each with policies
+     along the X axis and the *active* policy highlighted (`highlightKey`) — deliberately **not**
+     one chart with mixed scales/two y-axes, the dataviz skill's #1 anti-pattern.
+     `getMockPolicyComparison()`'s four metrics are illustrative demo constants (same status as
+     `getMockAdminOverview`'s platform stats) — no client-side allocation simulation exists to
+     derive them from.
+- **`ActivityChart` generalized** (`components/dashboard/ActivityChart.tsx`): the component was
+  hardcoded to "N booking(s)" in its tooltip and "Bookings" table-column header — fine for its
+  only two pre-existing callers (booking activity, advisor load, both literal booking counts),
+  **wrong** for Gini/percent/minutes metrics reused here. Added optional `valueLabel` (table
+  header) and `formatValue` (tooltip text) props, both defaulting to the exact prior behavior —
+  every pre-existing call site is unaffected, new callers (no-show %, the four comparison
+  charts) pass both so units read correctly instead of literally saying "0.24 bookings."
+- **Data layer** (`lib/office-hours/types.ts`, `mock-data.ts`, purely additive):
+  `AllocationPolicyName`, `AllocationPolicy`, `AllocationDecision`, `AllocationEvent`,
+  `EquityMetrics`, `PolicyComparisonRow`; `getMockAllocationPolicies`, `getMockAllocationEvents`,
+  `getMockNoShowRateByLecturer`, `giniCoefficient`, `getMockEquityMetrics`,
+  `getMockPolicyComparison`.
+- No new shared UI primitives beyond the `ActivityChart` prop additions above — `Card`,
+  `SectionHeader`, `FilterTabs`, `FormField`/`TextInput`, `ConfirmModal`, `IconChip`,
+  `HUE_TOKENS`, `ACCENT_TOKENS` all reused as-is. Page-local subcomponents (`PolicyCard`,
+  `OverrideForm`, `DecisionPill`, `GiniStat`, `EquitySection`, `PolicyComparisonSection`) stay
+  inline in their page files, matching the established convention.
+- Verified: `npx tsc --noEmit` clean (same one pre-existing unrelated `app/page.tsx` error every
+  phase has had), `npx eslint` clean after removing one unused icon import on first pass.
+  `curl` confirms both new routes 307-redirect unauthenticated and return 200 with no error
+  markers when logged in as the seeded admin account.
 
 ---
 

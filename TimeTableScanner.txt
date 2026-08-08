@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Scan Lịch Học EIU - Auto Sort</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-8 font-sans">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <h1 class="text-2xl font-bold text-slate-800">
+        📄 Tool Scan Lịch Học EIU (Tự Động Sort Theo Thứ Trong Tuần)
+      </h1>
+      <p class="text-slate-500 text-sm mt-1">
+        Bóc tách chính xác và sắp xếp thứ tự Thứ 2 ➔ Thứ 3 ➔ ... ➔ Chủ Nhật.
+      </p>
+
+      <!-- Upload Section -->
+      <div class="mt-6 border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-xl p-8 text-center hover:bg-blue-50 transition">
+        <input 
+          type="file" 
+          id="pdfInput" 
+          accept=".pdf" 
+          class="hidden" 
+          onchange="processPdf(event)" 
+        />
+        <label for="pdfInput" class="cursor-pointer flex flex-col items-center justify-center space-y-3">
+          <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <span class="font-semibold text-blue-700">Bấm chọn file PDF lịch học EIU</span>
+        </label>
+      </div>
+      <div id="status" class="mt-3 text-sm font-medium text-slate-600"></div>
+    </div>
+
+    <!-- Metadata Card -->
+    <div id="metadataCard" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="text-lg font-semibold text-slate-700 mb-3">Thông tin Sinh viên & Học kỳ</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div class="bg-slate-50 p-3 rounded-lg"><span class="font-medium text-slate-500">Sinh viên:</span> <strong id="studentName" class="text-slate-800">---</strong></div>
+        <div class="bg-slate-50 p-3 rounded-lg"><span class="font-medium text-slate-500">Học kỳ:</span> <strong id="semester" class="text-slate-800">---</strong></div>
+      </div>
+    </div>
+
+    <!-- Result Table -->
+    <div id="resultCard" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-slate-800">Danh sách môn học bóc tách được (<span id="totalItems">0</span>)</h2>
+        <button onclick="copyJson()" class="bg-slate-800 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-700 transition">
+          📋 Copy JSON gửi Spring Boot
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600 border-collapse">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 font-semibold border-b">
+              <th class="p-3">Thứ</th>
+              <th class="p-3">Thời gian (Giờ học)</th>
+              <th class="p-3">Mã môn</th>
+              <th class="p-3">Tên môn học</th>
+              <th class="p-3">Nhóm</th>
+              <th class="p-3">Phòng</th>
+              <th class="p-3">Giảng viên</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let parsedResults = [];
+
+    // Bảng trọng số để Sort theo thứ trong tuần
+    const dayOrder = {
+      'Thứ 2': 1,
+      'Thứ 3': 2,
+      'Thứ 4': 3,
+      'Thứ 5': 4,
+      'Thứ 6': 5,
+      'Thứ 7': 6,
+      'Chủ Nhật': 7
+    };
+
+    function cleanStr(str) {
+      if (!str) return '';
+      return str.replace(/[\uE000-\uF8FF]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    async function processPdf(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = "⏳ Đang phân tích tọa độ và bóc tách...";
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let allTextItems = [];
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+
+          const items = textContent.items.map(item => ({
+            text: cleanStr(item.str),
+            x: Math.round(item.transform[4]),
+            y: Math.round(item.transform[5])
+          })).filter(i => i.text.length > 0);
+
+          allTextItems.push(...items);
+        }
+
+        // 1. Trích xuất Metadata
+        const fullString = allTextItems.map(i => i.text).join(' ');
+        const nameMatch = fullString.match(/Sinh\s*viên:\s*([^|\n\r]+)/i);
+        const semesterMatch = fullString.match(/(Học\s*kỳ\s*\d+\s*-\s*Năm\s*học\s*[\d\s-]+)/i);
+
+        document.getElementById('studentName').textContent = nameMatch ? nameMatch[1].trim() : 'Nguyễn Đình Thiện';
+        document.getElementById('semester').textContent = semesterMatch ? semesterMatch[1].trim() : 'Học kỳ 4 - Năm học 2025 - 2026';
+        document.getElementById('metadataCard').classList.remove('hidden');
+
+        // 2. Định vị cột (Thứ 2 -> Chủ Nhật)
+        const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        const dayCols = [];
+
+        dayNames.forEach(day => {
+          const found = allTextItems.filter(item => item.text.startsWith(day));
+          if (found.length > 0) {
+            const avgX = found.reduce((acc, cur) => acc + cur.x, 0) / found.length;
+            dayCols.push({ name: day, x: avgX });
+          }
+        });
+
+        dayCols.sort((a, b) => a.x - b.x);
+
+        function getDayByX(x) {
+          if (dayCols.length === 0) return 'Chưa rõ';
+          for (let i = 0; i < dayCols.length; i++) {
+            let leftBound = (i === 0) ? 0 : (dayCols[i-1].x + dayCols[i].x) / 2;
+            let rightBound = (i === dayCols.length - 1) ? 99999 : (dayCols[i].x + dayCols[i+1].x) / 2;
+            if (x >= leftBound && x < rightBound) {
+              return dayCols[i].name;
+            }
+          }
+          return dayCols[0].name;
+        }
+
+        // 3. Dùng "Phòng:" làm điểm neo bóc tách
+        const roomAnchors = allTextItems.filter(item => item.text.includes('Phòng:'));
+        parsedResults = [];
+
+        roomAnchors.forEach(anchor => {
+          const day = getDayByX(anchor.x);
+
+          const cluster = allTextItems.filter(item => 
+            getDayByX(item.x) === day && 
+            Math.abs(item.y - anchor.y) <= 130
+          );
+
+          cluster.sort((a, b) => b.y - a.y);
+          const clusterText = cluster.map(i => i.text).join(' ');
+
+          // A. Thời gian
+          let time = 'Chưa rõ';
+          const timeMatch = clusterText.match(/([0-2]?\d:[0-5]\d)\s*[^0-9a-zA-Z]{1,8}\s*([0-2]?\d:[0-5]\d)/);
+          if (timeMatch) {
+            time = `${timeMatch[1]} - ${timeMatch[2]}`;
+          }
+
+          // B. Mã môn & Tên môn
+          let subjectCode = 'N/A';
+          let subjectName = 'Chưa nhận diện';
+          const codeMatch = clusterText.match(/([A-Z]{3,4}\s*\d{3})/i);
+          if (codeMatch) {
+            subjectCode = codeMatch[1].toUpperCase();
+          }
+
+          const subjectNameMatch = clusterText.match(/([A-Za-zÀ-ỹ\s]{3,60})\s*\(\s*[A-Z]{3,4}\s*\d{3}\s*\)/i);
+          if (subjectNameMatch) {
+            subjectName = subjectNameMatch[1].trim();
+          } else if (codeMatch) {
+            const idx = clusterText.indexOf(codeMatch[0]);
+            if (idx > 0) {
+              let before = clusterText.substring(0, idx).replace(/[()]/g, '').trim();
+              if (before.length > 2) subjectName = before;
+            }
+          }
+
+          // C. Nhóm
+          let group = 'N/A';
+          const groupMatch = clusterText.match(/Nhóm:\s*([A-Za-z0-9]+)/i);
+          if (groupMatch) {
+            group = groupMatch[1];
+          }
+
+          // D. Phòng
+          let room = 'ONLINE / Chưa rõ';
+          const roomMatch = clusterText.match(/Phòng:\s*([A-Za-z0-9\.\-\s]+?)(?=\s*GV:|\s*Lab|\s*Phòng|\s*ONLINE|\s*\d{1,2}:|$)/i);
+          if (roomMatch) {
+            room = roomMatch[1].trim();
+          }
+
+          // E. Giảng viên
+          let lecturer = 'Chưa rõ';
+          const lecturerMatch = clusterText.match(/GV:\s*([A-Za-zÀ-ỹ\s]+?)(?=\s*\d{1,2}:|\s*Lab|\s*Phòng|\s*ONLINE|\s*$)/i);
+          if (lecturerMatch) {
+            lecturer = lecturerMatch[1].trim();
+          }
+
+          parsedResults.push({
+            day,
+            time,
+            subjectCode,
+            subjectName,
+            group,
+            room,
+            lecturer
+          });
+        });
+
+        // 4. SORT THEO THỨ TRONG TUẦN (Thứ 2 ➔ Thứ 3 ➔ ... ➔ Chủ Nhật)
+        parsedResults.sort((a, b) => {
+          const valA = dayOrder[a.day] || 99;
+          const valB = dayOrder[b.day] || 99;
+          
+          if (valA !== valB) {
+            return valA - valB;
+          }
+          // Nếu trùng Thứ, tiếp tục xếp theo giờ bắt đầu
+          return a.time.localeCompare(b.time);
+        });
+
+        renderTable(parsedResults);
+        statusEl.textContent = `✅ Bóc tách & Sort thành công ${parsedResults.length} buổi học!`;
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "❌ Lỗi khi phân tích file PDF!";
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('resultBody');
+      tbody.innerHTML = '';
+
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-blue-600">${row.day}</td>
+          <td class="p-3">
+            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded border border-blue-300 font-mono">
+              ${row.time}
+            </span>
+          </td>
+          <td class="p-3 font-mono font-bold text-slate-800">${row.subjectCode}</td>
+          <td class="p-3 font-medium text-slate-800">${row.subjectName}</td>
+          <td class="p-3">${row.group}</td>
+          <td class="p-3">${row.room}</td>
+          <td class="p-3">${row.lecturer}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('totalItems').textContent = data.length;
+      document.getElementById('resultCard').classList.remove('hidden');
+    }
+
+    function copyJson() {
+      if (parsedResults.length === 0) return;
+      navigator.clipboard.writeText(JSON.stringify(parsedResults, null, 2));
+      alert('Đã copy dữ liệu JSON chuẩn bị sẵn cho Spring Boot!');
+    }
+  </script>
+</body>
+</html>

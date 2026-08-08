@@ -28,23 +28,25 @@ const ACCENT_TONES: Record<ChartAccent, { fill: string; stroke: string; label: s
   brand: { fill: "var(--brand-500)", stroke: "var(--brand-600)", label: "var(--brand-700)" },
 };
 
+const defaultFormatValue = (value: number) => `${value} booking${value === 1 ? "" : "s"}`;
+
 function ChartTooltip({
   active,
   payload,
   label,
+  formatValue,
 }: {
   active?: boolean;
   payload?: { value?: number }[];
   label?: string;
+  formatValue: (value: number) => string;
 }) {
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value ?? 0;
   return (
     <div className="rounded-lg border border-[var(--paper-200)] bg-white px-3 py-2 shadow-lg">
       <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)] mb-0.5">{label}</p>
-      <p className="text-sm font-bold text-[var(--ink-900)] tabular-nums">
-        {value} booking{value === 1 ? "" : "s"}
-      </p>
+      <p className="text-sm font-bold text-[var(--ink-900)] tabular-nums">{formatValue(value)}</p>
     </div>
   );
 }
@@ -54,11 +56,19 @@ export function ActivityChart({
   data,
   highlightKey,
   accent = "brand",
+  valueLabel = "Bookings",
+  formatValue = defaultFormatValue,
 }: {
   title: string;
   data: ActivityPoint[];
   highlightKey?: string;
   accent?: ChartAccent;
+  // Table-view column header — default matches every pre-existing caller
+  // (booking activity, advisor load), both of which are literally booking
+  // counts. Non-booking metrics (Gini, %, minutes) must pass both this and
+  // formatValue so the tooltip/table don't mislabel the unit.
+  valueLabel?: string;
+  formatValue?: (value: number) => string;
 }) {
   const [showTable, setShowTable] = useState(false);
   const tone = ACCENT_TONES[accent];
@@ -114,7 +124,7 @@ export function ActivityChart({
                 Label
               </th>
               <th className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-                Bookings
+                {valueLabel}
               </th>
             </tr>
           </thead>
@@ -137,7 +147,7 @@ export function ActivityChart({
                 tickLine={false}
                 tick={{ fill: "var(--ink-500)", fontSize: 11, fontWeight: 600 }}
               />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--paper-100)" }} />
+              <Tooltip content={<ChartTooltip formatValue={formatValue} />} cursor={{ fill: "var(--paper-100)" }} />
               <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={36}>
                 <LabelList dataKey="value" content={renderHighlightLabel} />
                 {data.map((point) => (

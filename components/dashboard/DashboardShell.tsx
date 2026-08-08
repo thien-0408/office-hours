@@ -58,6 +58,7 @@ function getNavItems(role: UserRole): NavItem[] {
       return [
         { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { label: "Users", href: "/dashboard/admin/users", icon: Users },
+        { label: "Schedule", href: "/dashboard/admin/schedule", icon: CalendarDays },
         { label: "Allocation", href: "/dashboard/admin/allocation", icon: Shuffle },
         { label: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
       ];

@@ -35,35 +35,35 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 
 ## Lecturer
 
-- [ ] 16. Availability Rules manager — nav links to `/dashboard/availability` (404)
-- [ ] 17. Availability Exceptions manager — not started
-- [ ] 18. My Schedule (busy blocks) — nav links to `/dashboard/schedule` (404)
+- [X] 16. Availability Rules manager — `app/(dashboard)/dashboard/availability/page.tsx` ("Rules" tab: day/time-range/slot-length/effective-dates CRUD)
+- [X] 17. Availability Exceptions manager — same route, "Exceptions" tab (one-off BLOCK/ADD entries)
+- [X] 18. My Schedule (busy blocks) — `app/(dashboard)/dashboard/schedule/page.tsx` (read-mostly day-column view of imported/manual teaching blocks)
 - [X] 19. Bookings to Review — covered by `/dashboard/bookings` (lecturer perspective defaults its status filter to Pending); intentionally not a separate route, per the Phase 8 plan
-- [ ] 20. Slot Waitlist view — not started
-- [ ] 21. Meeting Record entry — not started
+- [X] 20. Slot Waitlist view — same `/dashboard/availability` route, "Waitlist" tab (read-only queue transparency per slot, no allocation actions — that's Admin's Manual Override, #29)
+- [X] 21. Meeting Record entry — covered by `app/(dashboard)/dashboard/bookings/[id]/page.tsx`'s "Meeting record" card (attended + notes, shown to the lecturer once a booking is COMPLETED); intentionally not a separate route, built as part of Phase 8's Booking Detail
 
 ## Admin
 
-- [ ] 22. User management — nav links to `/dashboard/admin/users` (404)
-- [ ] 23. Semester management — not started
-- [ ] 24. Schedule Import — not started
-- [ ] 25. Manual Schedule Entry editor — not started
-- [ ] 26. Slot search/ops view — not started
-- [ ] 27. Allocation Policies manager — nav links to `/dashboard/admin/allocation` (404)
-- [ ] 28. Allocation Events audit log — not started
-- [ ] 29. Manual Override action — not started
-- [ ] 30. Analytics dashboard — nav links to `/dashboard/admin/analytics` (404)
+- [X] 22. User management — `app/(dashboard)/dashboard/admin/users/page.tsx` ("Users" tab: search/filter, inline role+department edit, deactivate)
+- [X] 23. Semester management — same route, "Semesters" tab (add, activate, delete)
+- [X] 24. Schedule Import — `app/(dashboard)/dashboard/admin/schedule/page.tsx` ("Import" tab: PDF upload, ported from the user's `TimeTableScanner.txt` reference tool via `lib/timetable/parse-pdf.ts`, plus a mocked import-history table)
+- [X] 25. Manual Schedule Entry editor — same route, "Manual Entry" tab (single-entry add/delete)
+- [X] 26. Slot search/ops view — same route, "Slot Search" tab (cross-lecturer, reuses `getMockOfficeHours`)
+- [X] 27. Allocation Policies manager — `app/(dashboard)/dashboard/admin/allocation/page.tsx` ("Policies" tab: register/activate/delete, per-policy-type weight config)
+- [X] 28. Allocation Events audit log — same route, "Events" tab (filterable by policy/decision, score/seed or override detail per row)
+- [X] 29. Manual Override action — same route, "New override" form on the Events tab (slot + student + reason → appends an `OVERRIDDEN` event)
+- [X] 30. Analytics dashboard — `app/(dashboard)/dashboard/admin/analytics/page.tsx` (advisor load, no-show rate by lecturer, equity Gini + Lorenz curve, policy-comparison small multiples)
 - [ ] 31. Research tools (stretch, may be dev-only) — out of scope for now, skip per Pages.txt note
 
 ## Summary
 
-- Done: 16 / 31 (Public + Auth + all 4 Shared pages + the full Student booking flow #10–15,
-  including "Bookings to Review" covered by the shared My Bookings route)
+- Done: 30 / 31 — every page shipped except #31 Research tools, which stays out of scope per
+  Pages.txt's own note ("stretch, may be dev-only, maybe skip in FE scope").
 - Extra (not in the 31-page list but built): role-aware `/dashboard` home shell
 
 ## Next up
 
-Lecturer-facing pages (#16–21: Availability Rules, Availability Exceptions, My Schedule, Slot
-Waitlist view, Meeting Record entry — #19 Bookings to Review already covered) are the next
-highest-leverage block — the dashboard's lecturer nav still links "Availability" and "My Schedule"
-to 404s. See `docs/DASHBOARD-UPGRADE.md` Phase 9 for what just shipped.
+Nothing planned — the 31-page list is complete except the explicitly-skipped #31 Research
+tools. Future work is polish/hardening (real backend wiring, the several "preview only" /
+"not wired" UI-complete features called out throughout this doc and `DASHBOARD-UPGRADE.md`)
+rather than new pages.

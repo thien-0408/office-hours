@@ -1,3 +1,5 @@
+import type { UserRole } from "@/lib/auth/types";
+
 export interface PublicSlot {
   lecturerName: string;
   department: string | null;
@@ -123,4 +125,159 @@ export interface WaitlistEntry {
   status: WaitlistStatus;
   offeredStartAt?: string; // ISO-8601, set only when status === "OFFERED"
   offeredExpiresAt?: string; // ISO-8601, set only when status === "OFFERED"
+}
+
+// Weekly recurring availability rule (Pages.txt #16). dayOfWeek follows the
+// same 1-5 Mon-Fri convention as RecurringBookingClient's DAY_OPTIONS.
+export interface AvailabilityRule {
+  id: number;
+  dayOfWeek: number; // 1 = Monday .. 5 = Friday
+  startTime: string; // "09:00"
+  endTime: string; // "12:00"
+  slotLengthMinutes: number;
+  effectiveFrom: string; // ISO date, "2026-08-01"
+  effectiveTo: string | null;
+  active: boolean;
+}
+
+// One-off calendar exception layered on top of the weekly rules (Pages.txt
+// #17) — BLOCK removes a normally-available window, ADD opens an extra one.
+export type ExceptionType = "BLOCK" | "ADD";
+
+export interface AvailabilityException {
+  id: number;
+  date: string; // ISO date
+  type: ExceptionType;
+  startTime: string;
+  endTime: string;
+  reason: string | null;
+}
+
+// Lecturer's imported/manual teaching schedule (Pages.txt #18) — read-mostly,
+// admin edits (Schedule Import / Manual Schedule Entry, #24/#25, future phase).
+export interface ScheduleBlock {
+  id: number;
+  title: string;
+  dayOfWeek: number; // 1 = Monday .. 5 = Friday
+  startTime: string;
+  endTime: string;
+  source: "IMPORTED" | "MANUAL";
+}
+
+// Per-slot waitlist queue transparency for a lecturer (Pages.txt #20) — read
+// only, no allocation actions (Manual Override, #29, is Admin scope).
+export interface SlotWaitlistQueueEntry {
+  studentName: string;
+  position: number;
+  requestedAt: string; // ISO-8601
+}
+
+export interface SlotWaitlistGroup {
+  id: number;
+  slotLabel: string; // e.g. "Tuesdays, 10:00-10:30"
+  queue: SlotWaitlistQueueEntry[];
+}
+
+// Admin User management (Pages.txt #22) — a platform-wide account row, not to
+// be confused with the seeded MOCK_ACCOUNTS (lib/auth/mock-accounts.ts) used
+// for login itself.
+export interface AdminUserRow {
+  id: number;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  department: string | null;
+  active: boolean;
+}
+
+// Semester management (Pages.txt #23) — CRUD + activate; exactly one row is
+// active at a time, enforced when an admin activates another one.
+export interface Semester {
+  id: number;
+  name: string; // "Fall 2026"
+  startDate: string; // ISO date
+  endDate: string; // ISO date
+  active: boolean;
+}
+
+// Admin-scoped variant of ScheduleBlock (above) — same shape plus which
+// lecturer it belongs to, since admin's Schedule Import/Manual Entry (#24/#25)
+// spans every lecturer while a lecturer's own /dashboard/schedule doesn't
+// need that field.
+export interface AdminScheduleEntry extends ScheduleBlock {
+  lecturerName: string;
+}
+
+// One row parsed out of an EIU timetable PDF via lib/timetable/parse-pdf.ts —
+// field names/shape mirror the validated TimeTableScanner.txt tool's JSON
+// output 1:1, so the port is a straight translation, not a redesign.
+export interface ParsedTimetableRow {
+  day: string; // "Thứ 2".."Chủ Nhật" as scanned; mapped to dayOfWeek on import
+  startTime: string;
+  endTime: string;
+  subjectCode: string;
+  subjectName: string;
+  group: string;
+  room: string;
+  lecturerName: string;
+}
+
+export interface ScheduleImportHistoryEntry {
+  id: number;
+  fileName: string;
+  importedAt: string; // ISO-8601
+  rowCount: number;
+  status: "SUCCESS" | "FAILED";
+}
+
+// Allocation Policies manager (Pages.txt #27) — mirrors
+// capstone-db-schema.md §4.2's allocation_policies: name is a fixed set,
+// config carries tunable weights (empty for FCFS/ROUND_ROBIN), exactly one
+// active at a time.
+export type AllocationPolicyName = "FCFS" | "NEED" | "ROUND_ROBIN" | "HYBRID";
+
+export interface AllocationPolicy {
+  id: number;
+  name: AllocationPolicyName;
+  config: Record<string, number>;
+  active: boolean;
+}
+
+// Allocation Events audit log (Pages.txt #28) + Manual Override (#29, a
+// decision: "OVERRIDDEN" row). Mirrors capstone-db-schema.md §4.3's mutually
+// exclusive field groups: SELECTED/SKIPPED carry policyName/computedScore/
+// randomSeed; OVERRIDDEN instead carries overriddenByName/overrideReason.
+export type AllocationDecision = "SELECTED" | "SKIPPED" | "OVERRIDDEN";
+
+export interface AllocationEvent {
+  id: number;
+  slotLabel: string; // e.g. "Dr. Amara Chen — Tue 10:00"
+  studentName: string;
+  decision: AllocationDecision;
+  policyName: AllocationPolicyName | null; // null only when OVERRIDDEN
+  computedScore: number | null; // null only when OVERRIDDEN
+  randomSeed: number | null; // null only when OVERRIDDEN
+  overriddenByName: string | null; // set only when OVERRIDDEN
+  overrideReason: string | null; // set only when OVERRIDDEN
+  allocatedAt: string; // ISO-8601
+}
+
+// Equity section of the Analytics dashboard (Pages.txt #30) — Gini
+// coefficients plus the Lorenz-curve points that back them, so the headline
+// numbers and the chart always agree (both derive from the same distribution).
+export interface EquityMetrics {
+  giniSlotsPerStudent: number;
+  giniLecturerAccess: number;
+  lorenzCurve: { cumulativeStudentsPct: number; cumulativeSlotsPct: number }[];
+}
+
+// Policy-comparison section of the Analytics dashboard (Pages.txt #30) — one
+// row per AllocationPolicy, four independently-scaled metrics (kept as small
+// multiples, never one dual-axis chart).
+export interface PolicyComparisonRow {
+  policyName: AllocationPolicyName;
+  giniSlotsPerStudent: number;
+  giniLecturerAccess: number;
+  utilizationPct: number;
+  avgWaitMinutes: number;
 }
