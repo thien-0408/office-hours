@@ -97,15 +97,51 @@ const MOCK_LECTURERS: MockLecturer[] = [
   },
 ];
 
+// dayOfWeek: 1=Mon..5=Fri, matching buildMockSlots' Mon-Fri generation.
+function weekdayOf(date: Date): number {
+  const day = date.getDay();
+  return day === 0 ? 7 : day;
+}
+
+// Remaining (not-yet-started) open slots this week, grouped by lecturer and
+// weekday — backs both the "available only" and "by day" browse filters.
+function computeUpcomingAvailabilityByLecturer(): Map<number, Set<number>> {
+  const now = new Date();
+  const map = new Map<number, Set<number>>();
+  buildMockSlots().forEach((slot) => {
+    if (new Date(slot.startAt) < now) return;
+    const days = map.get(slot.lecturerId) ?? new Set<number>();
+    days.add(weekdayOf(new Date(slot.startAt)));
+    map.set(slot.lecturerId, days);
+  });
+  return map;
+}
+
 // Stands in for GET /lecturers — the authenticated "browse" list, filterable
-// by department and free-text (matched against name + department).
-export function getMockLecturers(params?: { department?: string; q?: string }): MockLecturer[] {
+// by department, free-text (matched against name + department), weekday
+// availability, and "has any open slot left this week".
+export function getMockLecturers(params?: {
+  department?: string;
+  q?: string;
+  dayOfWeek?: number;
+  availableOnly?: boolean;
+}): MockLecturer[] {
   const department = params?.department?.trim().toLowerCase();
   const q = params?.q?.trim().toLowerCase();
+  const dayOfWeek = params?.dayOfWeek;
+  const availableOnly = params?.availableOnly;
+
+  const availabilityByLecturer =
+    dayOfWeek || availableOnly ? computeUpcomingAvailabilityByLecturer() : null;
 
   return MOCK_LECTURERS.filter((lecturer) => {
     if (department && lecturer.department.toLowerCase() !== department) return false;
     if (q && !`${lecturer.name} ${lecturer.department}`.toLowerCase().includes(q)) return false;
+    if (availabilityByLecturer) {
+      const days = availabilityByLecturer.get(lecturer.id) ?? new Set<number>();
+      if (dayOfWeek && !days.has(dayOfWeek)) return false;
+      if (availableOnly && days.size === 0) return false;
+    }
     return true;
   });
 }

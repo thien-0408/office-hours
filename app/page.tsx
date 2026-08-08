@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import rough from "roughjs";
 import { LogoWithText } from "@/components/LogoWithText";
 import SchedulingHeroBackground from "@/components/SchedulingHeroBackground";
-import Couch3D from "@/components/Couch";
-
-const COUCH_COLORS = [
-  { name: "Midnight Navy", value: "#132a5c" },
-  { name: "Slate", value: "#3b4657" },
-  { name: "Forest", value: "#1f4d3d" },
-  { name: "Burgundy", value: "#5c1a2b" },
-  { name: "Sand", value: "#c9a876" },
-];
+import HeroBookingDemo from "@/components/HeroBookingDemo";
 
 const VALUE_PROPS = [
   {
@@ -57,7 +49,6 @@ export default function LandingPage() {
   const underlineSvgRef = useRef<SVGSVGElement | null>(null);
   const studentBlobRef = useRef<SVGSVGElement | null>(null);
   const lecturerBlobRef = useRef<SVGSVGElement | null>(null);
-  const [couchColor, setCouchColor] = useState(COUCH_COLORS[0].value);
 
   // Initialize Rough.js Sketched UI Elements
   useEffect(() => {
@@ -226,48 +217,14 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right Column: 3D Couch Viewport */}
+          {/* Right Column: interactive booking demo */}
           <div className="relative flex items-center justify-center max-md:mt-2">
-            <div className="relative z-10 w-full h-[420px]">
-              <Couch3D color={couchColor} />
-            </div>
+            <HeroBookingDemo />
 
             {/* Sticker: nudges people to notice it's interactive */}
             <span className="absolute -top-3 right-4 z-20 rotate-[4deg] bg-blue-950 text-white text-[10.5px] font-bold uppercase tracking-[0.06em] px-3 py-1.5 rounded-full border border-white/25 shadow-[3px_3px_0_0_#3465e0]">
-              Drag it · Pick a color
+              Try it · Book a slot
             </span>
-
-            {/* Fabric color picker */}
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-white rounded-full shadow-lg border border-blue-100 px-3 py-2">
-              {COUCH_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setCouchColor(c.value)}
-                  aria-label={`Set couch color to ${c.name}`}
-                  aria-pressed={couchColor === c.value}
-                  title={c.name}
-                  className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
-                    couchColor === c.value
-                      ? "ring-2 ring-blue-600 ring-offset-2 scale-110"
-                      : "ring-1 ring-inset ring-black/10"
-                  }`}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-              <label
-                title="Custom color"
-                className="relative w-6 h-6 rounded-full ring-1 ring-inset ring-black/10 overflow-hidden cursor-pointer grid place-items-center text-[11px] font-bold text-slate-400 hover:ring-blue-400 bg-[conic-gradient(from_180deg,#f87171,#facc15,#4ade80,#38bdf8,#a78bfa,#f87171)]"
-              >
-                <input
-                  type="color"
-                  value={couchColor}
-                  onChange={(e) => setCouchColor(e.target.value)}
-                  aria-label="Custom couch color"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </label>
-            </div>
           </div>
         </div>
       </section>

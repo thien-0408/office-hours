@@ -4,6 +4,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api-server";
 import { getMockOfficeHours } from "@/lib/office-hours/mock-data";
 import { LogoWithText } from "@/components/LogoWithText";
+import { initials } from "@/lib/avatar";
 import type { PublicOfficeHoursResponse, PublicSlot } from "@/lib/office-hours/types";
 
 export const metadata: Metadata = {
@@ -41,16 +42,6 @@ function groupByDay(slots: DisplaySlot[]): { dateKey: string; slots: DisplaySlot
     }
   }
   return Array.from(groups.entries()).map(([dateKey, daySlots]) => ({ dateKey, slots: daySlots }));
-}
-
-function initials(name: string): string {
-  return name
-    .replace(/^(Dr\.|Prof\.)\s*/i, "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 }
 
 interface PageProps {

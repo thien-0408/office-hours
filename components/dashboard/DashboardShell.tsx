@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,6 +28,8 @@ import {
 import { useAuth } from "@/lib/auth/auth-context";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { LogoWithText } from "@/components/LogoWithText";
+import { initials } from "@/lib/avatar";
+import { useUserAvatarSrc } from "@/lib/use-avatar";
 import type { AuthUser, UserRole } from "@/lib/auth/types";
 
 interface NavItem {
@@ -67,15 +70,6 @@ function getNavItems(role: UserRole): NavItem[] {
 
 function roleLabel(role: UserRole): string {
   return role === "STUDENT" ? "Student" : role === "LECTURER" ? "Lecturer" : "Admin";
-}
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 }
 
 // Shared between the desktop sidebar and the mobile drawer so the two nav
@@ -132,6 +126,7 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navItems = getNavItems(user.role);
+  const avatarSrc = useUserAvatarSrc(user.id);
 
   // Route changed (link click, back/forward) — close the drawer. Derived
   // during render (React's documented pattern for reacting to prop changes),
@@ -253,9 +248,13 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
                 onClick={() => setMenuOpen((v) => !v)}
                 className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full hover:bg-[var(--brand-50)] transition-colors"
               >
-                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--brand-500)] text-white text-xs font-bold shrink-0">
-                  {initials(user.fullName)}
-                </span>
+                <Image
+                  src={avatarSrc}
+                  alt={initials(user.fullName)}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--brand-50)] bg-[var(--brand-50)] shrink-0"
+                />
                 <span className="hidden sm:block text-sm font-semibold text-[var(--ink-900)]">
                   {user.fullName}
                 </span>

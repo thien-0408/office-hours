@@ -1,27 +1,28 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
 import { Building2, GraduationCap, Mail } from "lucide-react";
+import { initials } from "@/lib/avatar";
+import { useUserAvatarSrc } from "@/lib/use-avatar";
 import type { AuthUser } from "@/lib/auth/types";
 import { Card } from "./Card";
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 function roleLabel(role: AuthUser["role"]): string {
   return role === "STUDENT" ? "Student" : role === "LECTURER" ? "Lecturer" : "Admin";
 }
 
 export function ProfileCard({ user }: { user: AuthUser }) {
+  const avatarSrc = useUserAvatarSrc(user.id);
   return (
     <Card className="flex flex-col items-center text-center p-6">
-      <span className="flex items-center justify-center w-16 h-16 rounded-full bg-[var(--brand-500)] text-white text-xl font-bold mb-3">
-        {initials(user.fullName)}
-      </span>
+      <Image
+        src={avatarSrc}
+        alt={initials(user.fullName)}
+        width={64}
+        height={64}
+        className="w-16 h-16 rounded-full object-cover ring-2 ring-[var(--brand-50)] bg-[var(--brand-50)] mb-3"
+      />
       <p className="text-base font-bold text-[var(--ink-900)]">{user.fullName}</p>
       <p className="text-[12.5px] text-[var(--ink-500)] mb-4">@{user.email.split("@")[0]}</p>
 

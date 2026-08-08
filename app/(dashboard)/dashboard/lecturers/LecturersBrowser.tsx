@@ -11,6 +11,15 @@ import { getMockLecturers } from "@/lib/office-hours/mock-data";
 const ALL_LECTURERS = getMockLecturers();
 const DEPARTMENTS = Array.from(new Set(ALL_LECTURERS.map((l) => l.department))).sort();
 
+const DAYS: { value: string; label: string }[] = [
+  { value: "ALL", label: "Any day" },
+  { value: "1", label: "Mon" },
+  { value: "2", label: "Tue" },
+  { value: "3", label: "Wed" },
+  { value: "4", label: "Thu" },
+  { value: "5", label: "Fri" },
+];
+
 export default function LecturersBrowser() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
@@ -19,10 +28,14 @@ export default function LecturersBrowser() {
   // syncing the input to the search param.
   const [query, setQuery] = useState(initialQuery);
   const [department, setDepartment] = useState<string>("ALL");
+  const [day, setDay] = useState<string>("ALL");
+  const [availability, setAvailability] = useState<string>("ALL");
 
   const filtered = getMockLecturers({
     q: query || undefined,
     department: department === "ALL" ? undefined : department,
+    dayOfWeek: day === "ALL" ? undefined : Number(day),
+    availableOnly: availability === "AVAILABLE" ? true : undefined,
   });
 
   return (
@@ -45,6 +58,18 @@ export default function LecturersBrowser() {
           options={[{ value: "ALL", label: "All departments" }, ...DEPARTMENTS.map((d) => ({ value: d, label: d }))]}
           value={department}
           onChange={setDepartment}
+        />
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <FilterTabs options={DAYS} value={day} onChange={setDay} />
+        <FilterTabs
+          options={[
+            { value: "ALL", label: "All lecturers" },
+            { value: "AVAILABLE", label: "Available this week" },
+          ]}
+          value={availability}
+          onChange={setAvailability}
         />
       </div>
 

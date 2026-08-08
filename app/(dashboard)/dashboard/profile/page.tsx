@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound } from "lucide-react";
+import Image from "next/image";
+import { KeyRound, Pencil } from "lucide-react";
+import { AvatarPickerModal } from "@/components/dashboard/AvatarPickerModal";
 import { Card } from "@/components/dashboard/Card";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormField, TextInput } from "@/components/dashboard/FormField";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToggleSwitch } from "@/components/dashboard/ToggleSwitch";
 import { useAuth } from "@/lib/auth/auth-context";
+import { initials } from "@/lib/avatar";
+import { setAvatarOverride, useAvatarIndex } from "@/lib/use-avatar";
 import { getMockNotificationPrefs } from "@/lib/office-hours/mock-data";
 
 export default function ProfilePage() {
@@ -29,6 +33,9 @@ export default function ProfilePage() {
   const [passwordConfirmOpen, setPasswordConfirmOpen] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
 
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const avatarIndex = useAvatarIndex(user?.id ?? -1);
+
   if (!user) return null;
 
   const passwordValid = newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0;
@@ -40,6 +47,35 @@ export default function ProfilePage() {
       <Card>
         <SectionHeader title="Identity" />
         <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setAvatarPickerOpen(true)}
+              className="group relative rounded-full"
+              aria-label="Change avatar"
+            >
+              <Image
+                src={`/memoji/${avatarIndex}.png`}
+                alt={initials(user.fullName)}
+                width={64}
+                height={64}
+                className="w-16 h-16 rounded-full object-cover ring-2 ring-[var(--brand-50)] bg-[var(--brand-50)]"
+              />
+              <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-500)] text-white ring-2 ring-white group-hover:bg-[var(--brand-600)] transition-colors">
+                <Pencil className="w-3 h-3" strokeWidth={2.2} />
+              </span>
+            </button>
+            <div>
+              <p className="text-sm font-semibold text-[var(--ink-900)]">Avatar</p>
+              <button
+                type="button"
+                onClick={() => setAvatarPickerOpen(true)}
+                className="text-[13px] font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] transition-colors"
+              >
+                Change avatar
+              </button>
+            </div>
+          </div>
           <FormField label="Full name">
             <TextInput
               value={fullName}
@@ -145,6 +181,16 @@ export default function ProfilePage() {
           </div>
         </div>
       </Card>
+
+      <AvatarPickerModal
+        open={avatarPickerOpen}
+        currentIndex={avatarIndex}
+        onSelect={(index) => {
+          setAvatarOverride(user.id, index);
+          setAvatarPickerOpen(false);
+        }}
+        onClose={() => setAvatarPickerOpen(false)}
+      />
 
       <ConfirmModal
         open={passwordConfirmOpen}

@@ -93,6 +93,13 @@ Maps to `SCHEDULE_ENTRIES`. Feeds conflict detection in §5.
 
 ## 5. Slots & Conflict-Aware Booking (FR-6, FR-7; UC1, UC2; workflow §9.1)
 
+### 5.0 Lecturer Directory (FR-6 support; Pages.txt #10 "Find a Lecturer")
+
+| Method | Path | Role | Description |
+|---|---|---|---|
+| GET | `/lecturers` | Authenticated | Browse/search lecturers — the entry point into slot browsing. `?q=` (free-text over name + department), `?department=` (exact match), `?dayOfWeek=1-7` (Mon=1..Sun=7 — only lecturers with ≥1 remaining open slot that weekday), `?availableOnly=true` (has any open slot left this week). Returns `{ content: Lecturer[], totalElements, totalPages, page, size }` per §0 pagination convention, where `Lecturer = { id, slug, name, department, photoUrl, blurb }`. |
+| GET | `/lecturers/{id}` | Authenticated | Single lecturer profile (same `Lecturer` shape) — backs the slot-picker page header. |
+
 | Method | Path | Role | Description |
 |---|---|---|---|
 | GET | `/lecturers/{lecturerId}/slots` | Authenticated | **Core query.** `?week=YYYY-Www` or `?from=&to=`. Returns bookable slots = availability − lecturer conflicts − existing bookings, further filtered against **the requesting student's** own `SCHEDULE_ENTRIES` so only conflict-free-for-this-student slots appear. Redis-cached with short TTL (§9.1). Target < 300 ms (NFR-1). |
@@ -124,6 +131,7 @@ Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 | Method | Path | Role | Description |
 |---|---|---|---|
 | POST | `/bookings/recurring` | Student | `{ lecturerId, dayOfWeek, startTime, endTime, semesterId }`. Creates a standing weekly booking across the semester, each occurrence subject to normal conflict checks; skips weeks with lecturer exceptions. |
+| GET | `/bookings/recurring` | Student | List own recurring series (active + cancelled) — powers the series list on the recurring-booking setup page (Pages.txt #14). |
 | GET | `/bookings/recurring/{id}` | Owner / Admin | View the recurring series and its generated occurrences. |
 | DELETE | `/bookings/recurring/{id}` | Owner / Admin | Cancel the series (future occurrences only). |
 
@@ -136,6 +144,7 @@ Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 | POST | `/slots/{id}/waitlist` | Student | Join the waitlist for an oversubscribed/full slot. `{ }` (student inferred from token). Creates `WAITLIST_ENTRIES` row, `status: WAITING`. |
 | GET | `/waitlist/me` | Student | List own waitlist entries across all slots, with position/estimated status. |
 | GET | `/slots/{id}/waitlist` | Lecturer (owner) / Admin | View queue for a slot (for transparency/audit). |
+| GET | `/lecturers/me/slot-waitlist` | Lecturer | Aggregate, read-only queue transparency across all of the lecturer's own upcoming slots, grouped by slot (Pages.txt #20) — distinct from the single-slot `GET /slots/{id}/waitlist` above, which this list-view is built from. |
 | DELETE | `/waitlist/{id}` | Student (owner) | Leave the waitlist. → `status: CANCELLED`. |
 | POST | `/waitlist/{id}/accept` | Student (owner, while `OFFERED`) | Accept an offered slot before expiry → creates `CONFIRMED` booking, `status: FULFILLED` (workflow §9.2). |
 | POST | `/waitlist/{id}/decline` | Student (owner, while `OFFERED`) | Explicitly decline an offer → re-run allocation for next candidate. |
@@ -213,6 +222,7 @@ Maps to `NOTIFICATIONS`.
 | FR-2 (semesters) | §2 |
 | FR-3, FR-4 (availability) | §3 |
 | FR-5 (CSV import) | §4 |
+| FR-6 (lecturer discovery) | `GET /lecturers`, `GET /lecturers/{id}` (§5.0) |
 | FR-6 (bookable slots) | `GET /lecturers/{id}/slots` |
 | FR-7 (conflict-safe booking) | `POST /bookings` |
 | FR-8 (confirm/decline) | `POST /bookings/{id}/confirm`\|`decline` |
