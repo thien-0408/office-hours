@@ -44,6 +44,12 @@
   --info-100: #e8e1ff;
   --info-700: #5433c4;
 
+  /* Status, light tint — for text directly on dark/glass surfaces (auth pages)
+     where --success-700/--danger-700 (tuned for white cards) don't have enough
+     contrast. Same hue family as above, just lighter. */
+  --success-300: #7de8bc;
+  --danger-300: #f5a3a3;
+
   /* Dashboard accent palette — decorative only (icon chips, featured-card CTA,
      calendar selection, nav active-state); NOT status semantics (those stay on
      the ramps above) and NOT a second primary/interactive color (--accent
@@ -81,6 +87,14 @@
   --glass-bg: rgba(255, 255, 255, 0.14);
   --glass-border: rgba(255, 255, 255, 0.32);
   --glass-sheen: rgba(255, 255, 255, 0.45);
+
+  /* Toast dark glass — deliberate exception, see docs/DESIGN.md §1.3. A toast
+     carries its own dark frosted surface (rather than --glass-bg's light
+     tint) because it has no dark backdrop of its own to sit against; this is
+     the one place the app intentionally floats a dark card over light
+     content. */
+  --toast-glass-bg: rgba(10, 13, 22, 0.82);
+  --toast-glass-border: rgba(255, 255, 255, 0.09);
 }
 
 @theme inline {

@@ -3,12 +3,15 @@ import type {
   AdminUserRow,
   AllocationEvent,
   AllocationPolicy,
+  AllocationPolicyName,
   AvailabilityException,
   AvailabilityRule,
   BookableSlot,
   Booking,
   BookingTimelineEvent,
   EquityMetrics,
+  Experiment,
+  ExperimentPolicyResult,
   Notification,
   NotificationPrefs,
   PolicyComparisonRow,
@@ -19,8 +22,10 @@ import type {
   ScheduleImportHistoryEntry,
   Semester,
   SlotWaitlistGroup,
+  SyntheticDemandRun,
   WaitlistEntry,
 } from "./types";
+import { memojiSrc } from "@/lib/avatar";
 
 // Stands in for GET /public/office-hours until the backend ships that endpoint
 // (see docs/capstone-api-endpoints.md §10) — app/public/office-hours/page.tsx
@@ -52,7 +57,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "amara-chen",
     name: "Dr. Amara Chen",
     department: "Computer Science",
-    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(1),
     blurb: "Thesis proposals, capstone scope, algorithms coursework.",
   },
   {
@@ -60,7 +65,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "daniel-reyes",
     name: "Prof. Daniel Reyes",
     department: "Computer Science",
-    photoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(2),
     blurb: "Algorithms homework help, systems design questions.",
   },
   {
@@ -68,7 +73,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "priya-nair",
     name: "Dr. Priya Nair",
     department: "Mathematics",
-    photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(3),
     blurb: "Linear algebra, discrete math, exam review sessions.",
   },
   {
@@ -76,7 +81,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "michael-osei",
     name: "Prof. Michael Osei",
     department: "Physics",
-    photoUrl: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(4),
     blurb: "Lab report feedback, mechanics and thermodynamics.",
   },
   {
@@ -84,7 +89,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "laura-bianchi",
     name: "Dr. Laura Bianchi",
     department: "Economics",
-    photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(5),
     blurb: "Midterm regrades, macro/micro theory questions.",
   },
   {
@@ -92,7 +97,7 @@ const MOCK_LECTURERS: MockLecturer[] = [
     slug: "samuel-okafor",
     name: "Prof. Samuel Okafor",
     department: "Mathematics",
-    photoUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=160&h=160&fit=crop&q=80",
+    photoUrl: memojiSrc(6),
     blurb: "Statistics, probability, and proof-writing help.",
   },
 ];
@@ -1030,5 +1035,106 @@ export function getMockPolicyComparison(): PolicyComparisonRow[] {
     { policyName: "NEED", giniSlotsPerStudent: 0.27, giniLecturerAccess: 0.24, utilizationPct: 68, avgWaitMinutes: 52 },
     { policyName: "ROUND_ROBIN", giniSlotsPerStudent: 0.19, giniLecturerAccess: 0.21, utilizationPct: 64, avgWaitMinutes: 61 },
     { policyName: "HYBRID", giniSlotsPerStudent: 0.24, giniLecturerAccess: 0.22, utilizationPct: 73, avgWaitMinutes: 45 },
+  ];
+}
+
+// ---- Research Tools (Pages.txt #31) -----------------------------------------
+// Mirrors capstone-api-endpoints.md §7.1 (POST /research/synthetic-demand,
+// POST/GET /research/experiments) — a mock console for the §11.4 fairness
+// study, not a real allocation simulation. Deterministic: the same seed
+// always produces the same numbers (demonstrates NFR-3 reproducibility),
+// derived from getMockPolicyComparison()'s baselines rather than a second,
+// disagreeing set of illustrative constants.
+
+// Pure seeded PRNG (mulberry32) — never Math.random(), which would trip the
+// React Compiler's react-hooks/purity rule if this were ever called during
+// render. Keeping it pure is what makes "same seed -> same output" true,
+// the whole point of the reproducibility demo.
+function mulberry32(seed: number): () => number {
+  let a = seed;
+  return function next() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function getMockSyntheticDemandRuns(): SyntheticDemandRun[] {
+  return [
+    { id: 1, seed: 4821, popularitySkew: 1.4, arrivalPattern: "BURST_BEFORE_DEADLINE", numStudents: 180, numLecturers: 12, generatedAt: "2026-07-28T09:00:00.000Z" },
+    { id: 2, seed: 2207, popularitySkew: 0.6, arrivalPattern: "POISSON", numStudents: 320, numLecturers: 18, generatedAt: "2026-08-02T14:30:00.000Z" },
+    { id: 3, seed: 9931, popularitySkew: 2.1, arrivalPattern: "UNIFORM", numStudents: 10000, numLecturers: 800, generatedAt: "2026-08-05T11:15:00.000Z" },
+  ];
+}
+
+// Deterministic, seeded — the same (policyNames, seed) pair always returns
+// identical results (NFR-3). Builds on getMockPolicyComparison()'s per-policy
+// baselines rather than inventing a second set of illustrative numbers, so
+// this page and Analytics' Policy Comparison agree when their inputs line
+// up; the seed only jitters the baseline; it doesn't replace it. No client-
+// side allocation engine actually runs — illustrative, same status as
+// getMockPolicyComparison itself. `demandRun` is accepted (not just ignored)
+// so a future real implementation has an obvious slot to read scale/skew
+// from; the mock jitter doesn't vary by demand run on purpose, only by seed.
+export function computeExperimentResults(
+  demandRun: SyntheticDemandRun,
+  policyNames: AllocationPolicyName[],
+  seed: number
+): ExperimentPolicyResult[] {
+  void demandRun;
+  const baselines = getMockPolicyComparison();
+  const rand = mulberry32(seed);
+  const jitter = () => 1 + (rand() - 0.5) * 0.16; // +/-8%, deterministic per seed
+
+  return policyNames.map((policyName) => {
+    const base = baselines.find((b) => b.policyName === policyName) ?? baselines[0];
+    const giniSlotsPerStudent = Math.round(base.giniSlotsPerStudent * jitter() * 100) / 100;
+    const giniLecturerAccess = Math.round(base.giniLecturerAccess * jitter() * 100) / 100;
+    const slotUtilizationPct = Math.round(base.utilizationPct * jitter());
+    const avgWaitTimeSeconds = Math.round(base.avgWaitMinutes * 60 * jitter());
+    // Derived from the metrics above (not independently seeded) so a
+    // "fairer" policy can't randomly also read as faster to fill — the four
+    // numbers stay internally consistent instead of contradicting each other.
+    const maxMinRatio = Math.round((1 + giniSlotsPerStudent * 6) * 100) / 100;
+    const avgTimeToFillSeconds = Math.round(avgWaitTimeSeconds * 0.4 * jitter());
+    const offerRejectionRatePct = Math.round(giniSlotsPerStudent * 25 * jitter() * 10) / 10;
+    const waitTimeVariance = Math.round(avgWaitTimeSeconds * avgWaitTimeSeconds * 0.05 * jitter());
+
+    return {
+      policyName,
+      giniSlotsPerStudent,
+      giniLecturerAccess,
+      maxMinRatio,
+      slotUtilizationPct,
+      avgTimeToFillSeconds,
+      offerRejectionRatePct,
+      avgWaitTimeSeconds,
+      waitTimeVariance,
+    };
+  });
+}
+
+export function getMockExperiments(): Experiment[] {
+  const runs = getMockSyntheticDemandRuns();
+  const allPolicies: AllocationPolicyName[] = ["FCFS", "NEED", "ROUND_ROBIN", "HYBRID"];
+  return [
+    {
+      id: 1,
+      demandRunId: runs[0].id,
+      seed: 4821,
+      policyNames: allPolicies,
+      results: computeExperimentResults(runs[0], allPolicies, 4821),
+      runAt: "2026-07-28T09:12:00.000Z",
+    },
+    {
+      id: 2,
+      demandRunId: runs[1].id,
+      seed: 2207,
+      policyNames: ["FCFS", "HYBRID"],
+      results: computeExperimentResults(runs[1], ["FCFS", "HYBRID"], 2207),
+      runAt: "2026-08-02T14:41:00.000Z",
+    },
   ];
 }

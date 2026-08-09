@@ -158,7 +158,7 @@ function PolicyComparisonSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader title="Policy comparison" />
+      <SectionHeader title="Policy comparison" href="/dashboard/admin/research" actionLabel="Open research tools" />
       <p className="text-[12.5px] text-[var(--ink-500)]">
         Active vs. alternative policies, side by side — four independent metrics, not one chart with mixed scales.
         Highlighted bar is the currently active policy.

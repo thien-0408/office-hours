@@ -60,7 +60,7 @@ export default function ResetPasswordForm() {
 
       {error && (
         <div className="mb-3">
-          <p className="text-xs text-red-300" role="alert">
+          <p className="text-xs text-[var(--danger-300)]" role="alert">
             {error}
           </p>
           {error.toLowerCase().includes("token") && (

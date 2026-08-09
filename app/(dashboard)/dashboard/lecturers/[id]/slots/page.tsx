@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { BookSlotModal } from "@/components/dashboard/BookSlotModal";
 import { Card } from "@/components/dashboard/Card";
+import { useToast } from "@/components/ToastProvider";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { WeekSlotGrid } from "@/components/dashboard/WeekSlotGrid";
 import { getMockLecturerById, getMockLecturerWeekSlots } from "@/lib/office-hours/mock-data";
@@ -15,6 +16,7 @@ export default function LecturerSlotsPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
   const lecturer = getMockLecturerById(id);
+  const toast = useToast();
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<BookableSlot | null>(null);
@@ -93,6 +95,7 @@ export default function LecturerSlotsPage() {
         onClose={() => setSelectedSlot(null)}
         onConfirm={() => {
           if (selectedSlot) setBookedSlotIds((ids) => [...ids, selectedSlot.id]);
+          toast.success("Request sent", { action: { label: "View bookings", href: "/dashboard/bookings" } });
         }}
       />
     </div>

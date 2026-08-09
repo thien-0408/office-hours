@@ -38,7 +38,32 @@ The app shell was originally blue-only ("`--accent` used only for buttons/links/
 
 **Validation:** `coral`/`rose`/`mint` + `brand` validated together as a 4-hue set — `node scripts/validate_palette.js "#F97316,#EC4899,#22C55E,#3465E0" --mode light` (dataviz skill) — all checks pass. The surface-contrast WARN (expected for saturated color on a near-white background) is resolved the same way status badges already handle it: color is always paired with an icon + text label, never used alone to carry meaning.
 
-Landing page implementation: `app/page.tsx` + `app/landing.module.css`. Placeholder hero photo is hotlinked from `images.unsplash.com` (Unsplash License, free tier — not a premium/paid asset) pending real campus photography; `next.config.ts` allows that remote host. Swap for real photography before launch.
+### 1.3 Toast notifications — dark glass exception (user-directed)
+
+`components/ToastProvider.tsx` (Phase 14, `DASHBOARD-UPGRADE.md`) deliberately breaks from both
+the restrained-app-shell rule *and* the light `--glass-*` tokens, on explicit user direction with
+a reference screenshot: a dark, blurred glassmorphism card, top-right, with a colored icon circle
+per notification type.
+
+**Why this is a different case from §1's glass rule, not a violation of it:** every existing
+glass surface (`ConfirmModal`, the auth pages) sits *over its own dark backdrop* — the light
+`--glass-bg` tint reads because there's something dark and blurred underneath it. A toast has no
+backdrop; it floats directly over whatever light dashboard/auth content the user is still reading.
+To read as "frosted glass" rather than "washed-out gray box," the toast card carries its own dark
+tint: new tokens `--toast-glass-bg` (`rgba(10,13,22,0.82)`) / `--toast-glass-border`
+(`rgba(255,255,255,0.09)`), `backdrop-filter: blur(20px)`, white title text, white/70 description
+text — the same physical glass recipe as `ConfirmModal`, just dark-on-light instead of light-on-dark.
+
+**Icon-circle color mapping** — a solid `var(--{hue}-500)` circle (white icon) inside a soft
+`var(--{hue}-500)` halo at low opacity, straight from the existing `HUE_TOKENS` (§4) — `success`
+green check, `warning` amber `!`, `danger` red `X`, `info` violet `i`, `neutral` gray bell. No new
+colors; only the *card* is a one-off dark exception, not the color system.
+
+**Position — top-right (desktop), top-center full-width on mobile.** Revised from Phase 14's
+original bottom-right placement on the same user direction. Newest toast renders closest to the
+corner, pushing older ones down — matches the reference screenshot's stacking.
+
+Landing page implementation: `app/page.tsx` + `app/landing.module.css`. The hero's right column is `components/HeroBookingDemo.tsx`, an interactive slot-picker mockup — no hero photo, no Unsplash dependency. Lecturer avatars everywhere (browse cards, public listing, this demo) are memoji (`public/memoji/`, `lib/avatar.ts`), not stock headshots — `next.config.ts` no longer allowlists `images.unsplash.com`.
 
 ### 1.1 Landing page style rule: Mixed Media / Painterly Collage + Neo-Brutalism + Organic Modernism
 
@@ -223,5 +248,5 @@ Badge pattern: `background: var(--{hue}-100); color: var(--{hue}-700);` with a s
 1. ~~Geist vs. system-font stack~~ — resolved, see §2.
 2. Confirm brand blue saturation/hue reads right once placed next to real content (not just the swatch preview) — revisit after the first 2-3 pages ship.
 3. `research-tools` (§7.1 API) has no UI — excluded from FE scope per earlier decision.
-4. Landing hero photo is an Unsplash placeholder (`images.unsplash.com/photo-1514369118554-...`) — replace with real campus/office-hours photography before launch.
+4. ~~Landing hero photo is an Unsplash placeholder~~ — resolved, hero is now the interactive `HeroBookingDemo` (no photo dependency); lecturer avatars app-wide switched from Unsplash stock headshots to memoji.
 5. ~~Nav anchors `#for-students` / `#for-lecturers` have no matching sections~~ — resolved, both sections added to `app/page.tsx` (see §1.1).

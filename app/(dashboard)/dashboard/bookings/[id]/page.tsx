@@ -10,6 +10,7 @@ import { Card } from "@/components/dashboard/Card";
 import { MetaRow } from "@/components/dashboard/MetaRow";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getMockBookingById, getMockBookingTimeline } from "@/lib/office-hours/mock-data";
 import type { Booking } from "@/lib/office-hours/types";
@@ -23,6 +24,7 @@ export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
   const { user } = useAuth();
+  const toast = useToast();
 
   // Store-previous-value pattern (established in DashboardShell / AuthLayout)
   // so the local mutable copy re-seeds if the route's id changes, without a
@@ -136,7 +138,10 @@ export default function BookingDetailPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => applyStatus("CONFIRMED")}
+                  onClick={() => {
+                    applyStatus("CONFIRMED");
+                    toast.success("Booking confirmed");
+                  }}
                   className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
                 >
                   Confirm
@@ -155,7 +160,10 @@ export default function BookingDetailPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => applyStatus("COMPLETED")}
+                  onClick={() => {
+                    applyStatus("COMPLETED");
+                    toast.success("Marked completed");
+                  }}
                   className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
                 >
                   Mark completed
@@ -198,7 +206,10 @@ export default function BookingDetailPage() {
           <div className="flex items-center gap-3 mt-3">
             <button
               type="button"
-              onClick={() => setRecordSaved(true)}
+              onClick={() => {
+                setRecordSaved(true);
+                toast.success("Meeting record saved");
+              }}
               className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
             >
               Save record
@@ -222,9 +233,18 @@ export default function BookingDetailPage() {
         cancelLabel="Never mind"
         onCancel={() => setPendingAction(null)}
         onConfirm={() => {
-          if (pendingAction === "CANCEL") applyStatus("CANCELLED");
-          if (pendingAction === "DECLINE") applyStatus("DECLINED");
-          if (pendingAction === "NO_SHOW") applyStatus("NO_SHOW");
+          if (pendingAction === "CANCEL") {
+            applyStatus("CANCELLED");
+            toast.show("neutral", "Booking cancelled");
+          }
+          if (pendingAction === "DECLINE") {
+            applyStatus("DECLINED");
+            toast.error("Booking declined");
+          }
+          if (pendingAction === "NO_SHOW") {
+            applyStatus("NO_SHOW");
+            toast.error("Marked as no-show");
+          }
         }}
       />
     </div>

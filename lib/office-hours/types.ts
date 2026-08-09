@@ -281,3 +281,46 @@ export interface PolicyComparisonRow {
   utilizationPct: number;
   avgWaitMinutes: number;
 }
+
+// Research Tools (Pages.txt #31) — mirrors capstone-db-schema.md §4.4's
+// synthetic_demand_runs table. `dataset jsonb` (the generated demand stream
+// itself) is intentionally not modeled here: it's an opaque blob/pointer the
+// UI never renders directly, only references by demandRunId.
+export type ArrivalPattern = "POISSON" | "BURST_BEFORE_DEADLINE" | "UNIFORM";
+
+export interface SyntheticDemandRun {
+  id: number;
+  seed: number;
+  popularitySkew: number;
+  arrivalPattern: ArrivalPattern;
+  numStudents: number;
+  numLecturers: number;
+  generatedAt: string; // ISO-8601
+}
+
+// One policy's row in the `experiments` table (capstone-db-schema.md §4.4) —
+// every field maps 1:1 to a DB column.
+export interface ExperimentPolicyResult {
+  policyName: AllocationPolicyName;
+  giniSlotsPerStudent: number;
+  giniLecturerAccess: number;
+  maxMinRatio: number;
+  slotUtilizationPct: number;
+  avgTimeToFillSeconds: number;
+  offerRejectionRatePct: number;
+  avgWaitTimeSeconds: number;
+  waitTimeVariance: number;
+}
+
+// The DB's `experiments` table is one row per (demand_run, policy); this
+// groups those rows because POST /research/experiments (capstone-api-
+// endpoints.md §7.1) takes policyIds[] and GET /{id} returns metrics per
+// policy in one response.
+export interface Experiment {
+  id: number;
+  demandRunId: number;
+  seed: number;
+  policyNames: AllocationPolicyName[];
+  results: ExperimentPolicyResult[];
+  runAt: string; // ISO-8601
+}

@@ -53,17 +53,16 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 - [X] 28. Allocation Events audit log — same route, "Events" tab (filterable by policy/decision, score/seed or override detail per row)
 - [X] 29. Manual Override action — same route, "New override" form on the Events tab (slot + student + reason → appends an `OVERRIDDEN` event)
 - [X] 30. Analytics dashboard — `app/(dashboard)/dashboard/admin/analytics/page.tsx` (advisor load, no-show rate by lecturer, equity Gini + Lorenz curve, policy-comparison small multiples)
-- [ ] 31. Research tools (stretch, may be dev-only) — out of scope for now, skip per Pages.txt note
+- [X] 31. Research tools — `app/(dashboard)/dashboard/admin/research/page.tsx` (Demand / Experiments tabs: synthetic demand-run generator, seeded deterministic experiment runner, fairness-vs-efficiency frontier scatter, JSON/CSV export; no sidebar nav entry by design — linked from Analytics' Policy Comparison instead, see `DASHBOARD-UPGRADE.md` Phase 13)
 
 ## Summary
 
-- Done: 30 / 31 — every page shipped except #31 Research tools, which stays out of scope per
-  Pages.txt's own note ("stretch, may be dev-only, maybe skip in FE scope").
+- Done: 31 / 31 — every page in the Pages.txt list is shipped, including #31 Research tools
+  (Phase 13), previously skipped as "stretch, may be dev-only."
 - Extra (not in the 31-page list but built): role-aware `/dashboard` home shell
 
 ## Next up
 
-Nothing planned — the 31-page list is complete except the explicitly-skipped #31 Research
-tools. Future work is polish/hardening (real backend wiring, the several "preview only" /
-"not wired" UI-complete features called out throughout this doc and `DASHBOARD-UPGRADE.md`)
-rather than new pages.
+Nothing planned — the full 31-page list is complete. Future work is polish/hardening (real
+backend wiring, the several "preview only" / "not wired" UI-complete features called out
+throughout this doc and `DASHBOARD-UPGRADE.md`) rather than new pages.

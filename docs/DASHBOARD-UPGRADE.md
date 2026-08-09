@@ -339,6 +339,179 @@ Admin block entirely — the dashboard's admin nav no longer has any 404 links, 
   `curl` confirms both new routes 307-redirect unauthenticated and return 200 with no error
   markers when logged in as the seeded admin account.
 
+### Phase 13 — Research Tools (Pages.txt #31) ✅ done
+Planned with Opus (`Plan` agent) before implementation, implemented in Sonnet 5. Closes the
+Pages.txt 31-page list entirely — #31 was previously marked out-of-scope/skipped as "stretch,
+may be dev-only"; built now since it's the actual capstone research deliverable (§11.4), fully
+spec'd on paper (`capstone-api-endpoints.md` §7.1, `capstone-db-schema.md` §4.4) but with no UI
+until this phase.
+
+- **Nav placement — revised after initial ship.** Phase 13 originally shipped with no sidebar
+  entry (API doc tags these endpoints `Admin (dev/research tooling)`, "not user-facing
+  product features" — reasoning mirrored Recurring Bookings' no-nav-slot precedent, #14 Phase
+  9). **User override**: add it to the admin sidebar anyway, prioritizing discoverability over
+  the dev-only framing — this was flagged as a trivial follow-up in the original plan and is
+  exactly what got picked. `DashboardShell.tsx`'s `"ADMIN"` case gained **Research** (last
+  item, `FlaskConical` icon) — admin nav is now Dashboard · Users · Schedule · Allocation ·
+  Analytics · Research. The Analytics → Research `SectionHeader` link (below) stays as a
+  contextual shortcut alongside the sidebar entry, not instead of it; the page's honesty
+  banner copy was adjusted to drop the now-inaccurate "that's why it isn't in the sidebar"
+  line.
+- **`/dashboard/admin/research`** (new route) — `FilterTabs` Demand / Experiments tabs, same
+  shape every admin page since Phase 10 has used, plus an honesty banner
+  ("illustrative... deterministic given a seed... no real allocation engine runs client-side")
+  under the header, matching the Notifications-SSE-stub / `getMockPolicyComparison` precedent
+  for not faking a live backend.
+  - **Demand** (mirrors `POST /research/synthetic-demand`): `DemandRunForm` (seed, popularity
+    skew, arrival pattern, student/lecturer counts) appends a `SyntheticDemandRun` to
+    page-local state; `DemandRunCard` list; delete gated behind `ConfirmModal`.
+  - **Experiments** (mirrors `POST /research/experiments`, `GET /{id}`, `GET /{id}/export`):
+    `ExperimentForm` (pick a demand run + seed + policy checkboxes) runs
+    `computeExperimentResults()` and appends an `Experiment`. Results view: a full metrics
+    `ResultsTable` (all eight `experiments`-table columns), two `ActivityChart` small
+    multiples (Gini, utilization — reusing the exact `valueLabel`/`formatValue`/`accent`
+    props Phase 12 added), the fairness-vs-efficiency frontier (below), and JSON/CSV export
+    via a client-side `Blob` + anchor-click download (no backend to call, so this is generated
+    on click rather than faked as a real export job). `ExperimentCard` list re-selects a past
+    run into the results view.
+- **Fairness-vs-efficiency frontier** (`FrontierScatter`, the §11.4 "frontier per policy"
+  deliverable): read the `dataviz` skill first, per the plan. Built as a genuine 2-D
+  `recharts` `ScatterChart` — utilization % (efficiency) on X, Gini (fairness) on Y, one
+  labeled point per policy — **not** a dual-axis combo chart layering two measures onto one
+  categorical X, the skill's #1 anti-pattern. Policy name is a direct text label
+  (`LabelList`) on every point, never color-alone identity; the active policy gets the one
+  `rose` accent, the rest a neutral `paper-200`/`ink-300` fill — same "highlight one, mute
+  the rest" philosophy as `ActivityChart`, not a four-way categorical palette. Mandatory
+  table-view toggle included (dataviz non-negotiable), axis titles state the fairness/
+  efficiency direction directly ("lower-right = fairer and more efficient").
+- **Data layer** (`types.ts`, `mock-data.ts`, purely additive): `ArrivalPattern`,
+  `SyntheticDemandRun`, `ExperimentPolicyResult`, `Experiment` — field names/shapes mirror the
+  DB schema's `synthetic_demand_runs`/`experiments` columns 1:1 (the plan's grounding step).
+  `getMockSyntheticDemandRuns`, `getMockExperiments`, and `computeExperimentResults()` — a
+  **pure, seeded** (`mulberry32`, never `Math.random()`) function that jitters
+  `getMockPolicyComparison()`'s existing baselines by ±8% per seed, then derives the four
+  DB-only metrics (`maxMinRatio`, `avgTimeToFillSeconds`, `offerRejectionRatePct`,
+  `waitTimeVariance`) from those jittered numbers rather than seeding them independently —
+  so a "fairer" policy can't randomly also read as faster, and the same seed always
+  reproduces the same result (demonstrates NFR-3 reproducibility, the literal point of this
+  page). Reuses `getMockPolicyComparison()` rather than inventing a second, potentially
+  disagreeing set of illustrative numbers — Analytics' Policy Comparison and this page's
+  Experiments tab stay consistent by construction.
+- No new shared UI primitives — reused `Card`, `SectionHeader`, `FilterTabs`, `FormField`/
+  `TextInput`, `ActivityChart`, `ConfirmModal`, `IconChip`, `ACCENT_TOKENS`. Page-local
+  subcomponents (`DemandRunForm`, `DemandRunCard`, `ExperimentForm`, `ResultsTable`,
+  `FrontierScatter`, `ExperimentCard`) stay inline in the page file, matching the established
+  convention.
+- Verified: `npx tsc --noEmit` clean (same one pre-existing unrelated `app/page.tsx` error
+  every phase has had — one new error was introduced and fixed during this phase, a
+  `LabelList` `formatter` prop typed against `recharts`' generic `RenderableText`, not the
+  narrower `AllocationPolicyName`), `npx eslint` clean after fixing five
+  `react/no-unescaped-entities` catches (apostrophes in the honesty-banner copy) on first
+  pass. `curl` confirms the new route 307-redirects unauthenticated and returns 200 with no
+  error markers when logged in as the seeded admin account.
+
+### Phase 14 — Toast notification system ✅ done (Wave 1)
+Planned with Opus (`Plan` agent) before implementation, implemented in Sonnet 5. The app had two
+blocking floating-overlay primitives (`ConfirmModal`, glass; `BookSlotModal`, restrained) but no
+non-blocking, auto-dismissing feedback channel — logout, waitlist accept, and most admin CRUD
+mutations fired silently. This phase adds that channel and wires it onto the transactional spine
+(auth + booking lifecycle); admin CRUD wiring is an explicitly deferred Wave 2.
+
+- **Visual decision — revised on user direction with a reference screenshot.** Originally shipped
+  flat/restrained (a `Card`-style surface with a hue-colored left border), reasoned against
+  DESIGN.md §1 as: a toast has no backdrop, so glass-over-arbitrary-light-content would repeat the
+  readability problem §1 keeps glass away from elsewhere. **User override, with a concrete
+  reference design**: dark glassmorphism card, top-right, colored icon circle per type — the
+  toast now carries its **own** dark tint (new tokens `--toast-glass-bg`/`--toast-glass-border`,
+  `app/globals.css`) rather than the light `--glass-bg` auth/modal tint, so it still physically
+  reads as frosted glass without a dark backdrop underneath it. Documented as an explicit §1.3
+  exception in `DESIGN.md`, not a silent contradiction of §1 — see there for the full reasoning.
+  The hue mapping itself is unchanged (still `HUE_TOKENS`, still no new status colors): a solid
+  `var(--{hue}-500)` circle with a white icon, sitting inside a soft same-hue halo at 30% opacity.
+- **`lib/ui/toast-config.ts`** (new) — `ToastVariant` (`success/error/warning/info/neutral`) →
+  `HUE_TOKENS` hue + lucide icon + per-variant default duration + aria role/live, mirroring
+  `notification-config.ts`'s "map onto the existing hues, invent nothing new" rule. `error`→
+  `danger`, `neutral`→the `CANCELLED`-style neutral hue — no new colors, `accent-palette.ts`'s
+  decorative set is explicitly the wrong source since a toast reports a real status outcome
+  (§1.2's own rule for status vs. decorative tiles, applied here to toasts).
+- **`components/ToastProvider.tsx`** (new, top-level like `ConfirmModal` — app-wide, not
+  dashboard-only, since auth pages fire toasts too) — `useToast()` exposes
+  `success/error/warning/info(title, opts?)` convenience methods plus `show(variant, title, opts?)`
+  for the neutral variant and full control, and `dismiss(id)`. `ToastOptions` carries an optional
+  `description`, `duration` (0 = sticky), `icon` override, and `action` (label + href/onClick).
+  Ids come from a `useRef` monotonic counter incremented inside the `show` callback (an event-
+  handler-time call, never render) — not `Date.now()`/`Math.random()`, the Phase 8 lint trap.
+  Stack capped at 3 visible (oldest silently dropped) so a burst of rapid actions can't run away.
+  Per-toast `ToastTimer` auto-dismisses (success/info/neutral 4s, warning 5s, error 6s — errors
+  linger longer) and pauses on hover/focus, resuming with the remaining time; timestamps use
+  `new Date().getTime()`, never `Date.now()`.
+  - **Lint trap hit and fixed**: the initial "start the timer once" logic was first written as a
+    `useRef` guard mutated directly during render (`if (!startedOnceRef.current) { ... }`) — the
+    React Compiler's `react-hooks/refs` rule (writing `ref.current` mid-render) correctly flagged
+    this. Fixed by moving the one-shot start into an empty-deps `useEffect` with a `clearTimer`
+    cleanup, matching `ConfirmModal`'s own effect-based (not render-mutated) side-effect pattern.
+  - Swipe-to-dismiss on mobile via `framer-motion`'s `drag="x"` (no new dependency — already
+    installed), gated off under `useReducedMotion()` same as every other animated primitive in
+    the app (`ConfirmModal`, `BookSlotModal`, `AuthLayout`, the Phase 5 `StaggerGroup`).
+    Enter/exit uses the identical `AnimatePresence` + easing curve (`[0.22, 1, 0.36, 1]`,
+    `duration: 0.22`) `ConfirmModal` already established, so the app's motion language stays one
+    voice.
+  - Position: **top-right on desktop, top-center full-width on mobile** — revised from the
+    original bottom-right placement on the same user-directed redesign, matching the reference
+    screenshot's stacking (newest closest to the corner, older toasts pushed down; `show()` now
+    prepends rather than appends). The original bottom placement was chosen to dodge the
+    dashboard topbar's bell/search pill; top-right can visually overlap that chrome when both are
+    open at once — an accepted trade-off for matching the requested design exactly, not something
+    flagged as needing a fix.
+  - Accessibility: each toast is `role="status" aria-live="polite"` (success/info/warning/
+    neutral) or `role="alert" aria-live="assertive"` (error) so it's announced without stealing
+    focus; the dismiss button has `aria-label="Dismiss"`; nothing autofocuses.
+- **Mount point**: `app/layout.tsx` (root), wrapping `PageTransition` and nested inside
+  `AuthProvider` — the only layout spanning all three route groups (auth/dashboard/landing), so
+  one provider instance survives a `router.push()` across group boundaries (e.g. the
+  login-success toast surviving the redirect to `/dashboard`). Mounting separately in
+  `(auth)/layout.tsx` and `(dashboard)/layout.tsx` would have created two provider instances and
+  dropped exactly that toast mid-flight.
+- **Toast vs. `Notification`-inbox boundary (reusable principle, not a case-by-case list)**:
+  "toast the actor, notify the recipient." A toast is ephemeral feedback about an action *the
+  current user just took*, non-persisted; a `Notification` (Phase 8's bell inbox) is a persisted
+  record of something that happened *to* the user, typically via another party's action, and
+  must survive reloads. The two never overlap in rendered output — a toast is never derived from
+  `getMockNotifications()`, and confirming your own booking fires a toast to you while the
+  `Notification` write for the *other* party stays a documented wiring comment (no backend to
+  actually deliver it to a second session, same "don't fake cross-user persistence" rule as the
+  Phase 8 SSE stub).
+- **Wave 1 wiring (the transactional spine — auth + booking lifecycle)**, scoped deliberately
+  small per the Phase 11/12 "split a big block" precedent — proving the primitive on ~10 call
+  sites before mechanically wiring the remaining ~20 admin CRUD buttons as Wave 2:
+  - `LoginForm.tsx`: `handleSubmit` success → `toast.success("Welcome back")`; the two inline
+    `justRegistered`/`justReset` query-param banners replaced outright by
+    `toast.success("Account created"/"Password reset", { description })` fired from a
+    mount-time `useEffect` (URL-derived, not render-mutated state). Inline field-level `role="alert"`
+    error text is kept for both login and register failures — deliberate: a validation failure
+    benefits from proximity to the field, and the toast channel is reserved for successes here so
+    the two `aria-live` regions never double-announce the same failure. (Flagged as a judgment
+    call the user may want to override toward "toast every outcome.")
+  - `DashboardShell.tsx`: logout `ConfirmModal onConfirm` → `toast.show("neutral", "Signed out")`.
+  - `bookings/[id]/page.tsx`: Confirm → success "Booking confirmed"; Mark completed → success
+    "Marked completed"; Save record → success "Meeting record saved"; the shared `ConfirmModal`
+    branches on `pendingAction` for Cancel → neutral "Booking cancelled", Decline → error
+    "Booking declined", No-show → error "Marked as no-show".
+  - `lecturers/[id]/slots/page.tsx` (`BookSlotModal`'s caller): booking `onConfirm` → success
+    "Request sent" with an `action` link to `/dashboard/bookings`.
+  - `waitlist/page.tsx`: `accept()` → success "Offer accepted"; decline `ConfirmModal onConfirm` →
+    neutral "Offer declined".
+- **Wave 2 (deferred, documented follow-up)**: the ~20 remaining admin CRUD call sites across
+  Availability (Rules/Exceptions), Admin Users/Semesters, Admin Schedule (Import/Manual Entry),
+  Allocation (Policies/Override), and Research Tools (Demand/Experiments) — plus Profile's save/
+  password-change and Recurring Bookings' create/cancel. Mechanical once the primitive exists
+  (`toast.success("X deleted")` per handler); intentionally not bundled into this phase so it
+  doesn't repeat the mistake the Phase 11/12 admin split specifically avoided.
+- Verified: `npx tsc --noEmit` clean (same one pre-existing unrelated `app/page.tsx` error every
+  phase has had), `npx eslint` clean after fixing the `react-hooks/refs` catch above. `curl`
+  confirms `/login`, `/dashboard`, `/dashboard/bookings/1`, `/dashboard/lecturers/1/slots`, and
+  `/dashboard/waitlist` all still return 200 post-wiring.
+
 ---
 
 ## 4. DESIGN.md guardrails checklist (apply to every phase)

@@ -51,7 +51,7 @@ export default function RegisterForm() {
       <h1 className="text-2xl font-bold text-white mb-5">Create account</h1>
 
       {error && (
-        <p className="text-xs text-red-300 mb-3" role="alert">
+        <p className="text-xs text-[var(--danger-300)] mb-3" role="alert">
           {error}
         </p>
       )}

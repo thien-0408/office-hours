@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ChevronDown,
   Clock,
+  FlaskConical,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { useToast } from "@/components/ToastProvider";
 import { LogoWithText } from "@/components/LogoWithText";
 import { initials } from "@/lib/avatar";
 import { useUserAvatarSrc } from "@/lib/use-avatar";
@@ -64,6 +66,7 @@ function getNavItems(role: UserRole): NavItem[] {
         { label: "Schedule", href: "/dashboard/admin/schedule", icon: CalendarDays },
         { label: "Allocation", href: "/dashboard/admin/allocation", icon: Shuffle },
         { label: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
+        { label: "Research", href: "/dashboard/admin/research", icon: FlaskConical },
       ];
   }
 }
@@ -119,6 +122,7 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const toast = useToast();
   const prefersReducedMotion = useReducedMotion();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -352,6 +356,7 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
         onConfirm={() => {
           setLogoutConfirmOpen(false);
           logout();
+          toast.show("neutral", "Signed out");
         }}
         onCancel={() => setLogoutConfirmOpen(false)}
       />

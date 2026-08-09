@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
-import { LogoWithText } from "@/components/LogoWithText";
+import { useToast } from "@/components/ToastProvider";
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
+  const toast = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,12 +21,20 @@ export default function LoginForm() {
   const justRegistered = searchParams.get("registered") === "1";
   const justReset = searchParams.get("reset") === "1";
 
+  // One-time redirect banners, now a toast instead of inline text — the
+  // "toast the actor" success case, replacing the two static banners below.
+  useEffect(() => {
+    if (justRegistered) toast.success("Account created", { description: "Log in to continue." });
+    if (justReset) toast.success("Password reset", { description: "Log in with your new password." });
+  }, [justRegistered, justReset, toast]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
       await login({ email, password });
+      toast.success("Welcome back");
       router.push(searchParams.get("redirectTo") || "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -36,24 +45,10 @@ export default function LoginForm() {
 
   return (
     <div className="w-full p-12 sm:p-15 rounded-[28px] bg-white/10 backdrop-blur-lg shadow-2xl text-white flex flex-col font-sans">
-      {/* Brand Logo Header */}
-        {/* <LogoWithText className="h-8 w-auto text-white mb-3" /> */}
-  
-      {/* Main Form Title */}
       <h1 className="text-2xl font-bold text-white mb-5">Login</h1>
 
-      {justRegistered && !error && (
-        <p className="text-xs text-emerald-300 mb-3">
-          Account created — log in to continue.
-        </p>
-      )}
-      {justReset && !error && (
-        <p className="text-xs text-emerald-300 mb-3">
-          Password reset — log in with your new password.
-        </p>
-      )}
       {error && (
-        <p className="text-xs text-red-300 mb-3" role="alert">
+        <p className="text-xs text-[var(--danger-300)] mb-3" role="alert">
           {error}
         </p>
       )}

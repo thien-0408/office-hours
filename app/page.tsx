@@ -321,10 +321,10 @@ export default function LandingPage() {
               Book time with your advisor, not a game of email chicken.
             </h2>
             <ul className="flex flex-col gap-4 m-0 p-0 list-none">
-              {STUDENT_POINTS.map((point) => (
+              {STUDENT_POINTS.map((point, idx) => (
                 <li key={point} className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-600 border-2 border-blue-950 flex items-center justify-center text-white text-[11px] font-bold">
-                    ✓
+                  <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full font-mono text-[11px] font-bold rotate-[-3deg] border-2 bg-blue-600 text-white border-blue-950">
+                    {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span className="text-[14.5px] leading-[1.6] text-slate-700">{point}</span>
                 </li>
@@ -345,10 +345,10 @@ export default function LandingPage() {
               Publish your availability once. Stop tracking it in your head.
             </h2>
             <ul className="flex flex-col gap-4 m-0 p-0 list-none">
-              {LECTURER_POINTS.map((point) => (
+              {LECTURER_POINTS.map((point, idx) => (
                 <li key={point} className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-blue-600 border-2 border-blue-950 flex items-center justify-center text-white text-[11px] font-bold">
-                    ✓
+                  <span className="mt-0.5 shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full font-mono text-[11px] font-bold rotate-[-3deg] border-2 bg-blue-600 text-white border-blue-950">
+                    {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span className="text-[14.5px] leading-[1.6] text-slate-700">{point}</span>
                 </li>
@@ -408,13 +408,16 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="bg-blue-600 py-19 px-6 text-center text-white">
+        <span className="inline-block bg-blue-950 text-white text-[10.5px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rotate-[-2deg] border border-white/40 rounded-sm mb-4">
+          Open for the pilot semester
+        </span>
         <h2 className="[font-family:var(--font-display)] font-black uppercase text-[clamp(26px,4vw,40px)] tracking-[-0.01em] text-white mb-3.5 text-balance">
           Ready to stop emailing your professor?
         </h2>
         <p className="text-sm text-blue-100 mb-7">Registration takes about a minute.</p>
         <Link
           href="/register"
-          className="inline-flex items-center gap-2 bg-white text-blue-600 text-sm font-bold px-[26px] py-[13px] rounded-full no-underline shadow-lg hover:bg-blue-50 transition-all hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 bg-white text-blue-600 text-sm font-bold px-[26px] py-[13px] rounded-full no-underline border-2 border-blue-950 shadow-[5px_5px_0_0_#0b1b49] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[3px_3px_0_0_#0b1b49] transition-all"
         >
           Get started — it&apos;s free
         </Link>

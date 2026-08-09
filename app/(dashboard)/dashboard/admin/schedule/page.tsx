@@ -14,7 +14,7 @@ import {
   getMockScheduleImportHistory,
 } from "@/lib/office-hours/mock-data";
 import type { AdminScheduleEntry, ParsedTimetableRow, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
-import { DAY_NAME_TO_INDEX, parseTimetablePdf } from "@/lib/timetable/parse-pdf";
+import { DAY_NAME_TO_INDEX, parseTimetablePdf, type TimetableMetadata } from "@/lib/timetable/parse-pdf";
 
 type Tab = "IMPORT" | "MANUAL" | "SEARCH";
 
@@ -62,6 +62,7 @@ function ImportTab({
   const [status, setStatus] = useState<ParseStatus>("idle");
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<ParsedTimetableRow[]>([]);
+  const [metadata, setMetadata] = useState<TimetableMetadata | null>(null);
   const [imported, setImported] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -72,11 +73,13 @@ function ImportTab({
     setImported(false);
     try {
       const parsed = await parseTimetablePdf(file);
-      setRows(parsed);
+      setRows(parsed.rows);
+      setMetadata(parsed.metadata);
       setStatus("done");
     } catch (err) {
       console.error(err);
       setRows([]);
+      setMetadata(null);
       setStatus("error");
     }
   }
@@ -124,9 +127,19 @@ function ImportTab({
           <p className="text-[13px] text-[var(--danger-700)] font-semibold mt-3">Couldn&apos;t parse that file. Try another PDF.</p>
         )}
         {status === "done" && (
-          <p className="text-[13px] text-[var(--success-700)] font-semibold mt-3">
-            Parsed {rows.length} class session{rows.length === 1 ? "" : "s"} from {fileName}.
-          </p>
+          <>
+            <p className="text-[13px] text-[var(--success-700)] font-semibold mt-3">
+              Parsed {rows.length} class session{rows.length === 1 ? "" : "s"} from {fileName}.
+            </p>
+            {(metadata?.name || metadata?.semester) && (
+              <p className="text-[12.5px] text-[var(--ink-500)] mt-1">
+                Detected in PDF:{" "}
+                {metadata.name && <span className="font-semibold text-[var(--ink-700)]">{metadata.name}</span>}
+                {metadata.name && metadata.semester && " · "}
+                {metadata.semester && <span className="font-semibold text-[var(--ink-700)]">{metadata.semester}</span>}
+              </p>
+            )}
+          </>
         )}
       </Card>
 

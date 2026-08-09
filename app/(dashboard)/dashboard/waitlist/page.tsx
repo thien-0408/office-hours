@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Clock, ListPlus, ShieldAlert } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { useToast } from "@/components/ToastProvider";
 import { Card } from "@/components/dashboard/Card";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { StatTile } from "@/components/dashboard/StatTile";
@@ -80,6 +81,7 @@ export default function WaitlistPage() {
   const [entries, setEntries] = useState<WaitlistEntry[]>(() => getMockWaitlistEntries());
   const [filter, setFilter] = useState<Filter>("ALL");
   const [pendingDeclineId, setPendingDeclineId] = useState<number | null>(null);
+  const toast = useToast();
 
   const waitingCount = entries.filter((e) => e.status === "WAITING").length;
   const offeredCount = entries.filter((e) => e.status === "OFFERED").length;
@@ -87,6 +89,7 @@ export default function WaitlistPage() {
 
   function accept(id: number) {
     setEntries((list) => list.map((e) => (e.id === id ? { ...e, status: "FULFILLED" } : e)));
+    toast.success("Offer accepted");
   }
 
   function decline(id: number) {
@@ -140,6 +143,7 @@ export default function WaitlistPage() {
         onConfirm={() => {
           if (pendingDeclineId !== null) decline(pendingDeclineId);
           setPendingDeclineId(null);
+          toast.show("neutral", "Offer declined");
         }}
       />
     </div>

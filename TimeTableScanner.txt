@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Scan Lịch Học EIU - Auto Sort</title>
+  <title>Tool Scan Lịch Học EIU - Fix Thứ 2 & Trích Xuất Chuẩn</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <!-- Header -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
       <h1 class="text-2xl font-bold text-slate-800">
-        📄 Tool Scan Lịch Học EIU (Tự Động Sort Theo Thứ Trong Tuần)
+        📄 Tool Scan Lịch Học EIU (Đã Fix Lỗi Thứ 2 & Tách Trường Dữ Liệu)
       </h1>
       <p class="text-slate-500 text-sm mt-1">
         Bóc tách chính xác và sắp xếp thứ tự Thứ 2 ➔ Thứ 3 ➔ ... ➔ Chủ Nhật.
@@ -82,7 +82,6 @@
 
     let parsedResults = [];
 
-    // Bảng trọng số để Sort theo thứ trong tuần
     const dayOrder = {
       'Thứ 2': 1,
       'Thứ 3': 2,
@@ -95,7 +94,13 @@
 
     function cleanStr(str) {
       if (!str) return '';
-      return str.replace(/[\uE000-\uF8FF]/g, ' ').replace(/\s+/g, ' ').trim();
+      return str
+        .normalize('NFC')
+        .replace(/[\uE000-\uF8FF]/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[–—]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
     async function processPdf(event) {
@@ -129,11 +134,11 @@
         const nameMatch = fullString.match(/Sinh\s*viên:\s*([^|\n\r]+)/i);
         const semesterMatch = fullString.match(/(Học\s*kỳ\s*\d+\s*-\s*Năm\s*học\s*[\d\s-]+)/i);
 
-        document.getElementById('studentName').textContent = nameMatch ? nameMatch[1].trim() : 'Nguyễn Đình Thiện';
-        document.getElementById('semester').textContent = semesterMatch ? semesterMatch[1].trim() : 'Học kỳ 4 - Năm học 2025 - 2026';
+        document.getElementById('studentName').textContent = nameMatch ? nameMatch[1].trim() : 'N/A';
+        document.getElementById('semester').textContent = semesterMatch ? semesterMatch[1].trim() : 'N/A';
         document.getElementById('metadataCard').classList.remove('hidden');
 
-        // 2. Định vị cột (Thứ 2 -> Chủ Nhật)
+        // 2. Định vị ranh giới cột chính xác
         const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
         const dayCols = [];
 
@@ -147,56 +152,74 @@
 
         dayCols.sort((a, b) => a.x - b.x);
 
+        // ĐIỀU CHỈNH QUAN TRỌNG: Loại bỏ hoàn toàn trục thời gian bên trái (X < rulerMaxX)
+        const rulerMaxX = dayCols[0].x - 30;
+
         function getDayByX(x) {
-          if (dayCols.length === 0) return 'Chưa rõ';
-          for (let i = 0; i < dayCols.length; i++) {
-            let leftBound = (i === 0) ? 0 : (dayCols[i-1].x + dayCols[i].x) / 2;
-            let rightBound = (i === dayCols.length - 1) ? 99999 : (dayCols[i].x + dayCols[i+1].x) / 2;
-            if (x >= leftBound && x < rightBound) {
-              return dayCols[i].name;
+          if (x < rulerMaxX) return null; // Loại tuyệt đối cột thời gian dọc ngoài cùng
+
+          let closestDay = dayCols[0].name;
+          let minDiff = Math.abs(x - dayCols[0].x);
+
+          for (let i = 1; i < dayCols.length; i++) {
+            let diff = Math.abs(x - dayCols[i].x);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestDay = dayCols[i].name;
             }
           }
-          return dayCols[0].name;
+          return closestDay;
         }
 
-        // 3. Dùng "Phòng:" làm điểm neo bóc tách
-        const roomAnchors = allTextItems.filter(item => item.text.includes('Phòng:'));
+        // 3. Lọc danh sách item thuộc khu vực các cột Thứ
+        const validItems = allTextItems.map(item => ({
+          ...item,
+          day: getDayByX(item.x)
+        })).filter(item => item.day !== null);
+
+        // 4. Bóc tách môn học dựa trên Neo "Phòng:"
+        const roomAnchors = validItems.filter(item => item.text.includes('Phòng:'));
         parsedResults = [];
 
         roomAnchors.forEach(anchor => {
-          const day = getDayByX(anchor.x);
+          const day = anchor.day;
 
-          const cluster = allTextItems.filter(item => 
-            getDayByX(item.x) === day && 
-            Math.abs(item.y - anchor.y) <= 130
+          // Gom các thẻ chữ nằm trong cùng cột và cùng ô môn học (Y trong phạm vi ±110px)
+          const cluster = validItems.filter(item => 
+            item.day === day && 
+            Math.abs(item.y - anchor.y) <= 110
           );
 
           cluster.sort((a, b) => b.y - a.y);
           const clusterText = cluster.map(i => i.text).join(' ');
 
-          // A. Thời gian
+          // A. Thời gian học (Lấy chuỗi thời gian thực bên trong ô môn học, ví dụ: 09:30-11:30 hoặc 16:30-18:30)
           let time = 'Chưa rõ';
-          const timeMatch = clusterText.match(/([0-2]?\d:[0-5]\d)\s*[^0-9a-zA-Z]{1,8}\s*([0-2]?\d:[0-5]\d)/);
-          if (timeMatch) {
-            time = `${timeMatch[1]} - ${timeMatch[2]}`;
+          const timeMatches = [...clusterText.matchAll(/([0-2]?\d:[0-5]\d)\s*(?:->|-)\s*([0-2]?\d:[0-5]\d)/g)];
+          if (timeMatches.length > 0) {
+            // Lấy thời gian viết bên trong ô thay vì mốc thời gian cột
+            time = `${timeMatches[0][1]} - ${timeMatches[0][2]}`;
           }
 
-          // B. Mã môn & Tên môn
+          // B. Mã môn & Tên môn học
           let subjectCode = 'N/A';
           let subjectName = 'Chưa nhận diện';
-          const codeMatch = clusterText.match(/([A-Z]{3,4}\s*\d{3})/i);
+
+          // B1. Bắt Mã Môn (Ưu tiên dạng (CSW 437) hoặc CSW 430, bỏ qua tên phòng LAB405)
+          const codeMatch = clusterText.match(/\b(?!(?:LAB|ROOM|PHONG)\b)([A-Z]{3,4}\s*\d{3})\b/i);
           if (codeMatch) {
             subjectCode = codeMatch[1].toUpperCase();
           }
 
-          const subjectNameMatch = clusterText.match(/([A-Za-zÀ-ỹ\s]{3,60})\s*\(\s*[A-Z]{3,4}\s*\d{3}\s*\)/i);
-          if (subjectNameMatch) {
-            subjectName = subjectNameMatch[1].trim();
-          } else if (codeMatch) {
-            const idx = clusterText.indexOf(codeMatch[0]);
-            if (idx > 0) {
-              let before = clusterText.substring(0, idx).replace(/[()]/g, '').trim();
-              if (before.length > 2) subjectName = before;
+          // B2. Bắt Tên Môn (Lấy đoạn chữ nằm trước Mã Môn hoặc Nhóm:)
+          const namePartMatch = clusterText.match(/^(.+?)(?=\s*\(\s*[A-Z]{3,4}\s*\d{3}\s*\)|\s*\b[A-Z]{3,4}\s*\d{3}\b|\s*Nhóm:|\s*Phòng:)/i);
+          if (namePartMatch) {
+            subjectName = namePartMatch[1].trim();
+          } else {
+            // Fallback: Lấy dòng đầu tiên trong cluster
+            const firstItem = cluster.find(i => !i.text.startsWith('Nhóm:') && !i.text.startsWith('Phòng:'));
+            if (firstItem) {
+              subjectName = firstItem.text.replace(/\(\s*[A-Z]{3,4}\s*\d{3}\s*\)/gi, '').trim();
             }
           }
 
@@ -207,11 +230,11 @@
             group = groupMatch[1];
           }
 
-          // D. Phòng
+          // D. Phòng (Xóa sạch ký tự - bị thừa ở cuối mã phòng)
           let room = 'ONLINE / Chưa rõ';
           const roomMatch = clusterText.match(/Phòng:\s*([A-Za-z0-9\.\-\s]+?)(?=\s*GV:|\s*Lab|\s*Phòng|\s*ONLINE|\s*\d{1,2}:|$)/i);
           if (roomMatch) {
-            room = roomMatch[1].trim();
+            room = roomMatch[1].replace(/[\s-]+$/, '').trim();
           }
 
           // E. Giảng viên
@@ -232,7 +255,7 @@
           });
         });
 
-        // 4. SORT THEO THỨ TRONG TUẦN (Thứ 2 ➔ Thứ 3 ➔ ... ➔ Chủ Nhật)
+        // 5. SORT THEO THỨ TRONG TUẦN & GIỜ BẮT ĐẦU
         parsedResults.sort((a, b) => {
           const valA = dayOrder[a.day] || 99;
           const valB = dayOrder[b.day] || 99;
@@ -240,7 +263,6 @@
           if (valA !== valB) {
             return valA - valB;
           }
-          // Nếu trùng Thứ, tiếp tục xếp theo giờ bắt đầu
           return a.time.localeCompare(b.time);
         });
 
