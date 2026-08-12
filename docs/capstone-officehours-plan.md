@@ -93,7 +93,7 @@ Current office-hours coordination at most universities is manual and inefficient
 - ❌ Payments / tutoring marketplace (this is not Calendly-for-tutors).
 - ❌ Physical room-booking / resource scheduling (different problem).
 - ❌ Native mobile apps — responsive PWA only.
-- ❌ Deep SIS integration — CSV import is sufficient for the capstone; live SIS sync is future work.
+- ❌ Deep SIS integration — a one-off AAO timetable export import is sufficient for the capstone; live SIS sync is future work. (Format note: this line originally said "CSV" but the shipped parser is PDF-only, `lib/timetable/parse-pdf.ts` — see capstone-db-schema.md §8 open question 8 for the unresolved CSV-vs-PDF discrepancy across docs.)
 - ❌ Multi-university tenancy — single-institution deployment only.
 
 > **Scope-creep guard:** The most likely creep is toward LMS features ("add meeting notes" → "add tasks" → "add grades"). Meeting notes are acceptable *only* as an optional text field on a completed booking; anything beyond that is out of scope.
@@ -211,7 +211,7 @@ graph LR
 - **NFR-1 Performance:** Bookable-slot query for a lecturer/week returns in < 300 ms at pilot scale; benchmarked up to 10k lecturers / 100k students (synthetic) for the research chapter.
 - **NFR-2 Correctness:** Double-booking must be impossible even under concurrent requests — enforced at the DB layer (exclusion constraint), not only in application code.
 - **NFR-3 Reproducibility:** Allocation decisions are deterministic given inputs + policy + seed, and fully logged.
-- **NFR-4 Security:** JWT auth; role-based authorization on every endpoint; passwords hashed (bcrypt/argon2); CSV import validated (MIME + schema).
+- **NFR-4 Security:** JWT auth; role-based authorization on every endpoint; passwords hashed (bcrypt/argon2); AAO import validated (MIME + schema).
 - **NFR-5 Usability:** Mobile-first PWA; a student can book in ≤ 3 taps from the lecturer's page.
 - **NFR-6 Observability:** Structured logs; basic metrics (booking counts, allocation runs, notification delivery).
 - **NFR-7 Deployability:** `docker compose up` brings up the full stack for dev; single-VM deploy for the pilot.
@@ -412,10 +412,12 @@ erDiagram
     ALLOCATION_EVENTS {
         bigint id PK
         bigint waitlist_entry_id FK
-        bigint policy_id FK
-        numeric computed_score
-        enum decision "SELECTED|SKIPPED"
-        int random_seed
+        bigint policy_id FK "NULL when decision=OVERRIDDEN"
+        numeric computed_score "NULL when decision=OVERRIDDEN"
+        enum decision "SELECTED|SKIPPED|OVERRIDDEN"
+        int random_seed "NULL when decision=OVERRIDDEN"
+        bigint overridden_by FK "set only when decision=OVERRIDDEN"
+        string override_reason "set only when decision=OVERRIDDEN"
         timestamptz allocated_at
     }
     NOTIFICATIONS {

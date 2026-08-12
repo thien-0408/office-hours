@@ -120,6 +120,29 @@ export async function parseTimetablePdf(file: File): Promise<ParsedTimetableResu
   dayCols.sort((a, b) => a.x - b.x);
   const rulerMaxX = dayCols.length > 0 ? dayCols[0].x - 30 : -Infinity;
 
+  // 2b. Each day column header carries its calendar date in parentheses right
+  // next to the day name (e.g. "Thứ 2" ... "(03/08)") — nearest-x match onto
+  // dayCols, same as data rows below. First match wins (the header repeats
+  // identically on every page).
+  const dayDateByName: Record<string, string> = {};
+  const dateHeaderItems = allTextItems.filter((item) => /^\(\s*\d{1,2}\/\d{1,2}\s*\)$/.test(item.text));
+  for (const item of dateHeaderItems) {
+    if (dayCols.length === 0) break;
+    let closestDay = dayCols[0].name;
+    let minDiff = Math.abs(item.x - dayCols[0].x);
+    for (const col of dayCols) {
+      const diff = Math.abs(item.x - col.x);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestDay = col.name;
+      }
+    }
+    if (!dayDateByName[closestDay]) {
+      const dateMatch = item.text.match(/(\d{1,2}\/\d{1,2})/);
+      if (dateMatch) dayDateByName[closestDay] = dateMatch[1];
+    }
+  }
+
   // 3. Resolve every item's day column up front (ruler-excluded), so
   // clustering below only ever sees text that's actually inside a day
   // column — this is the part of the fix that keeps ruler text out of
@@ -181,7 +204,7 @@ export async function parseTimetablePdf(file: File): Promise<ParsedTimetableResu
     const lecturerMatch = clusterText.match(/GV:\s*([A-Za-zÀ-ỹ\s]+?)(?=\s*\d{1,2}:|\s*Lab|\s*Phòng|\s*ONLINE|\s*$)/i);
     if (lecturerMatch) lecturerName = lecturerMatch[1].trim();
 
-    rows.push({ day, startTime, endTime, subjectCode, subjectName, group, room, lecturerName });
+    rows.push({ day, date: dayDateByName[day] ?? null, startTime, endTime, subjectCode, subjectName, group, room, lecturerName });
   }
 
   // 5. Sort Thứ 2 → Chủ Nhật, then by start time within a day.

@@ -29,7 +29,7 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 - [X] 10. Find a Lecturer / Browse Lecturers — `app/(dashboard)/dashboard/lecturers/page.tsx` (search + department filter)
 - [X] 11. Lecturer Slot Picker — `app/(dashboard)/dashboard/lecturers/[id]/slots/page.tsx` (weekly grid, conflict-marked against the student's own bookings)
 - [X] 12. Book a Slot — `components/dashboard/BookSlotModal.tsx`, opened from the slot picker
-- [X] 13. Group Booking management — `components/dashboard/ParticipantManager.tsx`, used from `BookSlotModal` and Booking Detail; UI-complete, explicitly not wired to a real participants model (schema unknown from this repo)
+- [X] 13. Group Booking management — `components/dashboard/ParticipantManager.tsx`, used from `BookSlotModal` and Booking Detail; UI-complete, not wired to a real backend. The schema *is* now documented (capstone-db-schema.md §3.3 `booking_participants`), but its shape (`student_id`) doesn't match this UI's add-by-email flow — see the open question noted there.
 - [X] 14. Recurring Booking setup — `app/(dashboard)/dashboard/bookings/recurring/page.tsx`; UI-complete (setup form + series list + cancel), preview-only, not wired to a real recurrence engine
 - [X] 15. My Waitlist — `app/(dashboard)/dashboard/waitlist/page.tsx` (position/status, accept/decline offers)
 - [ ] 32. Import My Timetable — planned as a role-aware tab on `app/(dashboard)/dashboard/schedule/page.tsx` (see #18); student self-uploads own official AAO export → own `SCHEDULE_ENTRIES`, reusing the `ImportTab` machinery from Admin's Schedule Import (#24). Not yet built; net-new scope beyond the original 31-page list, added when schedule import moved from admin-only to self-service.

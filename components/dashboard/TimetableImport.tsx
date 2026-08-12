@@ -139,7 +139,10 @@ export function TimetableImport<T extends { id: number }>({
               <tbody>
                 {rows.map((row, i) => (
                   <tr key={i} className="border-b border-[var(--paper-100)] last:border-0">
-                    <td className="py-2 pr-4 font-semibold text-[var(--brand-700)] whitespace-nowrap">{row.day}</td>
+                    <td className="py-2 pr-4 font-semibold text-[var(--brand-700)] whitespace-nowrap">
+                      {row.day}
+                      {row.date && <span className="text-[var(--ink-500)] font-normal"> ({row.date})</span>}
+                    </td>
                     <td className="py-2 pr-4 tabular-nums whitespace-nowrap">
                       {row.startTime || "?"}–{row.endTime || "?"}
                     </td>

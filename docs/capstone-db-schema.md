@@ -164,7 +164,8 @@ CREATE TYPE import_status AS ENUM ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED'
 CREATE TABLE schedule_imports (
     id              bigserial PRIMARY KEY,
     semester_id     bigint NOT NULL REFERENCES semesters (id),
-    uploaded_by     bigint NOT NULL REFERENCES users (id),
+    uploaded_by     bigint NOT NULL REFERENCES users (id),  -- who performed the upload (self-service: same as target_user_id; admin-on-behalf-of: the admin)
+    target_user_id  bigint REFERENCES users (id),           -- whose schedule this import populates. NULL means "same as uploaded_by" (self-service); non-NULL is an admin uploading for someone else — resolves the §8 open question below in favor of an explicit column rather than inferring ownership from parsed rows
     original_filename varchar(255) NOT NULL,
     status          import_status NOT NULL DEFAULT 'QUEUED',
     rows_processed  int NOT NULL DEFAULT 0,
@@ -281,6 +282,8 @@ CREATE TABLE booking_participants (
 ```
 
 > Capacity enforcement (`COUNT(participants) <= slots.capacity`) is application-layer or a trigger — not expressible as a plain CHECK across tables.
+>
+> **Open question — add-by-email vs. add-by-`student_id`.** This table only stores `student_id` (an existing `users.id`), but the built group-booking UI (`components/dashboard/ParticipantManager.tsx`) adds participants by typing an email address, implying an invite step that resolves email → `student_id`. Undefined: what happens when the typed email doesn't match an existing student account — silently reject, create a pending invite row, or auto-provision an account? Needs a decision (and possibly a `booking_invites` table) before this maps cleanly onto `booking_participants` as currently defined.
 
 ### 3.4 `meeting_records` (FR-10) — attendance & optional notes
 
@@ -328,7 +331,7 @@ CREATE TABLE waitlist_entries (
     slot_id         bigint NOT NULL REFERENCES slots (id) ON DELETE CASCADE,
     student_id      bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     requested_at    timestamptz NOT NULL DEFAULT now(),
-    priority_score  numeric(10,4),          -- computed by the active allocation policy at evaluation time
+    priority_score  numeric(10,4),          -- last-computed score for this entry, written whenever allocation runs against it (see note below)
     status          waitlist_status NOT NULL DEFAULT 'WAITING',
     offered_at      timestamptz,
     offer_expires_at timestamptz,
@@ -339,13 +342,15 @@ CREATE INDEX idx_waitlist_slot_status ON waitlist_entries (slot_id, status);
 CREATE INDEX idx_waitlist_student ON waitlist_entries (student_id, status);
 ```
 
+> **Open question — `priority_score` vs. `allocation_events.computed_score` (§4.3).** These are two different columns and their relationship isn't specified yet. Recommended resolution: `priority_score` is a **cache** — every time an allocation run evaluates this entry (whether it wins or is skipped), the engine writes that run's `computed_score` into both `waitlist_entries.priority_score` (so `GET /waitlist/me` can show current standing without joining `allocation_events`) and a new `allocation_events` row (the permanent, run-scoped log). So `priority_score` always reflects the *most recent* evaluation, while `allocation_events` retains every evaluation over the entry's lifetime. Confirm this before implementing — the alternative (a continuously-updated running score independent of discrete allocation runs) would need a different trigger design entirely.
+
 ### 4.2 `allocation_policies` (FR-13; UC12)
 
 ```sql
 CREATE TABLE allocation_policies (
     id          bigserial PRIMARY KEY,
     name        varchar(30) NOT NULL UNIQUE CHECK (name IN ('FCFS', 'NEED', 'ROUND_ROBIN', 'HYBRID')),
-    config      jsonb NOT NULL DEFAULT '{}', -- e.g. {"needWeight":0.5,"waitWeight":0.3,"randomWeight":0.2}
+    config      jsonb NOT NULL DEFAULT '{}', -- HYBRID: {"needWeight":0.5,"waitTimeWeight":0.3,"fairnessWeight":0.2} (matches the FE's getMockAllocationPolicies()/admin allocation page field names — NOT "waitWeight"/"randomWeight", an earlier naming this doc used that the FE didn't follow)
     is_active   boolean NOT NULL DEFAULT false
 );
 
@@ -363,7 +368,7 @@ CREATE TABLE allocation_events (
     policy_id           bigint REFERENCES allocation_policies (id),   -- NULL when decision = OVERRIDDEN (no policy ran)
     computed_score      numeric(10,4),                                -- NULL when decision = OVERRIDDEN
     decision            allocation_decision NOT NULL,
-    random_seed         int,                                          -- NULL when decision = OVERRIDDEN
+    random_seed         int,                                          -- NULL when decision = OVERRIDDEN. One seed per allocation RUN (i.e. per slot free-up event), shared by every SELECTED/SKIPPED row that run produces — not a fresh seed per candidate. This is what makes a run replayable: re-running allocate(slot, sameCandidates, config, seed) must reproduce the same winner. Distinct from experiments.seed/synthetic_demand_runs.seed (§4.4), which seed an entire synthetic demand stream, not a single allocation decision.
     overridden_by        bigint REFERENCES users (id),                -- admin who issued the override; set only when decision = OVERRIDDEN
     override_reason       varchar(255),                                -- set only when decision = OVERRIDDEN
     allocated_at        timestamptz NOT NULL DEFAULT now(),
@@ -480,5 +485,6 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 3. **`recurring_bookings` conflict semantics** — does a cancelled single occurrence of a recurring series get its own `bookings` row with `status = CANCELLED`, or is "skip this week" tracked separately from the `bookings` table? Current design assumes the former (simpler, consistent with the state machine in §9.3).
 4. **Migration ordering** — `schedule_entries.import_batch_id` references `schedule_imports`, which is defined later in this document for readability; the actual Flyway migration must create `schedule_imports` first or add the FK via a later `ALTER TABLE`.
 5. **Retention** — `allocation_events` and `notifications` grow unboundedly; decide a partitioning/archival strategy before the pilot's 4-week window if experiment volume is high (§11.4 synthetic stress runs could generate a lot of rows fast).
-6. **Override authorization scope** — mirrors the open question in the API doc: should `overridden_by` be restricted to department-scoped admins at the query/service layer, or does the schema need an explicit `department` scoping column on `allocation_events` to enforce it at the data layer too?
-7. **Import ownership vs uploader** — confirm whether to add `schedule_imports.target_user_id` (recommended, see §2.4) or infer the owner from the parsed rows' matched user. Also decide whether a fresh self-service import **replaces** the user's prior entries for that semester or **appends** (recommend replace-per-semester to avoid stale duplicates).
+6. **Override authorization scope — currently decided by omission, not on purpose.** Mirrors the open question in the API doc: should `overridden_by` be restricted to department-scoped admins at the query/service layer, or does the schema need an explicit `department` scoping column on `allocation_events` to enforce it at the data layer too? **Flag:** the built admin allocation UI (`app/(dashboard)/dashboard/admin/allocation/page.tsx`) already grants any authenticated Admin unrestricted override with no department check — so the permissive answer has been picked by default in the frontend, without anyone deciding it as a real requirement. Confirm this is actually the intended answer before the backend locks it in, rather than inheriting it accidentally from the FE mock.
+7. **Import ownership vs uploader** — resolved: `schedule_imports.target_user_id` is now defined (§2.4) — NULL means self-service, non-NULL means an admin uploaded on that user's behalf. Still open: whether a fresh self-service import **replaces** the user's prior entries for that semester or **appends** (recommend replace-per-semester to avoid stale duplicates).
+8. **AAO export file format — three-way disagreement across docs, needs one answer.** `capstone-officehours-plan.md` §5.3 lists CSV as sufficient scope; this doc and the API doc describe the import generically as "an AAO export" without naming a format; the actually-shipped parser (`lib/timetable/parse-pdf.ts`, wired into both the self-service and admin schedule pages) only accepts PDF. Confirm whether AAO can export CSV/XLSX too (in which case a second parser path is missing) or whether PDF is the only real AAO export format the school produces (in which case the plan doc's CSV mention is simply stale and should be corrected to PDF).

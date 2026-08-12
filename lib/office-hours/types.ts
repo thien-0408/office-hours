@@ -213,6 +213,7 @@ export interface AdminScheduleEntry extends ScheduleBlock {
 // output 1:1, so the port is a straight translation, not a redesign.
 export interface ParsedTimetableRow {
   day: string; // "Thứ 2".."Chủ Nhật" as scanned; mapped to dayOfWeek on import
+  date: string | null; // "03/08" — the calendar date scanned off that day's column header, informational only (entries import as a recurring weekly pattern, not a one-off date)
   startTime: string;
   endTime: string;
   subjectCode: string;

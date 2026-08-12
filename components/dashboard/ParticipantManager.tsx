@@ -6,9 +6,14 @@ import type { BookingParticipant } from "@/lib/office-hours/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormField, TextInput } from "./FormField";
 
-// Group-booking participants aren't wired to a real bookings-participants
-// model yet — the actual schema isn't known from this repo. This is a UI/
-// interaction demo: purely local state, no persistence.
+// Group-booking participants aren't wired to a real backend yet — this is a
+// UI/interaction demo: purely local state, no persistence. Note the shape
+// mismatch with the documented schema (capstone-db-schema.md §3.3
+// booking_participants: booking_id + student_id, i.e. an existing user):
+// this component adds participants by typed email, implying an invite flow
+// that resolves an email to a student_id (and needs a decision for what
+// happens when the email doesn't match an existing student) — that flow
+// isn't specified anywhere yet.
 export function ParticipantManager({
   participants,
   onChange,

@@ -238,7 +238,11 @@ pattern the Lecturer phase didn't need but Admin's size warranted.
     actually built" way `recharts`/`react-day-picker` were (§2); worker wired via
     `new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url)` (the standard
     bundler-native pattern) rather than the reference tool's cdnjs URL, since the app already
-    has a bundler and this avoids an external runtime dependency. The page shows a parse
+    has a bundler and this avoids an external runtime dependency. Extended beyond the ported
+    tool to also scan each day-column header's calendar date (e.g. "(03/08)" next to "Thứ 2")
+    via nearest-x match onto the same `dayCols`, exposed as `ParsedTimetableRow.date` and shown
+    in the preview table next to the day name — informational only, since entries still import
+    as a recurring weekly pattern (`dayOfWeek`), not a one-off date. The page shows a parse
     status line, a preview table, an "Import N entries" button that appends mapped rows into
     the shared `AdminScheduleEntry[]` state, and an import-history table
     (`getMockScheduleImportHistory()` + session-added rows) standing in for the "job status

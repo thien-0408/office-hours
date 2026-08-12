@@ -162,10 +162,10 @@ Maps to `WAITLIST_ENTRIES`.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/allocation-policies` | Admin | List available policies: `FCFS`, `NEED`, `ROUND_ROBIN`, `HYBRID`, each with `config` JSON and `isActive`. |
+| GET | `/allocation-policies` | Admin | List available policies: `FCFS`, `NEED`, `ROUND_ROBIN`, `HYBRID`, each with `config` JSON (e.g. `HYBRID`: `{ needWeight, waitTimeWeight, fairnessWeight }` — matches capstone-db-schema.md §4.2) and `isActive`. |
 | POST | `/allocation-policies` | Admin | Register a new policy config (e.g., a tuned `HYBRID` weighting). |
 | PATCH | `/allocation-policies/{id}` | Admin | Update `config` (weights, decay factors, randomization seed range). |
-| POST | `/allocation-policies/{id}/activate` | Admin | UC12. Sets this policy `is_active = true` (only one active at a time, or per-department if extended). |
+| POST | `/allocation-policies/{id}/activate` | Admin | UC12. Sets this policy `is_active = true`. **Global, single active policy** — the schema's `uq_allocation_policies_one_active` unique index is unscoped (no `department` column). Per-department policies were floated as a stretch idea but are explicitly cut from scope, not deferred: no doc models a department-scoped policy and none should be assumed. |
 | POST | `/slots/{id}/run-allocation` | System (internal) / Admin (manual trigger for demo/testing) | UC14. Triggered automatically on cancel/decline, or manually invocable by Admin for the live policy-comparison demo (Risk #6 mitigation). Executes `allocate(slot, candidates, activePolicy)`, writes `ALLOCATION_EVENTS`, sends offer notification. |
 | POST | `/slots/{id}/override` | Admin | **Manual override, bypasses the active policy.** `{ studentId, reason }`. Admin directly assigns the freed slot to a specific waitlisted (or new) student — e.g., the policy misbehaves, a lecturer objects to the algorithmic pick, or an edge case needs a human call during the pilot. Cancels any outstanding `OFFERED` waitlist entry for the slot, creates a `CONFIRMED` booking for `studentId`, and writes an `ALLOCATION_EVENTS` row with `decision: OVERRIDDEN` so the deviation is still logged and auditable — it does not bypass the reproducibility trail, only the automated selection. |
 | GET | `/allocation-events` | Admin | Full audit log, filterable by `slotId`, `policyId`, `decision` (incl. `OVERRIDDEN`), `dateRange` — the reproducibility backbone (§10.1). |
