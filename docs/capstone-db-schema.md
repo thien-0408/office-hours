@@ -145,7 +145,7 @@ CREATE TABLE schedule_entries (
     start_time      time NOT NULL,
     end_time        time NOT NULL,
     room            varchar(50),
-    source          varchar(20) NOT NULL DEFAULT 'CSV_IMPORT', -- 'CSV_IMPORT' | 'MANUAL'
+    source          varchar(20) NOT NULL DEFAULT 'AAO_IMPORT', -- 'AAO_IMPORT' | 'MANUAL'
     import_batch_id bigint REFERENCES schedule_imports (id) ON DELETE SET NULL,
     CONSTRAINT chk_schedule_time_order CHECK (end_time > start_time)
 );
@@ -154,9 +154,9 @@ CREATE INDEX idx_schedule_entries_user_semester ON schedule_entries (user_id, se
 CREATE INDEX idx_schedule_entries_day ON schedule_entries (semester_id, day_of_week);
 ```
 
-> Design note (§10.1 of the plan): storing both student classes and lecturer teaching in one generic table keeps the conflict query uniform — `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`.
+> Design note (§10.1 of the plan): storing both student classes and lecturer teaching in one generic table keeps the conflict query uniform — `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`. Entries are owned by `user_id` regardless of who performed the upload; the uploader is captured on the linked `schedule_imports.uploaded_by`, not on this row.
 
-### 2.4 `schedule_imports` — audit trail for CSV ingestion (supports FR-5 endpoint `/schedule-imports`)
+### 2.4 `schedule_imports` — audit trail for AAO export ingestion (supports FR-5 self-service endpoint `/users/me/schedule-imports` and FR-5a admin endpoint `/schedule-imports`)
 
 ```sql
 CREATE TYPE import_status AS ENUM ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED');
@@ -176,6 +176,8 @@ CREATE TABLE schedule_imports (
 ```
 
 > `schedule_entries.import_batch_id` forward-references this table — in a real migration, create `schedule_imports` **before** `schedule_entries`, or add the FK in a later `ALTER TABLE`. Order noted here for readability only.
+>
+> `uploaded_by` records **who performed the upload** — the self-serving user themselves, or an admin uploading on their behalf. Recommend adding a nullable `target_user_id bigint REFERENCES users(id)`: NULL means "uploaded_by is also the owner" (self-service), non-NULL means admin uploaded for that target. See §8 open question.
 
 ---
 
@@ -466,7 +468,7 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 2. **Denormalized `lecturer_id`/`time_range` on `bookings`**, populated by trigger — required because Postgres `EXCLUDE` constraints can't span a join to `slots`. Trade-off: a small sync-on-write cost for a storage-layer correctness guarantee.
 3. **Materialized `slots`** over computed-on-the-fly — costs storage/regeneration complexity on rule edits, buys referenceable rows for waitlist/allocation-event foreign keys. Directly serves the research thread (§11).
 4. **`allocation_events` logs `SKIPPED` candidates too**, not just winners — required for Gini/variance computation across the full candidate pool, not an audit nicety.
-5. **`schedule_entries` is deliberately generic** (one table, not `student_classes` + `lecturer_teaching`) — keeps the conflict-detection query identical regardless of caller role.
+5. **`schedule_entries` is deliberately generic** (one table, not `student_classes` + `lecturer_teaching`) — keeps the conflict-detection query identical regardless of caller role. This genericness is also what makes self-service student/lecturer import a zero-schema-change feature: the same row shape is produced regardless of uploader role.
 6. **`OVERRIDDEN` is a decision outcome, not a bypass of the audit trail** — an admin override still produces an `allocation_events` row (via `chk_allocation_event_policy_fields`), just with `overridden_by`/`override_reason` instead of `policy_id`/`computed_score`/`random_seed`. This keeps NFR-3's "every decision is logged" guarantee true even when a human, not a policy, made the call — and gives the pilot an operational safety net (Risk #1: lecturer trust) without punching a hole in the research data's integrity, since `/research/experiments` filters overrides out by default.
 
 ---
@@ -479,3 +481,4 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 4. **Migration ordering** — `schedule_entries.import_batch_id` references `schedule_imports`, which is defined later in this document for readability; the actual Flyway migration must create `schedule_imports` first or add the FK via a later `ALTER TABLE`.
 5. **Retention** — `allocation_events` and `notifications` grow unboundedly; decide a partitioning/archival strategy before the pilot's 4-week window if experiment volume is high (§11.4 synthetic stress runs could generate a lot of rows fast).
 6. **Override authorization scope** — mirrors the open question in the API doc: should `overridden_by` be restricted to department-scoped admins at the query/service layer, or does the schema need an explicit `department` scoping column on `allocation_events` to enforce it at the data layer too?
+7. **Import ownership vs uploader** — confirm whether to add `schedule_imports.target_user_id` (recommended, see §2.4) or infer the owner from the parsed rows' matched user. Also decide whether a fresh self-service import **replaces** the user's prior entries for that semester or **appends** (recommend replace-per-semester to avoid stale duplicates).

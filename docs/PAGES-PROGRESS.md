@@ -32,12 +32,13 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 - [X] 13. Group Booking management — `components/dashboard/ParticipantManager.tsx`, used from `BookSlotModal` and Booking Detail; UI-complete, explicitly not wired to a real participants model (schema unknown from this repo)
 - [X] 14. Recurring Booking setup — `app/(dashboard)/dashboard/bookings/recurring/page.tsx`; UI-complete (setup form + series list + cancel), preview-only, not wired to a real recurrence engine
 - [X] 15. My Waitlist — `app/(dashboard)/dashboard/waitlist/page.tsx` (position/status, accept/decline offers)
+- [ ] 32. Import My Timetable — planned as a role-aware tab on `app/(dashboard)/dashboard/schedule/page.tsx` (see #18); student self-uploads own official AAO export → own `SCHEDULE_ENTRIES`, reusing the `ImportTab` machinery from Admin's Schedule Import (#24). Not yet built; net-new scope beyond the original 31-page list, added when schedule import moved from admin-only to self-service.
 
 ## Lecturer
 
 - [X] 16. Availability Rules manager — `app/(dashboard)/dashboard/availability/page.tsx` ("Rules" tab: day/time-range/slot-length/effective-dates CRUD)
 - [X] 17. Availability Exceptions manager — same route, "Exceptions" tab (one-off BLOCK/ADD entries)
-- [X] 18. My Schedule (busy blocks) — `app/(dashboard)/dashboard/schedule/page.tsx` (read-mostly day-column view of imported/manual teaching blocks)
+- [~] 18. My Schedule (busy blocks) — `app/(dashboard)/dashboard/schedule/page.tsx` (day-column view of imported/manual teaching blocks). Currently read-mostly with a banner pointing corrections at Admin's Schedule Import; planned to gain a self-import affordance (own AAO export upload) and become role-aware to also serve student self-import (#32) on the same route, matching the existing role-aware pattern used by `/dashboard` and `/dashboard/bookings`.
 - [X] 19. Bookings to Review — covered by `/dashboard/bookings` (lecturer perspective defaults its status filter to Pending); intentionally not a separate route, per the Phase 8 plan
 - [X] 20. Slot Waitlist view — same `/dashboard/availability` route, "Waitlist" tab (read-only queue transparency per slot, no allocation actions — that's Admin's Manual Override, #29)
 - [X] 21. Meeting Record entry — covered by `app/(dashboard)/dashboard/bookings/[id]/page.tsx`'s "Meeting record" card (attended + notes, shown to the lecturer once a booking is COMPLETED); intentionally not a separate route, built as part of Phase 8's Booking Detail
@@ -46,7 +47,7 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 
 - [X] 22. User management — `app/(dashboard)/dashboard/admin/users/page.tsx` ("Users" tab: search/filter, inline role+department edit, deactivate)
 - [X] 23. Semester management — same route, "Semesters" tab (add, activate, delete)
-- [X] 24. Schedule Import — `app/(dashboard)/dashboard/admin/schedule/page.tsx` ("Import" tab: PDF upload, ported from the user's `TimeTableScanner.txt` reference tool via `lib/timetable/parse-pdf.ts`, plus a mocked import-history table)
+- [X] 24. Schedule Import — `app/(dashboard)/dashboard/admin/schedule/page.tsx` ("Import" tab: PDF upload, ported from the user's `TimeTableScanner.txt` reference tool via `lib/timetable/parse-pdf.ts`, plus a mocked import-history table). Now the admin-on-behalf-of / oversight path — self-service for student/lecturer is #32 and the extended #18, reusing this same parser and `ImportTab` UI.
 - [X] 25. Manual Schedule Entry editor — same route, "Manual Entry" tab (single-entry add/delete)
 - [X] 26. Slot search/ops view — same route, "Slot Search" tab (cross-lecturer, reuses `getMockOfficeHours`)
 - [X] 27. Allocation Policies manager — `app/(dashboard)/dashboard/admin/allocation/page.tsx` ("Policies" tab: register/activate/delete, per-policy-type weight config)
@@ -57,12 +58,18 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 
 ## Summary
 
-- Done: 31 / 31 — every page in the Pages.txt list is shipped, including #31 Research tools
-  (Phase 13), previously skipped as "stretch, may be dev-only."
+- Done: 31 / 31 — every page in the original Pages.txt list is shipped, including #31 Research
+  tools (Phase 13), previously skipped as "stretch, may be dev-only."
 - Extra (not in the 31-page list but built): role-aware `/dashboard` home shell
+- Net-new scope (not in the original 31-page list): #32 Import My Timetable — schedule import
+  moved from admin-only to self-service (student/lecturer upload their own official AAO export);
+  admin's #24 becomes an on-behalf-of/oversight fallback rather than the sole ingestion path.
 
 ## Next up
 
-Nothing planned — the full 31-page list is complete. Future work is polish/hardening (real
-backend wiring, the several "preview only" / "not wired" UI-complete features called out
-throughout this doc and `DASHBOARD-UPGRADE.md`) rather than new pages.
+- Make `/dashboard/schedule` (#18) role-aware and add the student self-import tab (#32), reusing
+  `ImportTab`/`parseTimetablePdf` from Admin's Schedule Import (#24). Requires extracting
+  `ImportTab` into a shared component generic over entry type (currently parameterized on
+  `AdminScheduleEntry[]`), and adding a student nav entry in `DashboardShell.tsx`.
+- Otherwise, future work is polish/hardening (real backend wiring, the several "preview only" /
+  "not wired" UI-complete features called out throughout this doc and `DASHBOARD-UPGRADE.md`).

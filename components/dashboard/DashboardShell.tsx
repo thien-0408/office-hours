@@ -51,6 +51,7 @@ function getNavItems(role: UserRole): NavItem[] {
         { label: "Find a Lecturer", href: "/dashboard/lecturers", icon: Search },
         { label: "My Bookings", href: "/dashboard/bookings", icon: CalendarDays },
         { label: "My Waitlist", href: "/dashboard/waitlist", icon: Clock },
+        { label: "My Schedule", href: "/dashboard/schedule", icon: BookOpen },
       ];
     case "LECTURER":
       return [

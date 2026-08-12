@@ -804,8 +804,9 @@ export function getMockAvailabilityExceptions(): AvailabilityException[] {
   ];
 }
 
-// Stands in for GET /lecturers/me/schedule — imported/manual teaching
-// schedule, read-mostly for the lecturer (admin edits, Pages.txt #18).
+// Stands in for GET /users/me/schedule-entries (lecturer) — self-imported/
+// manual teaching schedule (Pages.txt #18). Previously admin-only; now the
+// lecturer's own AAO self-import populates this (capstone-api-endpoints.md §4).
 export function getMockScheduleBlocks(): ScheduleBlock[] {
   return [
     { id: 1, title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
@@ -814,6 +815,25 @@ export function getMockScheduleBlocks(): ScheduleBlock[] {
     { id: 4, title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
     { id: 5, title: "Thesis committee — B. Nguyen", dayOfWeek: 5, startTime: "13:00", endTime: "14:00", source: "MANUAL" },
   ];
+}
+
+// Stands in for GET /users/me/schedule-entries (student) — self-imported
+// class timetable (Pages.txt #32, net-new), feeding the conflict filter on
+// GET /lecturers/{id}/slots. No prior admin-imported seed rows, since this
+// data source is student-owned from the start.
+export function getMockStudentScheduleBlocks(): ScheduleBlock[] {
+  return [
+    { id: 1, title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 2, title: "CS 220 — Data Structures", dayOfWeek: 2, startTime: "13:30", endTime: "15:00", source: "IMPORTED" },
+    { id: 3, title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+  ];
+}
+
+// Stands in for GET /users/me/schedule-imports — self-service import history
+// (student or lecturer). No seed rows: self-service is net-new, so a fresh
+// account has nothing imported yet until they upload their own AAO export.
+export function getMockMyScheduleImportHistory(): ScheduleImportHistoryEntry[] {
+  return [];
 }
 
 // Stands in for GET /lecturers/me/slot-waitlist — per-slot queue transparency

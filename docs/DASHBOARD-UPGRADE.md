@@ -184,6 +184,9 @@ remaining lecturer-nav 404s (`/dashboard/availability`, `/dashboard/schedule`).
   static info cards (title, time range, Imported/Manual source badge) instead of bookable
   buttons; a banner note points corrections at the future Admin Schedule Import/Manual Entry
   pages (#24/#25) rather than faking an "Edit" button with nothing behind it.
+  **Superseded/extended** — schedule import moved from admin-only to self-service (see the
+  Phase 11 note below); this banner copy is planned to change to offer self-import instead of
+  routing corrections to admin.
 - **Data layer** (`lib/office-hours/types.ts`, `mock-data.ts`, purely additive): `AvailabilityRule`,
   `AvailabilityException`/`ExceptionType`, `ScheduleBlock`, `SlotWaitlistGroup`/
   `SlotWaitlistQueueEntry`; `getMockAvailabilityRules`, `getMockAvailabilityExceptions`,
@@ -245,6 +248,17 @@ pattern the Lecturer phase didn't need but Admin's size warranted.
   - **Manual Entry** (#25): fallback single-entry add/delete, sharing the same
     `AdminScheduleEntry[]` state as Import (lecturer `<select>` from `getMockLecturers()`, title,
     day `FilterTabs`, start/end time).
+  - **Superseded/extended by a planned self-service phase:** the admin-only Import tab is no
+    longer the sole ingestion path. Students and lecturers are planned to self-upload their own
+    official AAO timetable export via a role-aware `/dashboard/schedule` (extending #18, adding
+    #32 — see `PAGES-PROGRESS.md`), reusing the same `ImportTab`/`parseTimetablePdf` machinery.
+    Admin's Import tab here remains as an on-behalf-of/oversight fallback, not the only path.
+    `ImportTab`'s parse logic and `lib/timetable/parse-pdf.ts` are unchanged; only the surrounding
+    page (target user, entry shape) differs, and `ImportTab` will need extracting into a shared
+    component generic over entry type (currently parameterized on `AdminScheduleEntry[]`) rather
+    than living inline in this admin page. See `capstone-officehours-plan.md` §5.1 and
+    `capstone-api-endpoints.md` §4 for the design rationale (AAO exports are institutionally
+    authoritative, so uploader identity doesn't affect trust).
   - **Slot Search** (#26): cross-lecturer browser reusing `getMockOfficeHours()` as-is (already
     department-filterable, the same function the public listing and dashboard stat tiles read)
     plus a new lecturer-name text filter — no new mock data needed, UI-only addition.

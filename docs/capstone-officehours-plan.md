@@ -57,10 +57,10 @@ Current office-hours coordination at most universities is manual and inefficient
 
 | Persona | Role | Goals | Pain today |
 |---|---|---|---|
-| **Minh** | Student | Book advisor time that doesn't clash with classes; get a fair shot at popular lecturers | Emails go unanswered; slots taken before he sees them |
-| **Dr. Lan** | Lecturer / Advisor | Publish availability once; avoid double-bookings; not get swamped | Manual tracking; no-shows; overwhelmed by requests |
+| **Minh** | Student | Book advisor time that doesn't clash with classes; get a fair shot at popular lecturers; import his own class timetable so booking never clashes with class | Emails go unanswered; slots taken before he sees them |
+| **Dr. Lan** | Lecturer / Advisor | Publish availability once; avoid double-bookings; not get swamped; import her own teaching timetable | Manual tracking; no-shows; overwhelmed by requests |
 | **Team Alpha** | Capstone team (group) | Book a recurring weekly slot with their advisor as a group | Coordinating 4 calendars + advisor by email is painful |
-| **Ms. Huong** | Department admin | Balance advisor load; monitor equity and no-shows | No data at all today |
+| **Ms. Huong** | Department admin | Monitor and aggregate imported schedules; balance advisor load; monitor equity and no-shows | No data at all today |
 
 ---
 
@@ -71,7 +71,7 @@ Current office-hours coordination at most universities is manual and inefficient
 - **Accounts & roles:** Student, Lecturer, Admin. JWT auth.
 - **Semester management:** Admin defines active semester with date bounds.
 - **Availability management:** Lecturer defines recurring weekly availability + one-off exceptions (block a date, add an extra slot).
-- **Schedule import:** CSV upload of class/teaching schedules for students and lecturers → converted to "busy" blocks used for conflict detection.
+- **Schedule import (self-service):** Students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable export → parsed into "busy" blocks used for conflict detection. Because the file must be a genuine AAO export (the school's system of record), not free-form self-reported data, any user may upload their own without a data-integrity risk. Admin retains an aggregation/oversight + manual-entry fallback role, not exclusive upload rights.
 - **Conflict-aware booking:** Student requests a slot; system rejects any slot clashing with the student's classes, the lecturer's teaching, or an existing booking. Enforced at the database level via exclusion constraints.
 - **Booking lifecycle:** request → confirm/decline → complete / cancel / mark no-show.
 - **Notifications:** Email (SMTP) + in-app (SSE) for booking events.
@@ -121,7 +121,8 @@ graph LR
         uc7(["Add availability exception"])
         uc8(["Confirm / decline request"])
         uc9(["Mark attendance / no-show"])
-        uc10(["Import schedule CSV"])
+        uc10(["Import own AAO timetable"])
+        uc10b(["Manage/aggregate schedules"])
         uc11(["Manage semesters & users"])
         uc12(["Configure allocation policy"])
         uc13(["View equity & load analytics"])
@@ -134,14 +135,16 @@ graph LR
     student --- uc3
     student --- uc4
     student --- uc5
+    student --- uc10
 
     lecturer --- uc6
     lecturer --- uc7
     lecturer --- uc8
     lecturer --- uc9
     lecturer --- uc1
+    lecturer --- uc10
 
-    admin --- uc10
+    admin --- uc10b
     admin --- uc11
     admin --- uc12
     admin --- uc13
@@ -185,7 +188,8 @@ graph LR
 | FR-2 | Admin creates and activates a semester with date bounds | Must |
 | FR-3 | Lecturer defines recurring weekly availability rules | Must |
 | FR-4 | Lecturer adds one-off exceptions (block/add) | Must |
-| FR-5 | Admin imports schedule CSV → busy blocks per user | Must |
+| FR-5 | Students/lecturers import their **own** official AAO timetable export → busy blocks; parser rejects non-AAO files | Must |
+| FR-5a | Admin can manually add/edit/delete any user's busy blocks (support fallback) and view aggregated schedule data across users | Must |
 | FR-6 | System computes bookable slots = availability − conflicts | Must |
 | FR-7 | Student requests a booking; DB enforces no double-booking | Must |
 | FR-8 | Lecturer confirms/declines; both parties notified | Must |
@@ -428,7 +432,7 @@ erDiagram
 
 - **Double-booking prevention.** On `BOOKINGS`, use a PostgreSQL exclusion constraint over `(lecturer_id WITH =, time_range WITH &&)` for confirmed bookings (`EXCLUDE USING gist`). This makes overlapping confirmed bookings *impossible* at the storage layer, even under concurrency — a clean point to raise in your defense.
 - **SLOTS: materialized vs computed.** Two options: (a) generate concrete `SLOTS` rows from rules (simpler to reason about, easier to attach waitlists and allocation events — **recommended**), or (b) compute slots on the fly (less storage, harder to reference). The ERD assumes (a) because the research needs concrete, referenceable slot objects.
-- **SCHEDULE_ENTRIES is generic.** Both student classes and lecturer teaching are stored here as busy blocks. This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?"
+- **SCHEDULE_ENTRIES is generic.** Both student classes and lecturer teaching are stored here as busy blocks. This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export, self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
 - **ALLOCATION_EVENTS is the reproducibility backbone.** Every decision records the policy, the computed score, and the random seed → experiments are replayable, which is exactly what a committee wants to see.
 
 ---

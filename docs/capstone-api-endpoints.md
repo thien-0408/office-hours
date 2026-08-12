@@ -76,16 +76,21 @@ Maps to `AVAILABILITY_RULES`, `AVAILABILITY_EXCEPTIONS`.
 
 ---
 
-## 4. Schedule Import — Conflict Source (FR-5; UC10)
+## 4. Schedule Import — Conflict Source (FR-5, FR-5a; UC10)
+
+Self-service by default: students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable export. Trust doesn't depend on who uploads — every import path validates that the file is a genuine AAO export (format/signature + MIME + schema per NFR-4) and rejects anything else, so a student's own upload is exactly as trustworthy as an admin's. Admin's role is a support fallback (upload on a user's behalf) and oversight (aggregated view), not the sole ingestion path.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| POST | `/schedule-imports` | Admin | `multipart/form-data`: CSV file + `semesterId`. Validated by MIME + schema per NFR-4. Async job; returns `{ importId, status: QUEUED }`. |
-| GET | `/schedule-imports/{importId}` | Admin | Poll import status: `{ status: QUEUED\|PROCESSING\|COMPLETED\|FAILED, rowsProcessed, rowsFailed, errors[] }`. |
-| GET | `/schedule-imports` | Admin | History of past imports. |
-| GET | `/users/{userId}/schedule-entries` | Owner / Admin | List a user's busy blocks (classes/teaching) for the active semester. |
-| POST | `/users/{userId}/schedule-entries` | Admin | Manually add one entry (fallback to bulk CSV). `{ semesterId, title, dayOfWeek, startTime, endTime, room }`. |
-| DELETE | `/schedule-entries/{id}` | Admin | Remove a manually- or CSV-imported busy block. |
+| POST | `/users/me/schedule-imports` | Student / Lecturer | `multipart/form-data`: AAO timetable file + `semesterId`. Parser validates it's a genuine AAO export; rejects non-AAO files. Async job; returns `{ importId, status: QUEUED }`. Replaces the caller's own busy blocks for that semester (replace, not append). |
+| GET | `/users/me/schedule-imports/{importId}` | Student / Lecturer (owner) | Poll own import status: `{ status: QUEUED\|PROCESSING\|COMPLETED\|FAILED, rowsProcessed, rowsFailed, errors[] }`. |
+| GET | `/users/me/schedule-imports` | Student / Lecturer | Own import history. |
+| GET | `/users/me/schedule-entries` | Student / Lecturer | List own busy blocks (classes/teaching) for the active semester. |
+| DELETE | `/schedule-entries/{id}` | Owner / Admin | Remove a busy block — the owning user or admin. |
+| POST | `/schedule-imports` | Admin | Admin uploads an AAO export **on behalf of** a user who can't self-serve. Body adds `targetUserId`. Same AAO validation as self-service. |
+| GET | `/schedule-imports` | Admin | Aggregated import history across all users (oversight). |
+| GET | `/users/{userId}/schedule-entries` | Owner / Admin | List a specific user's busy blocks (classes/teaching) for the active semester — admin support/oversight view. |
+| POST | `/users/{userId}/schedule-entries` | Admin | Manually add one entry (fallback for a user who can't self-serve). `{ semesterId, title, dayOfWeek, startTime, endTime, room }`. |
 
 Maps to `SCHEDULE_ENTRIES`. Feeds conflict detection in §5.
 
@@ -102,7 +107,7 @@ Maps to `SCHEDULE_ENTRIES`. Feeds conflict detection in §5.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/lecturers/{lecturerId}/slots` | Authenticated | **Core query.** `?week=YYYY-Www` or `?from=&to=`. Returns bookable slots = availability − lecturer conflicts − existing bookings, further filtered against **the requesting student's** own `SCHEDULE_ENTRIES` so only conflict-free-for-this-student slots appear. Redis-cached with short TTL (§9.1). Target < 300 ms (NFR-1). |
+| GET | `/lecturers/{lecturerId}/slots` | Authenticated | **Core query.** `?week=YYYY-Www` or `?from=&to=`. Returns bookable slots = availability − lecturer conflicts − existing bookings, further filtered against **the requesting student's** own `SCHEDULE_ENTRIES` (populated by the student's own AAO import per §4) so only conflict-free-for-this-student slots appear. Redis-cached with short TTL (§9.1). Target < 300 ms (NFR-1). |
 | GET | `/slots/{id}` | Authenticated | Slot detail incl. `status: OPEN\|FULL\|CLOSED`, capacity, current waitlist count. |
 | GET | `/slots` | Admin | Cross-lecturer slot search/filter (for analytics/ops). |
 | POST | `/bookings` | Student | `{ slotId, topic, participantIds? }`. Server re-validates conflicts server-side (never trust cached FE view). DB `EXCLUDE` constraint guards overlap under concurrency. Returns `201` with `status: PENDING`, or `409` (slot taken — race) with `{ waitlistAvailable: true }`, or `422` (conflict detected). |
@@ -221,7 +226,8 @@ Maps to `NOTIFICATIONS`.
 | FR-1 (auth/roles) | §1 |
 | FR-2 (semesters) | §2 |
 | FR-3, FR-4 (availability) | §3 |
-| FR-5 (CSV import) | §4 |
+| FR-5 (self-service AAO import) | §4 `POST /users/me/schedule-imports` |
+| FR-5a (admin schedule support/oversight) | §4 `POST /schedule-imports`, `POST /users/{userId}/schedule-entries` |
 | FR-6 (lecturer discovery) | `GET /lecturers`, `GET /lecturers/{id}` (§5.0) |
 | FR-6 (bookable slots) | `GET /lecturers/{id}/slots` |
 | FR-7 (conflict-safe booking) | `POST /bookings` |
