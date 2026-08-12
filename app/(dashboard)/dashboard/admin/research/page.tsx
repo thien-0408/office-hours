@@ -284,6 +284,7 @@ function ResultsTable({ experiment }: { experiment: Experiment }) {
             <th className="px-5 py-3 text-right">Gini (slots)</th>
             <th className="px-5 py-3 text-right">Gini (access)</th>
             <th className="px-5 py-3 text-right">Max-min ratio</th>
+            <th className="px-5 py-3 text-right">% with a slot</th>
             <th className="px-5 py-3 text-right">Utilization</th>
             <th className="px-5 py-3 text-right">Time to fill</th>
             <th className="px-5 py-3 text-right">Rejection rate</th>
@@ -298,6 +299,7 @@ function ResultsTable({ experiment }: { experiment: Experiment }) {
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniSlotsPerStudent.toFixed(2)}</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniLecturerAccess.toFixed(2)}</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.maxMinRatio.toFixed(2)}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.pctStudentsWithSlot.toFixed(1)}%</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.slotUtilizationPct}%</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.avgTimeToFillSeconds}s</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.offerRejectionRatePct.toFixed(1)}%</td>
@@ -437,9 +439,9 @@ function exportExperiment(experiment: Experiment, format: "json" | "csv") {
     blob = new Blob([JSON.stringify(experiment, null, 2)], { type: "application/json" });
     filename = `experiment-${experiment.id}.json`;
   } else {
-    const header = "policy,giniSlotsPerStudent,giniLecturerAccess,maxMinRatio,slotUtilizationPct,avgTimeToFillSeconds,offerRejectionRatePct,avgWaitTimeSeconds,waitTimeVariance";
+    const header = "policy,giniSlotsPerStudent,giniLecturerAccess,maxMinRatio,pctStudentsWithSlot,slotUtilizationPct,avgTimeToFillSeconds,offerRejectionRatePct,avgWaitTimeSeconds,waitTimeVariance";
     const rows = experiment.results.map((r) =>
-      [r.policyName, r.giniSlotsPerStudent, r.giniLecturerAccess, r.maxMinRatio, r.slotUtilizationPct, r.avgTimeToFillSeconds, r.offerRejectionRatePct, r.avgWaitTimeSeconds, r.waitTimeVariance].join(",")
+      [r.policyName, r.giniSlotsPerStudent, r.giniLecturerAccess, r.maxMinRatio, r.pctStudentsWithSlot, r.slotUtilizationPct, r.avgTimeToFillSeconds, r.offerRejectionRatePct, r.avgWaitTimeSeconds, r.waitTimeVariance].join(",")
     );
     blob = new Blob([[header, ...rows].join("\n")], { type: "text/csv" });
     filename = `experiment-${experiment.id}.csv`;
@@ -591,9 +593,10 @@ export default function AdminResearchPage() {
       <Card className="flex items-start gap-3 bg-[var(--paper-50)]">
         <IconChip icon={FlaskConical} tone={ACCENT_TOKENS.rose} />
         <p className="text-[12.5px] text-[var(--ink-600)] leading-relaxed">
-          Illustrative research console — deterministic given a seed (the same seed always reproduces the same metrics, per NFR-3), but no
-          real allocation engine runs client-side. Dev/research tooling for the pilot&apos;s fairness study, exposed here alongside the rest
-          of the admin console for discoverability.
+          Research console — runs the real allocate() engine (FCFS/NEED/ROUND_ROBIN/HYBRID) against a bounded, seeded synthetic population,
+          deterministic given a seed (the same seed always reproduces the same metrics, per NFR-3). The population size and event count are
+          capped for client-side performance, so treat these as a demo-scale proof of the methodology, not the full-scale server-side study
+          the pilot&apos;s real experiments would run. Dev/research tooling exposed here alongside the rest of the admin console for discoverability.
         </p>
       </Card>
 

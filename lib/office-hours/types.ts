@@ -16,6 +16,20 @@ export interface PublicOfficeHoursResponse {
   size: number;
 }
 
+// Student dashboard's "Available today" widget — like PublicSlot but scoped
+// to the authenticated dashboard (carries lecturerId so each row can link
+// straight to that lecturer's slot picker). The public unauthenticated view
+// deliberately doesn't expose this (capstone-api-endpoints.md §10 — no PII
+// beyond name/department), but a numeric lecturerId isn't PII and an
+// authenticated student needs it to navigate.
+export interface TodayAvailabilitySlot {
+  lecturerId: number;
+  lecturerName: string;
+  department: string | null;
+  startAt: string; // ISO-8601
+  endAt: string; // ISO-8601
+}
+
 // Matches bookings.status enum, capstone-db-schema.md §3.2.
 export type BookingStatus =
   | "PENDING"
@@ -306,6 +320,7 @@ export interface ExperimentPolicyResult {
   giniSlotsPerStudent: number;
   giniLecturerAccess: number;
   maxMinRatio: number;
+  pctStudentsWithSlot: number; // % of the simulated population that won >= 1 slot — plan.md §11.3's 4th fairness metric, previously missing from this type/the DB schema
   slotUtilizationPct: number;
   avgTimeToFillSeconds: number;
   offerRejectionRatePct: number;

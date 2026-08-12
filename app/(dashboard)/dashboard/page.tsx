@@ -9,6 +9,7 @@ import {
   getMockLecturerSlotsToday,
   getMockOfficeHours,
   getMockStudentBookings,
+  getMockTodaysAvailableSlots,
   getMockWeeklyActivity,
 } from "@/lib/office-hours/mock-data";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
@@ -24,6 +25,7 @@ import { SlotsTodayList } from "@/components/dashboard/SlotsTodayList";
 import { StaggerGroup, StaggerItem } from "@/components/dashboard/StaggerGroup";
 import { StatTile } from "@/components/dashboard/StatTile";
 import { TaskList, type Task } from "@/components/dashboard/TaskList";
+import { TodaysAvailabilityCard } from "@/components/dashboard/TodaysAvailabilityCard";
 import { UpcomingList } from "@/components/dashboard/UpcomingList";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -78,6 +80,7 @@ function StudentDashboard({ user }: { user: AuthUser }) {
   const slotsThisWeek = getMockOfficeHours({ page: 0, size: 500 }).totalElements;
   const weeklyActivity = getMockWeeklyActivity();
   const todayKey = new Date().toDateString();
+  const todaysAvailability = getMockTodaysAvailableSlots();
 
   return (
     <DashboardColumns
@@ -101,6 +104,11 @@ function StudentDashboard({ user }: { user: AuthUser }) {
       }
     >
       <StaggerGroup className="flex flex-col gap-6">
+        <StaggerItem>
+          <SectionHeader title="Available today" href="/dashboard/lecturers" />
+          <TodaysAvailabilityCard slots={todaysAvailability} />
+        </StaggerItem>
+
         <StaggerItem className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={upcoming.length} label="Upcoming bookings" />
           <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={pendingCount} label="Pending confirmation" />

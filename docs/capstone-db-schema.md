@@ -412,6 +412,7 @@ CREATE TABLE experiments (
     gini_slots_per_student      numeric(6,4),
     gini_lecturer_access        numeric(6,4),
     max_min_ratio               numeric(10,4),
+    pct_students_with_slot      numeric(5,2),        -- % of the candidate population that won >= 1 slot — plan.md §11.3's 4th fairness metric ("% of students who got >= 1 slot"), missing from earlier drafts of this table
     slot_utilization_pct        numeric(5,2),
     avg_time_to_fill_seconds    int,
     offer_rejection_rate_pct    numeric(5,2),

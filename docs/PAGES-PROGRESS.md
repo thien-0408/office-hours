@@ -60,7 +60,11 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 
 - Done: 31 / 31 — every page in the original Pages.txt list is shipped, including #31 Research
   tools (Phase 13), previously skipped as "stretch, may be dev-only."
-- Extra (not in the 31-page list but built): role-aware `/dashboard` home shell
+- Extra (not in the 31-page list but built): role-aware `/dashboard` home shell, including the
+  student home's "Available today" widget (`getMockTodaysAvailableSlots()`,
+  `components/dashboard/TodaysAvailabilityCard.tsx`) — today's open slots across every
+  lecturer, filtered against the student's own self-imported class schedule (#32), surfaced
+  before the student starts browsing lecturer-by-lecturer.
 - Net-new scope (not in the original 31-page list): #32 Import My Timetable — schedule import
   moved from admin-only to self-service (student/lecturer upload their own official AAO export);
   admin's #24 becomes an on-behalf-of/oversight fallback rather than the sole ingestion path.

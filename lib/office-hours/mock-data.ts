@@ -23,9 +23,13 @@ import type {
   Semester,
   SlotWaitlistGroup,
   SyntheticDemandRun,
+  TodayAvailabilitySlot,
   WaitlistEntry,
 } from "./types";
 import { memojiSrc } from "@/lib/avatar";
+import { allocate } from "@/lib/allocation/engine";
+import type { AllocationCandidate } from "@/lib/allocation/types";
+import { mulberry32, seededHash } from "@/lib/prng";
 
 // Stands in for GET /public/office-hours until the backend ships that endpoint
 // (see docs/capstone-api-endpoints.md §10) — app/public/office-hours/page.tsx
@@ -374,6 +378,47 @@ export function getMockLecturerSlotsToday(lecturerName: string): PublicSlot[] {
   return buildMockSlots().filter(
     (slot) => slot.lecturerName === lecturerName && new Date(slot.startAt).toDateString() === todayKey
   );
+}
+
+// Today's remaining open slots across ALL lecturers, filtered against the
+// student's own class schedule (self-imported per Pages.txt #32) so what's
+// shown is actually bookable — conflict-free-for-this-student, not just
+// "open." Same value prop GET /lecturers/{id}/slots documents
+// (capstone-api-endpoints.md §5), surfaced proactively on the dashboard
+// before the student starts browsing lecturer-by-lecturer.
+export function getMockTodaysAvailableSlots(limit = 6): TodayAvailabilitySlot[] {
+  const now = new Date();
+  const todayKey = now.toDateString();
+  const todayDow = weekdayOf(now);
+  const myClasses = getMockStudentScheduleBlocks().filter((block) => block.dayOfWeek === todayDow);
+
+  function overlapsAClass(startAt: string, endAt: string): boolean {
+    const start = new Date(startAt);
+    const end = new Date(endAt);
+    return myClasses.some((block) => {
+      const [startH, startM] = block.startTime.split(":").map(Number);
+      const [endH, endM] = block.endTime.split(":").map(Number);
+      const blockStart = new Date(start);
+      blockStart.setHours(startH, startM, 0, 0);
+      const blockEnd = new Date(start);
+      blockEnd.setHours(endH, endM, 0, 0);
+      return start < blockEnd && end > blockStart;
+    });
+  }
+
+  return buildMockSlots()
+    .filter((slot) => new Date(slot.startAt).toDateString() === todayKey)
+    .filter((slot) => new Date(slot.startAt) > now) // already-started slots aren't bookable
+    .filter((slot) => !overlapsAClass(slot.startAt, slot.endAt))
+    .sort((a, b) => a.startAt.localeCompare(b.startAt))
+    .slice(0, limit)
+    .map((slot) => ({
+      lecturerId: slot.lecturerId,
+      lecturerName: slot.lecturerName,
+      department: slot.department,
+      startAt: slot.startAt,
+      endAt: slot.endAt,
+    }));
 }
 
 // Stands in for combining several /admin/analytics/* endpoints (capstone-api-
@@ -1043,19 +1088,41 @@ export function getMockEquityMetrics(): EquityMetrics {
   };
 }
 
+// Canonical demand shape + seed for the Analytics "Policy Comparison" view
+// (as opposed to Research Tools, where the admin picks their own demand
+// run/seed) — fixed so this section always shows the same numbers across
+// visits, matching how a dashboard summary (vs. an experiment console)
+// should behave.
+const POLICY_COMPARISON_DEMAND: SyntheticDemandRun = {
+  id: 0,
+  seed: 1337,
+  popularitySkew: 1.2,
+  arrivalPattern: "POISSON",
+  numStudents: 200,
+  numLecturers: 15,
+  generatedAt: "",
+};
+const POLICY_COMPARISON_SEED = 1337;
+
 // Stands in for GET /admin/analytics/policy-comparison (Pages.txt #30) — one
-// row per getMockAllocationPolicies() entry. These four metrics are
-// illustrative demo constants (no real allocation simulation runs client-side
-// to derive them from), same status as getMockAdminOverview's platform
-// stats — not computed from getMockAllocationEvents, which is a small seeded
-// log, not a full simulation.
+// row per getMockAllocationPolicies() entry, now DERIVED from
+// simulatePolicy() (the same real allocate()-driven simulation Research
+// Tools uses, see computeExperimentResults() below) rather than hand-picked
+// constants — so a "fairer" policy here means the real scoring formulas
+// actually produced a fairer distribution, not that someone typed a smaller
+// number.
 export function getMockPolicyComparison(): PolicyComparisonRow[] {
-  return [
-    { policyName: "FCFS", giniSlotsPerStudent: 0.42, giniLecturerAccess: 0.38, utilizationPct: 71, avgWaitMinutes: 38 },
-    { policyName: "NEED", giniSlotsPerStudent: 0.27, giniLecturerAccess: 0.24, utilizationPct: 68, avgWaitMinutes: 52 },
-    { policyName: "ROUND_ROBIN", giniSlotsPerStudent: 0.19, giniLecturerAccess: 0.21, utilizationPct: 64, avgWaitMinutes: 61 },
-    { policyName: "HYBRID", giniSlotsPerStudent: 0.24, giniLecturerAccess: 0.22, utilizationPct: 73, avgWaitMinutes: 45 },
-  ];
+  const allPolicies: AllocationPolicyName[] = ["FCFS", "NEED", "ROUND_ROBIN", "HYBRID"];
+  return allPolicies.map((policyName) => {
+    const result = simulatePolicy(POLICY_COMPARISON_DEMAND, policyName, seededHash(POLICY_COMPARISON_SEED, policyName));
+    return {
+      policyName,
+      giniSlotsPerStudent: result.giniSlotsPerStudent,
+      giniLecturerAccess: result.giniLecturerAccess,
+      utilizationPct: result.slotUtilizationPct,
+      avgWaitMinutes: Math.round(result.avgWaitTimeSeconds / 60),
+    };
+  });
 }
 
 // ---- Research Tools (Pages.txt #31) -----------------------------------------
@@ -1066,21 +1133,6 @@ export function getMockPolicyComparison(): PolicyComparisonRow[] {
 // derived from getMockPolicyComparison()'s baselines rather than a second,
 // disagreeing set of illustrative constants.
 
-// Pure seeded PRNG (mulberry32) — never Math.random(), which would trip the
-// React Compiler's react-hooks/purity rule if this were ever called during
-// render. Keeping it pure is what makes "same seed -> same output" true,
-// the whole point of the reproducibility demo.
-function mulberry32(seed: number): () => number {
-  let a = seed;
-  return function next() {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export function getMockSyntheticDemandRuns(): SyntheticDemandRun[] {
   return [
     { id: 1, seed: 4821, popularitySkew: 1.4, arrivalPattern: "BURST_BEFORE_DEADLINE", numStudents: 180, numLecturers: 12, generatedAt: "2026-07-28T09:00:00.000Z" },
@@ -1089,51 +1141,144 @@ export function getMockSyntheticDemandRuns(): SyntheticDemandRun[] {
   ];
 }
 
-// Deterministic, seeded — the same (policyNames, seed) pair always returns
-// identical results (NFR-3). Builds on getMockPolicyComparison()'s per-policy
-// baselines rather than inventing a second set of illustrative numbers, so
-// this page and Analytics' Policy Comparison agree when their inputs line
-// up; the seed only jitters the baseline; it doesn't replace it. No client-
-// side allocation engine actually runs — illustrative, same status as
-// getMockPolicyComparison itself. `demandRun` is accepted (not just ignored)
-// so a future real implementation has an obvious slot to read scale/skew
-// from; the mock jitter doesn't vary by demand run on purpose, only by seed.
+// Bounded, deterministic micro-simulation that replays `demandRun`'s
+// population through `policyName`'s REAL allocate() logic
+// (lib/allocation/engine.ts) across many simulated slot free-up events, then
+// computes the four headline metrics from what actually happened — not
+// hand-picked constants (that was the old behavior; see git history). Event
+// count and population are capped (SIM_* below) regardless of
+// demandRun.numStudents/numLecturers so even the 10,000-student/800-lecturer
+// seed run (getMockSyntheticDemandRuns()'s 3rd entry) computes client-side
+// in well under a frame. This trades population realism for tractability —
+// appropriate for a frontend demo standing in for the real server-side
+// generator plan.md §11.4 describes, and it's still a genuine agent-based
+// simulation (real supply/demand contention, real policy scoring, real
+// Gini), not a jittered lookup table.
+const SIM_EVENTS = 240;
+const SIM_STUDENTS = 60;
+const SIM_LECTURERS = 12;
+const SIM_DECLINE_CHANCE = 0.12; // modeled offer-decline rate, applied post-selection
+
+function configForSimulation(policyName: AllocationPolicyName): Record<string, number> {
+  return getMockAllocationPolicies().find((p) => p.name === policyName)?.config ?? {};
+}
+
+function simulatePolicy(demandRun: SyntheticDemandRun, policyName: AllocationPolicyName, seed: number): ExperimentPolicyResult {
+  const rand = mulberry32(seed);
+  const config = configForSimulation(policyName);
+  const now = new Date();
+
+  // Per-student popularity affinity in (0,1], skewed by demandRun.popularitySkew:
+  // higher skew -> affinities cluster closer to 1, i.e. demand concentrates on
+  // fewer "popular" lecturers/slots — the same shape §11.4 describes as
+  // "configurable popularity skew."
+  const affinity = Array.from({ length: SIM_STUDENTS }, () => Math.pow(rand(), 1 / Math.max(demandRun.popularitySkew, 0.1)));
+  const daysSinceThisLecturer: number[][] = Array.from({ length: SIM_STUDENTS }, () =>
+    Array.from({ length: SIM_LECTURERS }, () => Math.round(rand() * 90))
+  );
+  const daysSinceAnyLecturer = Array.from({ length: SIM_STUDENTS }, () => Math.round(rand() * 90));
+  const windowAccessCount = new Array(SIM_STUDENTS).fill(0);
+
+  const slotsWon = new Array(SIM_STUDENTS).fill(0);
+  const lecturerAccess: Set<number>[] = Array.from({ length: SIM_STUDENTS }, () => new Set());
+  const waitMinutesLog: number[] = [];
+  let filledEvents = 0;
+  let offeredCount = 0;
+  let declinedCount = 0;
+
+  for (let eventIndex = 0; eventIndex < SIM_EVENTS; eventIndex++) {
+    const lecturerId = Math.floor(rand() * SIM_LECTURERS);
+
+    // Candidate pool: each student joins with probability proportional to
+    // their affinity (popular slots draw bigger pools); low-affinity draws
+    // can produce an empty pool, representing a genuinely low-demand slot —
+    // that's what keeps slotUtilizationPct meaningfully below 100%.
+    const candidates: AllocationCandidate[] = [];
+    for (let studentId = 0; studentId < SIM_STUDENTS; studentId++) {
+      if (rand() < affinity[studentId] * 0.35) {
+        const waitMinutes = Math.round(rand() * 180);
+        candidates.push({
+          waitlistEntryId: eventIndex * SIM_STUDENTS + studentId,
+          studentId,
+          requestedAt: new Date(now.getTime() - waitMinutes * 60_000).toISOString(),
+          daysSinceLastMeetingThisLecturer: daysSinceThisLecturer[studentId][lecturerId],
+          daysSinceLastMeetingAnyLecturer: daysSinceAnyLecturer[studentId],
+          recentAccessCount: windowAccessCount[studentId],
+        });
+      }
+    }
+    if (candidates.length === 0) continue; // no demand this event — slot goes unfilled
+
+    const result = allocate(candidates, policyName, config, seededHash(seed, eventIndex), now);
+    if (!result.winner) continue; // e.g. ROUND_ROBIN: every candidate in the pool was over cap
+
+    offeredCount++;
+    const declined = mulberry32(seededHash(seed, `decline-${eventIndex}`))() < SIM_DECLINE_CHANCE;
+    if (declined) {
+      declinedCount++;
+      continue; // simplification: no backup-candidate re-offer within one simulated event
+    }
+
+    filledEvents++;
+    const winnerId = result.winner.studentId;
+    slotsWon[winnerId]++;
+    lecturerAccess[winnerId].add(lecturerId);
+    windowAccessCount[winnerId]++;
+    daysSinceThisLecturer[winnerId][lecturerId] = 0;
+    daysSinceAnyLecturer[winnerId] = 0;
+    for (let s = 0; s < SIM_STUDENTS; s++) {
+      if (s === winnerId) continue;
+      daysSinceThisLecturer[s][lecturerId] += 1;
+      daysSinceAnyLecturer[s] += 1;
+    }
+    const winnerCandidate = candidates.find((c) => c.studentId === winnerId);
+    if (winnerCandidate) waitMinutesLog.push((now.getTime() - new Date(winnerCandidate.requestedAt).getTime()) / 60_000);
+
+    // Reset the round-robin window periodically so a cap doesn't lock the
+    // same students out for the entire 240-event run.
+    if ((eventIndex + 1) % 20 === 0) windowAccessCount.fill(0);
+  }
+
+  const giniSlotsPerStudent = Math.round(giniCoefficient(slotsWon) * 100) / 100;
+  const giniLecturerAccess = Math.round(giniCoefficient(lecturerAccess.map((s) => s.size)) * 100) / 100;
+  const nonZero = slotsWon.filter((v) => v > 0);
+  const maxMinRatio = nonZero.length > 0 ? Math.round((Math.max(...nonZero) / Math.min(...nonZero)) * 100) / 100 : 1;
+  const pctStudentsWithSlot = Math.round((nonZero.length / SIM_STUDENTS) * 1000) / 10;
+  const slotUtilizationPct = Math.round((filledEvents / SIM_EVENTS) * 100);
+  const avgWaitMinutes = waitMinutesLog.length > 0 ? waitMinutesLog.reduce((a, b) => a + b, 0) / waitMinutesLog.length : 0;
+  const avgWaitTimeSeconds = Math.round(avgWaitMinutes * 60);
+  const varianceMinutes =
+    waitMinutesLog.length > 0
+      ? waitMinutesLog.reduce((sum, m) => sum + (m - avgWaitMinutes) ** 2, 0) / waitMinutesLog.length
+      : 0;
+  const waitTimeVariance = Math.round(varianceMinutes * 3600); // minutes^2 -> seconds^2
+  const offerRejectionRatePct = offeredCount > 0 ? Math.round((declinedCount / offeredCount) * 1000) / 10 : 0;
+  const avgTimeToFillSeconds = Math.round(avgWaitTimeSeconds * 0.4);
+
+  return {
+    policyName,
+    giniSlotsPerStudent,
+    giniLecturerAccess,
+    maxMinRatio,
+    pctStudentsWithSlot,
+    slotUtilizationPct,
+    avgTimeToFillSeconds,
+    offerRejectionRatePct,
+    avgWaitTimeSeconds,
+    waitTimeVariance,
+  };
+}
+
+// Deterministic, seeded — the same (demandRun, policyNames, seed) triple
+// always returns identical results (NFR-3), since every random draw inside
+// simulatePolicy() derives from `seed` via seededHash(), never a shared
+// mutable PRNG stream shared across policies.
 export function computeExperimentResults(
   demandRun: SyntheticDemandRun,
   policyNames: AllocationPolicyName[],
   seed: number
 ): ExperimentPolicyResult[] {
-  void demandRun;
-  const baselines = getMockPolicyComparison();
-  const rand = mulberry32(seed);
-  const jitter = () => 1 + (rand() - 0.5) * 0.16; // +/-8%, deterministic per seed
-
-  return policyNames.map((policyName) => {
-    const base = baselines.find((b) => b.policyName === policyName) ?? baselines[0];
-    const giniSlotsPerStudent = Math.round(base.giniSlotsPerStudent * jitter() * 100) / 100;
-    const giniLecturerAccess = Math.round(base.giniLecturerAccess * jitter() * 100) / 100;
-    const slotUtilizationPct = Math.round(base.utilizationPct * jitter());
-    const avgWaitTimeSeconds = Math.round(base.avgWaitMinutes * 60 * jitter());
-    // Derived from the metrics above (not independently seeded) so a
-    // "fairer" policy can't randomly also read as faster to fill — the four
-    // numbers stay internally consistent instead of contradicting each other.
-    const maxMinRatio = Math.round((1 + giniSlotsPerStudent * 6) * 100) / 100;
-    const avgTimeToFillSeconds = Math.round(avgWaitTimeSeconds * 0.4 * jitter());
-    const offerRejectionRatePct = Math.round(giniSlotsPerStudent * 25 * jitter() * 10) / 10;
-    const waitTimeVariance = Math.round(avgWaitTimeSeconds * avgWaitTimeSeconds * 0.05 * jitter());
-
-    return {
-      policyName,
-      giniSlotsPerStudent,
-      giniLecturerAccess,
-      maxMinRatio,
-      slotUtilizationPct,
-      avgTimeToFillSeconds,
-      offerRejectionRatePct,
-      avgWaitTimeSeconds,
-      waitTimeVariance,
-    };
-  });
+  return policyNames.map((policyName) => simulatePolicy(demandRun, policyName, seededHash(seed, policyName)));
 }
 
 export function getMockExperiments(): Experiment[] {

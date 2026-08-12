@@ -332,9 +332,12 @@ Admin block entirely — the dashboard's admin nav no longer has any 404 links, 
      slots-per-student, Gini lecturer-access, utilization %, avg wait time), each with policies
      along the X axis and the *active* policy highlighted (`highlightKey`) — deliberately **not**
      one chart with mixed scales/two y-axes, the dataviz skill's #1 anti-pattern.
-     `getMockPolicyComparison()`'s four metrics are illustrative demo constants (same status as
-     `getMockAdminOverview`'s platform stats) — no client-side allocation simulation exists to
-     derive them from.
+     `getMockPolicyComparison()`'s four metrics are now DERIVED, not hand-picked: a real
+     `allocate()` engine (`lib/allocation/engine.ts`, implementing the FCFS/NEED/ROUND_ROBIN/
+     HYBRID formulas from plan.md §11.2) runs a bounded, seeded micro-simulation
+     (`simulatePolicy()` in `lib/office-hours/mock-data.ts`) per policy and these are the actual
+     resulting Gini/utilization/wait numbers — see the allocation-engine implementation note
+     below the Research Tools entry.
 - **`ActivityChart` generalized** (`components/dashboard/ActivityChart.tsx`): the component was
   hardcoded to "N booking(s)" in its tooltip and "Bookings" table-column header — fine for its
   only two pre-existing callers (booking activity, advisor load, both literal booking counts),
@@ -386,12 +389,28 @@ until this phase.
   - **Experiments** (mirrors `POST /research/experiments`, `GET /{id}`, `GET /{id}/export`):
     `ExperimentForm` (pick a demand run + seed + policy checkboxes) runs
     `computeExperimentResults()` and appends an `Experiment`. Results view: a full metrics
-    `ResultsTable` (all eight `experiments`-table columns), two `ActivityChart` small
+    `ResultsTable` (all nine `experiments`-table columns, including `pctStudentsWithSlot` —
+    added later, see the allocation-engine implementation note above), two `ActivityChart` small
     multiples (Gini, utilization — reusing the exact `valueLabel`/`formatValue`/`accent`
     props Phase 12 added), the fairness-vs-efficiency frontier (below), and JSON/CSV export
     via a client-side `Blob` + anchor-click download (no backend to call, so this is generated
     on click rather than faked as a real export job). `ExperimentCard` list re-selects a past
     run into the results view.
+- **Superseded — real `allocate()` engine (net-new phase, beyond the original Pages.txt list).**
+  The "illustrative, no real allocation engine runs client-side" framing above described Phase
+  13 as shipped. That's since been replaced: `lib/allocation/engine.ts` implements the four
+  policies' actual scoring formulas (FCFS = join-order; NEED = `needWeight·need +
+  waitWeight·wait`; ROUND_ROBIN = an eligibility cap, not a ranking; HYBRID = weighted need +
+  wait + a seeded per-candidate random draw for anti-gaming tie-breaking — see the formula
+  table in the module's own comments), and `simulatePolicy()`
+  (`lib/office-hours/mock-data.ts`) replays a bounded, seeded synthetic population through it
+  to derive real Gini/utilization/wait metrics — both `computeExperimentResults()` (Research
+  Tools) and `getMockPolicyComparison()` (Analytics) now call it instead of hand-picked/jittered
+  constants. The honesty banner on `/dashboard/admin/research` was updated accordingly (real
+  engine, still demo-scale/capped, not the full server-side study). `lib/prng.ts` extracted the
+  shared seeded-PRNG (`mulberry32`) + a `seededHash()` helper so every random draw in the engine
+  and the simulator derives independently from one run seed, keeping runs reproducible (NFR-3)
+  regardless of call order.
 - **Fairness-vs-efficiency frontier** (`FrontierScatter`, the §11.4 "frontier per policy"
   deliverable): read the `dataviz` skill first, per the plan. Built as a genuine 2-D
   `recharts` `ScatterChart` — utilization % (efficiency) on X, Gini (fairness) on Y, one
