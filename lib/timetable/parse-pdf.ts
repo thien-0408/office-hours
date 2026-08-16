@@ -120,12 +120,23 @@ export async function parseTimetablePdf(file: File): Promise<ParsedTimetableResu
   dayCols.sort((a, b) => a.x - b.x);
   const rulerMaxX = dayCols.length > 0 ? dayCols[0].x - 30 : -Infinity;
 
-  // 2b. Each day column header carries its calendar date in parentheses right
-  // next to the day name (e.g. "Thứ 2" ... "(03/08)") — nearest-x match onto
-  // dayCols, same as data rows below. First match wins (the header repeats
-  // identically on every page).
+  // 2b. Extract calendar date for each day column header (e.g. "Thứ 2 (13/07)", "(13/07)", or "13/07").
   const dayDateByName: Record<string, string> = {};
-  const dateHeaderItems = allTextItems.filter((item) => /^\(\s*\d{1,2}\/\d{1,2}\s*\)$/.test(item.text));
+
+  // Pass 1: Look for date pattern directly embedded inside the day header item itself
+  for (const item of allTextItems) {
+    for (const day of DAY_NAMES) {
+      if (item.text.startsWith(day) || item.text.includes(day)) {
+        const directMatch = item.text.match(/\(?\s*(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\s*\)?/);
+        if (directMatch && !dayDateByName[day]) {
+          dayDateByName[day] = directMatch[1];
+        }
+      }
+    }
+  }
+
+  // Pass 2: Look for dedicated date header items (e.g. "(13/07)", "(03/08)") located near each day column header X center
+  const dateHeaderItems = allTextItems.filter((item) => /^\(?\s*\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s*\)?$/.test(item.text));
   for (const item of dateHeaderItems) {
     if (dayCols.length === 0) break;
     let closestDay = dayCols[0].name;
@@ -138,7 +149,7 @@ export async function parseTimetablePdf(file: File): Promise<ParsedTimetableResu
       }
     }
     if (!dayDateByName[closestDay]) {
-      const dateMatch = item.text.match(/(\d{1,2}\/\d{1,2})/);
+      const dateMatch = item.text.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/);
       if (dateMatch) dayDateByName[closestDay] = dateMatch[1];
     }
   }

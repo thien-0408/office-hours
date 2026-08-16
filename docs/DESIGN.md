@@ -15,7 +15,7 @@
 | Surface | Treatment |
 |---|---|
 | Auth pages (Login, Register) | **Full glass**: brand-500→950 gradient background, glass card (`--glass-bg` / `--glass-border` / `backdrop-filter: blur`), white text. This is where the glassmorphism actually performs. Implemented as `app/(auth)/layout.tsx` + `login/` + `register/`, background is `assets/Login-Background.png` (chosen over `Glass Effect Login Page - Blue.png` for its more balanced shape placement around a centered card). The two routes share one persistent layout so Framer Motion can animate the glass card between them — `layout` prop auto-animates the height difference (register is taller), `AnimatePresence` cross-fades/slides the inner content, direction-aware (login→register vs. reverse) via React's "derive state during render" pattern, not a ref mutation (the React Compiler ESLint rule `react-hooks/refs` forbids writing `ref.current` mid-render). Respects `prefers-reduced-motion` via `useReducedMotion()`. |
-| Landing page (`/`) | **Editorial/collage**, referenced from `assets/Slingshot.png`: bold uppercase display headline (Archivo 900), organic paper-cutout blobs (irregular `border-radius` shapes in brand-300/warning-500) behind an arch-topped photo, a hand-drawn wobble badge (SVG `feTurbulence`/`feDisplacementMap`, not a hand-authored path). Same brand-blue token set as the rest of the app — only the *structure* is borrowed from Slingshot, not its terracotta/mustard palette. Dark hero + CTA band use `--brand-900`/`--brand-950` directly (not theme-toggled, a deliberate fixed-dark choice like the reference). No glass on this page. |
+| Landing page (`/`) | **Neo-brutalist collage**, referenced from a ProjectOne (Framer template) screenshot: near-black-on-warm-white palette, a self-hosted Satoshi display face, a wide recessed hero circle with rotated Unsplash polaroid photos overlapping its rim, and hard offset-shadow cards (`border-2 border-blue-950` + flat `shadow-[Npx_Npx_0_0_<color>]`, no blur) used everywhere — value-prop cells, process-timeline steps, pricing cards, stat tiles, testimonials, the FAQ panel. See §1.1. |
 | App shell (dashboard, calendars, tables, admin) | **Restrained**, revised — see §1.2: flat `--bg-canvas` / `--bg-surface` structure unchanged, glass still chrome-only. Color is no longer blue-exclusive: a validated decorative accent palette (coral/rose/mint) now carries icon chips, the featured-card CTA, calendar selection, and nav active-state — `--accent` (blue) still owns default buttons/links/focus rings, and booking-status semantics (§4) are untouched. |
 
 Reasoning: heavy `backdrop-blur` + busy gradient backgrounds hurt readability and perf on scroll-heavy, data-dense pages (weekly slot calendars, allocation audit logs, analytics). Apple itself reserves glass for chrome, not content-dense screens. Landing gets its own editorial energy because it's a one-shot marketing surface, not a form or a data view — same reasoning that keeps glass off the app shell also keeps it off a page that's mostly headline + photo.
@@ -63,36 +63,83 @@ colors; only the *card* is a one-off dark exception, not the color system.
 original bottom-right placement on the same user direction. Newest toast renders closest to the
 corner, pushing older ones down — matches the reference screenshot's stacking.
 
-Landing page implementation: `app/page.tsx` + `app/landing.module.css`. The hero's right column is `components/HeroBookingDemo.tsx`, an interactive slot-picker mockup — no hero photo, no Unsplash dependency. Lecturer avatars everywhere (browse cards, public listing, this demo) are memoji (`public/memoji/`, `lib/avatar.ts`), not stock headshots — `next.config.ts` no longer allowlists `images.unsplash.com`.
+### 1.1 Landing page style rule: ProjectOne-referenced neo-brutalist collage
 
-### 1.1 Landing page style rule: Mixed Media / Painterly Collage + Neo-Brutalism + Organic Modernism
+This is the concrete, reusable ruleset for `app/page.tsx` (and only that page — see the split
+table above, everything else stays **Restrained** or **Full glass**). It replaced an earlier
+Slingshot-referenced rough.js/organic-blob treatment (and, before that, a second parallel `/landing`
+route explored with an Educo-referenced soft-gradient style) — both are gone; this is the one
+landing system now. Follow these when adding or editing landing sections; don't invent new motifs
+ad hoc.
 
-This is the concrete, reusable ruleset for `app/page.tsx` (and only that page — see the split table above, everything else stays **Restrained** or **Full glass**). Follow these when adding or editing landing sections; don't invent new motifs ad hoc.
+**Own token scope, not the app-wide ramp.** The landing page runs on its own CSS custom-property
+scope (`components/landing/tokens.ts`'s `PROJECT_ONE_TOKENS`, applied via inline `style` on the
+page's root element) rather than `app/globals.css`'s `--brand-*`/`--paper-*`/`--ink-*` ramp — a
+near-black-on-warm-white palette with a blue accent, deliberately distinct from the app shell's
+lighter blue-on-white chrome. Every color on this page is a `var(--po-*)` lookup or (for the
+neo-brutalist border/shadow recipe specifically) a Tailwind `blue-950`/`blue-600` utility — never a
+raw hex in component markup.
 
-**Tools:** `rough.js` (already installed) for every hand-drawn accent — underlines, rings/blobs, card-border sketches. Never hand-author a wobbly SVG path; always generate it with `rough.svg(...)`.
-
-**Rough.js parameter ranges** (keep new elements inside these so the page reads as one hand):
-- `roughness`: 1.6–2.5
-- `bowing`: 1.8–3
-- `strokeWidth`: 1.5–5 (rings/underlines heavier at 3–5, card-border sketches lighter at 1.5–2)
-- Stroke colors: `#2563eb` / `#3b82f6` (brand blues) for emphasis marks, `#cbd5e1` for subtle card-texture overlays
-
-**Neo-brutalist card recipe** (used for value-prop cards, persona quote cards, research stat tiles):
 ```
-border-2 border-blue-950 rounded-[16–18px] shadow-[7px_7px_0_0_#0b1b49]
+--po-text-primary:   #131311   /* near-black body text */
+--po-text-secondary: #b9b9b7   /* muted labels/eyebrows */
+--po-text-tertiary:  #fafafa   /* text on dark surfaces */
+--po-accent:         #8fb0ff   /* brand-300 — this app's blue, not a lime clone of the reference */
+--po-bg:              #fafafa  /* page canvas */
+--po-circle:          #f4f4f4  /* hero's recessed circle, slightly darker than the canvas */
+--po-surface:          #ffffff
+--po-surface-black:    #000000
+--po-border:           #e4e2db
 ```
-- Hard offset shadow, no blur — `shadow-[Npx_Npx_0_0_<color>]`, N in the 6–8px range.
-- Every 2nd or 3rd card in a row inverts to `bg-blue-950 text-white` with the shadow color swapped to a lighter brand blue (e.g. `#3465e0`) so it "pops" — don't invert every card, that reads as a dark section instead of a collage accent.
-- Slight rotation per card, alternating: `-rotate-1 / rotate-1 / -rotate-1` (or `rotate-2` on standalone quote/sticker cards). `hover:rotate-0` on interactive cards reads as the card "settling" on click/hover — nice, keep it.
-- Numeral/tag chips are small rotated "stickers": rounded-full or rounded-sm, `border-2 border-blue-950`, own hard shadow, rotated -2 to -4deg, positioned to overlap the card edge (e.g. `absolute -top-3 left-6`).
 
-**Organic Modernism accents:** hand-drawn rough.js rings/blobs (two concentric ellipses, outer stroke lighter) sit *behind* a circular content area — used for the hero's "Free for students" badge and the persona-quote illustrations in `#for-students` / `#for-lecturers`. Reuse this exact two-ring pattern rather than introducing a new blob shape per section.
+**Typography:** self-hosted **Satoshi** (Fontshare, free-for-commercial EULA — see
+`assets/fonts/satoshi/LICENSE.txt`) via `next/font/local` (`components/landing/fonts.ts`), applied
+via its `.className` on the page root — not `next/font/google`, since Satoshi isn't in that
+registry, and not a system-font substitute; the actual family is bundled at build time, same
+zero-runtime-fetch treatment as the rest of the app's fonts. Weights loaded: Regular/Medium/Bold/Black.
 
-**Palette discipline:** stay inside the existing `--brand-*` / `--paper-*` / `--ink-*` ramp (§3). No terracotta/mustard, no new hues — the collage/brutalist energy comes from *contrast, rotation, and hard shadows*, not new colors. This was already the rule for the Slingshot-referenced structure (§1); it now explicitly covers the brutalist card treatment too.
+**Neo-brutalist card recipe** — used on every card-like surface on this page (value-prop cells,
+process-timeline steps, pricing cards, the comparison table, stat tiles, testimonials, the FAQ
+panel, the final CTA banner):
+```
+border-2 border-blue-950 rounded-[16–20px] shadow-[6–8px_6–8px_0_0_<color>]
+```
+- Hard offset shadow, no blur. Shared as Tailwind class strings in `components/landing/shared.tsx`:
+  `NEO_LIGHT` (navy shadow `#0b1b49`, for white/lime/paper surfaces) and `NEO_DARK` (blue shadow
+  `#3465e0`, for near-black surfaces — the shadow needs a lighter color to read against a dark
+  card, same logic as `/`'s old "inverted card" variant). A tile sitting on an already-black
+  *section* background (`StatsBento`) needs a further-tuned pair — `NEO_ON_DARK_LIGHT` /
+  `NEO_ON_DARK_GLASS` — since a navy shadow would vanish against black; both keep the blue shadow
+  and only vary the border so it still reads against the tile's own light-vs-translucent face.
+- Slight rotation per card, alternating `-rotate-1 / rotate-1`. `hover:-translate-y-0.5
+  hover:rotate-0` reads as the card "settling" — keep it on interactive cards.
+- Structural single-panel surfaces (the checklist panel, the comparison-table wrapper, the FAQ
+  panel, the final CTA banner) get the same border+shadow but typically no rotation, or one subtle
+  `-rotate-1`/`rotate-1` on the whole panel — they're not a multi-card collage row.
 
-**Where it's implemented (reference examples):** hero headline underline scribble, hero "Free for students" ring badge, hero "Drag it · Pick a color" sticker on the 3D couch card, the three value-prop cards, the `#for-students` / `#for-lecturers` persona-quote cards with ring blobs, and the research/fairness stat tiles — all in `app/page.tsx`. Copy these patterns forward instead of designing new ones per section.
+**Hero:** a wide (920px) recessed circle (`--po-circle`) behind the headline, with four rotated
+polaroid photo cards (`PolaroidCard` in `shared.tsx`, using the same `NEO_LIGHT` recipe) overlapping
+its rim. Photos are real Unsplash images (`assets/photos/landing/`, sourced and license-noted in
+that folder's `SOURCES.md`) downloaded once and self-hosted — not a live third-party embed, and a
+deliberate one-off exception to the no-stock-photo convention below, made on explicit request.
+Everywhere else on this page (testimonials, stat-tile avatars, the pricing preview) still uses
+memoji (`lib/avatar.ts` `memojiSrc`), not stock headshots.
 
-**`next/image` quality gotcha (Next 16):** the `quality` prop is silently clamped to the closest value in `images.qualities`, which **defaults to `[75]` only** — passing `quality={100}` does nothing unless you allowlist it in `next.config.ts` first. This bit the auth background: at the default q75, Next's WebP re-encoding of the smooth blue gradient (`assets/Glass Effect Login Page - Blue.png`, 1.6MB PNG source) introduced visible banding — a ~40x compression ratio down to ~39KB. Added `images.qualities: [75, 95]` and set `quality={95}` on that one `<Image>`; output is ~64KB, banding gone. Reach for this same fix if any other photo/gradient background looks blocky — check the network tab for the actual `q=` the browser received before assuming the source asset is bad.
+**Nav:** uppercase, letter-tracked link labels; solid near-black pill CTA with a small accent-colored
+circular arrow chip (`LandingNav.tsx`) — not a lime/accent-filled pill.
+
+**Palette discipline:** everything routes through `--po-*` tokens or the `NEO_*` shadow constants —
+no new hex added ad hoc. If a future section needs a color this page's token set doesn't have,
+extend `PROJECT_ONE_TOKENS`, don't inline a hex.
+
+**`next/image` quality gotcha (Next 16):** the `quality` prop is silently clamped to the closest
+value in `images.qualities`, which **defaults to `[75]` only** — passing `quality={100}` does
+nothing unless you allowlist it in `next.config.ts` first. This bit the auth background: at the
+default q75, Next's WebP re-encoding of the smooth blue gradient (`assets/Glass Effect Login Page -
+Blue.png`, 1.6MB PNG source) introduced visible banding — a ~40x compression ratio down to ~39KB.
+Added `images.qualities: [75, 95]` and set `quality={95}` on that one `<Image>`; output is ~64KB,
+banding gone. Reach for this same fix if any other photo/gradient background looks blocky — check
+the network tab for the actual `q=` the browser received before assuming the source asset is bad.
 
 **App shell strategy:** one shared responsive shell, nav swaps by role (Student / Lecturer / Admin) — not separate portals.
 
@@ -111,7 +158,7 @@ No external font loading (Artifact/CSP-safe, and matches the Apple-style directi
 
 Renders as San Francisco on Apple devices (true to the reference), Segoe UI on Windows, sane fallbacks elsewhere. Mono stack reserved for data-alignment contexts (hex codes, IDs, timestamps, tabular numerics — use `font-variant-numeric: tabular-nums` wherever digits line up in a column, e.g. booking tables, analytics).
 
-**Resolved:** kept Geist Sans/Mono (already wired via `next/font`, self-hosted at build time — no runtime request, same "zero extra font fetch" property as the system stack). Added **Archivo** (weights 800/900, `next/font/google`, var `--font-archivo` / Tailwind `font-display`) as a third role: display headlines only, currently just the landing page's bold uppercase hero/CTA type. Body/UI copy stays on Geist everywhere.
+**Resolved:** kept Geist Sans/Mono (already wired via `next/font`, self-hosted at build time — no runtime request, same "zero extra font fetch" property as the system stack). Added **Archivo** (weights 800/900, `next/font/google`, var `--font-archivo` / Tailwind `font-display`) as a third role: display headlines, used by the `components/greet/*` sections and `app/public/office-hours/page.tsx`. Body/UI copy stays on Geist everywhere except `app/page.tsx`, which runs on its own self-hosted **Satoshi** (§1.1) rather than any of these three — a deliberate one-page exception, not a second app-wide font.
 
 ---
 
@@ -248,5 +295,9 @@ Badge pattern: `background: var(--{hue}-100); color: var(--{hue}-700);` with a s
 1. ~~Geist vs. system-font stack~~ — resolved, see §2.
 2. Confirm brand blue saturation/hue reads right once placed next to real content (not just the swatch preview) — revisit after the first 2-3 pages ship.
 3. `research-tools` (§7.1 API) has no UI — excluded from FE scope per earlier decision.
-4. ~~Landing hero photo is an Unsplash placeholder~~ — resolved, hero is now the interactive `HeroBookingDemo` (no photo dependency); lecturer avatars app-wide switched from Unsplash stock headshots to memoji.
-5. ~~Nav anchors `#for-students` / `#for-lecturers` have no matching sections~~ — resolved, both sections added to `app/page.tsx` (see §1.1).
+4. Landing hero photos (§1.1) are self-hosted Unsplash images, a deliberate exception to the
+   memoji-everywhere rule made on explicit request — everywhere else (lecturer avatars app-wide,
+   this page's own testimonials/stat tiles) still uses memoji, not stock headshots.
+5. `app/page.tsx` was rebuilt on the ProjectOne-referenced neo-brutalist system (§1.1); the
+   Slingshot-referenced rough.js version and the separate Educo-referenced `/landing` route it
+   briefly coexisted with are both gone — one landing page, one system.

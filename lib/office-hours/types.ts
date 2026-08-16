@@ -167,15 +167,22 @@ export interface AvailabilityException {
   reason: string | null;
 }
 
-// Lecturer's imported/manual teaching schedule (Pages.txt #18) — read-mostly,
-// admin edits (Schedule Import / Manual Schedule Entry, #24/#25, future phase).
 export interface ScheduleBlock {
   id: number;
   title: string;
-  dayOfWeek: number; // 1 = Monday .. 5 = Friday
+  dayOfWeek: number; // 1 = Monday .. 7 = Sunday
+  date?: string; // "13/07" or "13/07/2026" — calendar date scanned from PDF column header
   startTime: string;
   endTime: string;
   source: "IMPORTED" | "MANUAL";
+  subjectCode?: string;
+  subjectName?: string;
+  group?: string;
+  room?: string;
+  lecturerName?: string;
+  locationType?: "LAB" | "ROOM" | "ONLINE" | "OTHER";
+  colorHue?: "brand" | "coral" | "rose" | "mint" | "info" | "warning";
+  notes?: string;
 }
 
 // Per-slot waitlist queue transparency for a lecturer (Pages.txt #20) — read

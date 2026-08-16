@@ -400,7 +400,7 @@ until this phase.
   The "illustrative, no real allocation engine runs client-side" framing above described Phase
   13 as shipped. That's since been replaced: `lib/allocation/engine.ts` implements the four
   policies' actual scoring formulas (FCFS = join-order; NEED = `needWeight·need +
-  waitWeight·wait`; ROUND_ROBIN = an eligibility cap, not a ranking; HYBRID = weighted need +
+  waitTimeWeight·wait`; ROUND_ROBIN = an eligibility cap, not a ranking; HYBRID = weighted need +
   wait + a seeded per-candidate random draw for anti-gaming tie-breaking — see the formula
   table in the module's own comments), and `simulatePolicy()`
   (`lib/office-hours/mock-data.ts`) replays a bounded, seeded synthetic population through it

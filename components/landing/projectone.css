@@ -1,0 +1,21 @@
+/* Marquee ticker keyframes for the /landing route's ProjectOne-referenced
+   ticker bar (components/landing/shared.tsx Marquee). Scoped by a unique
+   class name so it can't collide with anything else in the app. */
+@keyframes po-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.po-marquee-track {
+  animation: po-marquee-scroll 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .po-marquee-track {
+    animation: none;
+  }
+}

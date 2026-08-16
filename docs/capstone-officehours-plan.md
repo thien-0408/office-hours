@@ -71,8 +71,13 @@ Current office-hours coordination at most universities is manual and inefficient
 - **Accounts & roles:** Student, Lecturer, Admin. JWT auth.
 - **Semester management:** Admin defines active semester with date bounds.
 - **Availability management:** Lecturer defines recurring weekly availability + one-off exceptions (block a date, add an extra slot).
-- **Schedule import (self-service):** Students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable export → parsed into "busy" blocks used for conflict detection. Because the file must be a genuine AAO export (the school's system of record), not free-form self-reported data, any user may upload their own without a data-integrity risk. Admin retains an aggregation/oversight + manual-entry fallback role, not exclusive upload rights.
-- **Conflict-aware booking:** Student requests a slot; system rejects any slot clashing with the student's classes, the lecturer's teaching, or an existing booking. Enforced at the database level via exclusion constraints.
+- **Schedule import & Timetable Matrix (self-service):** Students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable exports → parsed into structured course sessions used for conflict detection and visual timetable viewing.
+  - **07:30 AM Shift Standard:** Structured around the Vietnamese university shift model: Ca Sáng (`07:30–12:30`), Ca Chiều (`12:30–16:30`), and Ca Tối (`16:30–20:30`).
+  - **Full 7-Day & Specific Date Support:** Spans Monday (Thứ 2) to Sunday (Chủ Nhật) for weekend lab sessions/studios, with automated PDF column-header date extraction (e.g. `Thứ 2 (13/07)`).
+  - **Multi-File Batch Ingestion:** Batch upload multiple PDFs (lectures + labs) with `Replace Old` or `Merge & Deduplicate` modes.
+  - **Dual UX View:** Interactive 07:30 AM Weekly Matrix Grid (with proportional duration scaling and overlap clustering) + Daily Agenda List View. Shipped as `components/dashboard/TimetableGrid.tsx` and `components/dashboard/TimetableAgenda.tsx`, toggled via a `GRID`/`AGENDA` view mode on the schedule page.
+  - **Landing-page showcase (illustrative only):** `components/TimetableShowcaseDemo.tsx`, embedded on the public marketing page (`app/page.tsx`), is a self-contained "how the conflict-free engine works" demo with its own hardcoded fixture data — it does not read `ScheduleBlock`/`SuggestedSlot` or any real mock-data function. Don't mistake its sample classes/slots for schema-backed content; it exists purely to visually explain the conflict-detection concept to a visitor who isn't logged in.
+- **Conflict-aware booking & Proactive Dashboard Suggestions:** Student requests a slot; system rejects any slot clashing with the student's classes, the lecturer's teaching, or an existing booking (enforced at DB level). Student dashboard proactively suggests verified conflict-free open slots across faculty advisors for 1-click booking.
 - **Booking lifecycle:** request → confirm/decline → complete / cancel / mark no-show.
 - **Notifications:** Email (SMTP) + in-app (SSE) for booking events.
 - **Rescheduling & cancellation** with notice-period rules.
@@ -358,11 +363,18 @@ erDiagram
         bigint id PK
         bigint user_id FK
         bigint semester_id FK
-        string title "e.g. CS304 lecture"
-        smallint day_of_week
-        time start_time
+        string title "e.g. UX Design (CSW 437)"
+        string subject_code "CSW 437"
+        string subject_name "Thiết kế trải nghiệm"
+        string group_code "E1"
+        smallint day_of_week "1=Mon .. 7=Sun"
+        string date_label "e.g. 13/07"
+        time start_time "07:30 standard"
         time end_time
-        string room
+        string room "LAB405.B08 / 213.B08"
+        enum location_type "LAB|ROOM|ONLINE|OTHER"
+        string lecturer_name "instructor"
+        string source "AAO_IMPORT|MANUAL"
     }
     SLOTS {
         bigint id PK
@@ -434,8 +446,9 @@ erDiagram
 
 - **Double-booking prevention.** On `BOOKINGS`, use a PostgreSQL exclusion constraint over `(lecturer_id WITH =, time_range WITH &&)` for confirmed bookings (`EXCLUDE USING gist`). This makes overlapping confirmed bookings *impossible* at the storage layer, even under concurrency — a clean point to raise in your defense.
 - **SLOTS: materialized vs computed.** Two options: (a) generate concrete `SLOTS` rows from rules (simpler to reason about, easier to attach waitlists and allocation events — **recommended**), or (b) compute slots on the fly (less storage, harder to reference). The ERD assumes (a) because the research needs concrete, referenceable slot objects.
-- **SCHEDULE_ENTRIES is generic.** Both student classes and lecturer teaching are stored here as busy blocks. This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export, self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
+- **SCHEDULE_ENTRIES is generic and shift-aware.** Both student classes and lecturer teaching are stored here as busy blocks. Intervals align with the university 07:30 AM standard (Ca Sáng: `07:30–12:30`, Ca Chiều: `12:30–16:30`, Ca Tối: `16:30–20:30`) across 7 days (Thứ 2 to Chủ Nhật). This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export (with support for multi-file batch uploads and `REPLACE` vs `MERGE_DEDUPLICATE` modes), self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
 - **ALLOCATION_EVENTS is the reproducibility backbone.** Every decision records the policy, the computed score, and the random seed → experiments are replayable, which is exactly what a committee wants to see.
+- **Large-Scale Timetable Ingestion Architecture.** Ingestion supports massive multi-page PDF files via an asynchronous producer-consumer pipeline: streaming PDF workers write to a staging table (`SCHEDULE_IMPORT_STAGING`), provide live progress via Server-Sent Events (SSE), enable paginated dry-run inspection, and perform atomic high-throughput commits via batch SQL `ON CONFLICT DO NOTHING`. For single-user self-service (1-2 pages), a client-side Web Worker fast-path offloads 100% of parse CPU from backend servers.
 
 ---
 

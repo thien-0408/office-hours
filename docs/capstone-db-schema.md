@@ -136,15 +136,25 @@ CREATE INDEX idx_avail_exceptions_lecturer_date ON availability_exceptions (lect
 ### 2.3 `schedule_entries` (FR-5; UC10) — generic busy blocks for both students and lecturers
 
 ```sql
+CREATE TYPE schedule_location_type AS ENUM ('LAB', 'ROOM', 'ONLINE', 'OTHER');
+
 CREATE TABLE schedule_entries (
     id              bigserial PRIMARY KEY,
     user_id         bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
-    title           varchar(150) NOT NULL,      -- e.g. "CS304 Lecture"
-    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
-    start_time      time NOT NULL,
+    title           varchar(200) NOT NULL,      -- e.g. "Thiết kế trải nghiệm người dùng (CSW 437)"
+    subject_code    varchar(30),                -- e.g. "CSW 437", "CSE 422"
+    subject_name    varchar(150),               -- e.g. "Thiết kế trải nghiệm người dùng"
+    group_code      varchar(20),                -- e.g. "E1", "01" (AAO course group)
+    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- 1=Monday (Thứ 2) .. 7=Sunday (Chủ Nhật)
+    date_label      varchar(20),                -- e.g. "13/07" (scanned specific calendar date from column header)
+    start_time      time NOT NULL,              -- 07:30 AM onward standard
     end_time        time NOT NULL,
-    room            varchar(50),
+    room            varchar(100),               -- e.g. "LAB405.B08", "213.B08", "ONLINE 3"
+    location_type   schedule_location_type NOT NULL DEFAULT 'ROOM',
+    lecturer_name   varchar(150),               -- e.g. "Dr. Amara Chen" or teaching instructor
+    color_hue       varchar(20),                -- 'brand' | 'coral' | 'rose' | 'mint' | 'info' | 'warning'
+    notes           text,                       -- optional user/import notes
     source          varchar(20) NOT NULL DEFAULT 'AAO_IMPORT', -- 'AAO_IMPORT' | 'MANUAL'
     import_batch_id bigint REFERENCES schedule_imports (id) ON DELETE SET NULL,
     CONSTRAINT chk_schedule_time_order CHECK (end_time > start_time)
@@ -152,25 +162,37 @@ CREATE TABLE schedule_entries (
 
 CREATE INDEX idx_schedule_entries_user_semester ON schedule_entries (user_id, semester_id);
 CREATE INDEX idx_schedule_entries_day ON schedule_entries (semester_id, day_of_week);
+CREATE INDEX idx_schedule_entries_dedup ON schedule_entries (user_id, semester_id, day_of_week, start_time, end_time, subject_code);
 ```
 
-> Design note (§10.1 of the plan): storing both student classes and lecturer teaching in one generic table keeps the conflict query uniform — `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`. Entries are owned by `user_id` regardless of who performed the upload; the uploader is captured on the linked `schedule_imports.uploaded_by`, not on this row.
+> **Design notes (§10.1 of the plan):**
+> 1. **Campus Shift Standard:** Timetable intervals align to the university 07:30 AM system divided into three shifts:
+>    - **Ca Sáng (Morning Shift):** `07:30` – `12:30`
+>    - **Ca Chiều (Afternoon Shift):** `12:30` – `16:30`
+>    - **Ca Tối (Evening Shift):** `16:30` – `20:30`
+> 2. **7-Day Support:** `day_of_week` spans 1 (Mon) to 7 (Sun) to fully support Saturday/Sunday lab sessions, capstone studios, and weekend seminars.
+> 3. **Specific Date Association:** `date_label` preserves scanned calendar dates (e.g. `13/07`) directly from PDF headers.
+> 4. **Batch Ingestion Modes:** Supports both `REPLACE` (wipes previous imported rows while keeping `MANUAL` blocks) and `MERGE` (merges multiple PDF files, skipping identical sessions based on `idx_schedule_entries_dedup`) — matches the `import_mode` enum in §2.4 and the shipped FE's `ImportMode` type (`components/dashboard/TimetableImport.tsx`), which is `'REPLACE' | 'MERGE'`, not `MERGE_DEDUPLICATE` as earlier drafts of this doc called it. Note also that the multi-file batch loop and REPLACE/MERGE mode handling live in `TimetableImport.tsx`, not in `lib/timetable/parse-pdf.ts` — the latter remains a single-file, PDF-only parser.
+> 5. **Uniform Conflict Detection:** Storing both student enrolled classes and lecturer teaching in one generic table keeps conflict queries uniform: `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`.
 
 ### 2.4 `schedule_imports` — audit trail for AAO export ingestion (supports FR-5 self-service endpoint `/users/me/schedule-imports` and FR-5a admin endpoint `/schedule-imports`)
 
 ```sql
 CREATE TYPE import_status AS ENUM ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED');
+CREATE TYPE import_mode AS ENUM ('REPLACE', 'MERGE');
 
 CREATE TABLE schedule_imports (
     id              bigserial PRIMARY KEY,
     semester_id     bigint NOT NULL REFERENCES semesters (id),
-    uploaded_by     bigint NOT NULL REFERENCES users (id),  -- who performed the upload (self-service: same as target_user_id; admin-on-behalf-of: the admin)
-    target_user_id  bigint REFERENCES users (id),           -- whose schedule this import populates. NULL means "same as uploaded_by" (self-service); non-NULL is an admin uploading for someone else — resolves the §8 open question below in favor of an explicit column rather than inferring ownership from parsed rows
+    uploaded_by     bigint NOT NULL REFERENCES users (id),  -- who performed the upload
+    target_user_id  bigint REFERENCES users (id),           -- whose schedule this import populates (NULL = self)
     original_filename varchar(255) NOT NULL,
+    mode            import_mode NOT NULL DEFAULT 'REPLACE', -- 'REPLACE' or 'MERGE'
     status          import_status NOT NULL DEFAULT 'QUEUED',
     rows_processed  int NOT NULL DEFAULT 0,
     rows_failed     int NOT NULL DEFAULT 0,
-    error_log       jsonb,                        -- array of {row, message}
+    rows_skipped    int NOT NULL DEFAULT 0,                 -- duplicate count skipped during MERGE mode
+    error_log       jsonb,                                  -- array of {row, message}
     created_at      timestamptz NOT NULL DEFAULT now(),
     completed_at    timestamptz
 );
@@ -179,6 +201,49 @@ CREATE TABLE schedule_imports (
 > `schedule_entries.import_batch_id` forward-references this table — in a real migration, create `schedule_imports` **before** `schedule_entries`, or add the FK in a later `ALTER TABLE`. Order noted here for readability only.
 >
 > `uploaded_by` records **who performed the upload** — the self-serving user themselves, or an admin uploading on their behalf. Recommend adding a nullable `target_user_id bigint REFERENCES users(id)`: NULL means "uploaded_by is also the owner" (self-service), non-NULL means admin uploaded for that target. See §8 open question.
+
+### 2.5 `schedule_import_staging` — temporary high-throughput buffer for massive ingestion
+
+```sql
+CREATE TYPE staging_row_status AS ENUM ('VALID', 'DUPLICATE', 'CONFLICT', 'INVALID');
+
+CREATE TABLE schedule_import_staging (
+    id              bigserial PRIMARY KEY,
+    import_batch_id bigint NOT NULL REFERENCES schedule_imports (id) ON DELETE CASCADE,
+    temp_row_num    int NOT NULL,
+    user_id         bigint REFERENCES users (id) ON DELETE CASCADE,
+    semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
+    title           varchar(200) NOT NULL,
+    subject_code    varchar(30),
+    subject_name    varchar(150),
+    group_code      varchar(20),
+    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+    date_label      varchar(20),
+    start_time      time NOT NULL,
+    end_time        time NOT NULL,
+    room            varchar(100),
+    location_type   schedule_location_type NOT NULL DEFAULT 'ROOM',
+    lecturer_name   varchar(150),
+    status          staging_row_status NOT NULL DEFAULT 'VALID',
+    conflict_notes  text,
+    created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_staging_batch_status ON schedule_import_staging (import_batch_id, status);
+```
+
+> **Ingestion & Commit Pattern:**
+> 1. Ingestion workers stream PDF pages and bulk-insert raw records into `schedule_import_staging`.
+> 2. An automated staging query flags duplicates and conflicts against existing `schedule_entries`.
+> 3. After client review (`GET /preview`), the commit endpoint executes:
+>    ```sql
+>    INSERT INTO schedule_entries (user_id, semester_id, title, subject_code, subject_name, group_code, day_of_week, date_label, start_time, end_time, room, location_type, lecturer_name, source, import_batch_id)
+>    SELECT user_id, semester_id, title, subject_code, subject_name, group_code, day_of_week, date_label, start_time, end_time, room, location_type, lecturer_name, 'AAO_IMPORT', import_batch_id
+>    FROM schedule_import_staging
+>    WHERE import_batch_id = :batchId AND status = 'VALID'
+>    ON CONFLICT (user_id, semester_id, day_of_week, start_time, end_time, subject_code) DO NOTHING;
+>    ```
+> 4. The staging rows are cleared automatically upon completion.
 
 ---
 

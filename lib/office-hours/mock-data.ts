@@ -421,6 +421,97 @@ export function getMockTodaysAvailableSlots(limit = 6): TodayAvailabilitySlot[] 
     }));
 }
 
+export interface SuggestedSlot {
+  id: number;
+  lecturerId: number;
+  lecturerName: string;
+  department: string;
+  photoUrl: string;
+  blurb: string;
+  startAt: string;
+  endAt: string;
+  dayOfWeek: number;
+  dayLabel: string;
+  formattedTime: string;
+  specialtyTag: string;
+  isConflictFree: boolean;
+}
+
+const SPECIALTY_TAGS: Record<number, string> = {
+  1: "Algorithms & Capstone",
+  2: "Systems & Architecture",
+  3: "Linear Algebra & Calculus",
+  4: "Physics & Lab Reports",
+  5: "Economic Theory",
+  6: "Probability & Statistics",
+};
+
+const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function getMockSuggestedLecturerSlots(): SuggestedSlot[] {
+  const allSlots = buildMockSlots();
+  const myClasses = getMockStudentScheduleBlocks();
+  const now = new Date();
+
+  function checkConflict(startIso: string, endIso: string, dow: number): boolean {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    const dayClasses = myClasses.filter((c) => c.dayOfWeek === dow);
+
+    return dayClasses.some((block) => {
+      const [sH, sM] = block.startTime.split(":").map(Number);
+      const [eH, eM] = block.endTime.split(":").map(Number);
+      const bStart = new Date(start);
+      bStart.setHours(sH, sM, 0, 0);
+      const bEnd = new Date(start);
+      bEnd.setHours(eH, eM, 0, 0);
+      return start < bEnd && end > bStart;
+    });
+  }
+
+  // Format time e.g. "10:00 AM – 10:30 AM"
+  const timeFmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+
+  const suggestions: SuggestedSlot[] = [];
+
+  for (const slot of allSlots) {
+    const slotDate = new Date(slot.startAt);
+    const dow = slotDate.getDay() === 0 ? 7 : slotDate.getDay();
+    const hasConflict = checkConflict(slot.startAt, slot.endAt, dow);
+    if (hasConflict) continue; // Only suggest conflict-free slots
+
+    const isSlotToday = slotDate.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isSlotTomorrow = slotDate.toDateString() === tomorrow.toDateString();
+
+    let dayLabel = SHORT_DAYS[slotDate.getDay()];
+    if (isSlotToday) dayLabel = "Today";
+    else if (isSlotTomorrow) dayLabel = "Tomorrow";
+
+    suggestions.push({
+      id: slot.id,
+      lecturerId: slot.lecturerId,
+      lecturerName: slot.lecturerName,
+      department: slot.department ?? "General Faculty",
+      photoUrl: slot.photoUrl,
+      blurb: MOCK_LECTURERS.find((l) => l.id === slot.lecturerId)?.blurb ?? "Office hours discussion.",
+      startAt: slot.startAt,
+      endAt: slot.endAt,
+      dayOfWeek: dow,
+      dayLabel,
+      formattedTime: `${timeFmt.format(slotDate)} – ${timeFmt.format(new Date(slot.endAt))}`,
+      specialtyTag: SPECIALTY_TAGS[slot.lecturerId] || "Academic Advising",
+      isConflictFree: true,
+    });
+  }
+
+  // Sort by earliest start time, and pick diverse top slots
+  suggestions.sort((a, b) => a.startAt.localeCompare(b.startAt));
+
+  return suggestions;
+}
+
 // Stands in for combining several /admin/analytics/* endpoints (capstone-api-
 // endpoints.md §9) into the one overview row the admin dashboard needs.
 export interface AdminOverviewStats {
@@ -849,29 +940,311 @@ export function getMockAvailabilityExceptions(): AvailabilityException[] {
   ];
 }
 
+const MOCK_DAY_DATES: Record<number, string> = {
+  1: "13/07",
+  2: "14/07",
+  3: "15/07",
+  4: "16/07",
+  5: "17/07",
+  6: "18/07",
+  7: "19/07",
+};
+
 // Stands in for GET /users/me/schedule-entries (lecturer) — self-imported/
 // manual teaching schedule (Pages.txt #18). Previously admin-only; now the
 // lecturer's own AAO self-import populates this (capstone-api-endpoints.md §4).
 export function getMockScheduleBlocks(): ScheduleBlock[] {
-  return [
-    { id: 1, title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
-    { id: 2, title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
-    { id: 3, title: "CS 410 — Capstone Seminar", dayOfWeek: 2, startTime: "09:00", endTime: "10:30", source: "IMPORTED" },
-    { id: 4, title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
-    { id: 5, title: "Thesis committee — B. Nguyen", dayOfWeek: 5, startTime: "13:00", endTime: "14:00", source: "MANUAL" },
+  const raw: ScheduleBlock[] = [
+    {
+      id: 1,
+      title: "Thiết kế trải nghiệm người dùng (CSW 437)",
+      subjectCode: "CSW 437",
+      subjectName: "Thiết kế trải nghiệm người dùng",
+      group: "E1",
+      room: "213.B08 - Phòng học vừa",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 1,
+      startTime: "09:30",
+      endTime: "11:30",
+      colorHue: "coral",
+      source: "IMPORTED",
+    },
+    {
+      id: 2,
+      title: "CS 301 — Algorithms",
+      subjectCode: "CS 301",
+      subjectName: "Algorithms",
+      group: "02",
+      room: "302.B08 - Giảng đường",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 1,
+      startTime: "11:30",
+      endTime: "13:00",
+      colorHue: "mint",
+      source: "IMPORTED",
+    },
+    {
+      id: 3,
+      title: "Phát triển ứng dụng di động (CSW 430)",
+      subjectCode: "CSW 430",
+      subjectName: "Phát triển ứng dụng di động",
+      group: "01",
+      room: "ONLINE 3 - Virtual Room",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ONLINE",
+      dayOfWeek: 1,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "brand",
+      source: "IMPORTED",
+    },
+    {
+      id: 4,
+      title: "CS 410 — Capstone Seminar",
+      subjectCode: "CS 410",
+      subjectName: "Capstone Seminar",
+      group: "01",
+      room: "105.B08 - Phòng seminar",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 2,
+      startTime: "09:00",
+      endTime: "10:30",
+      colorHue: "rose",
+      source: "IMPORTED",
+    },
+    {
+      id: 5,
+      title: "Kỹ năng lập trình chuyên nghiệp (CSE 422)",
+      subjectCode: "CSE 422",
+      subjectName: "Kỹ năng lập trình chuyên nghiệp",
+      group: "E",
+      room: "221.B08 - Phòng học nhỏ",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 2,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "info",
+      source: "IMPORTED",
+    },
+    {
+      id: 6,
+      title: "Thiết kế trải nghiệm người dùng (CSW 437)",
+      subjectCode: "CSW 437",
+      subjectName: "Thiết kế trải nghiệm người dùng",
+      group: "E1",
+      room: "213.B08 - Phòng học vừa",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 3,
+      startTime: "09:30",
+      endTime: "11:30",
+      colorHue: "coral",
+      source: "IMPORTED",
+    },
+    {
+      id: 7,
+      title: "CS 301 — Algorithms",
+      subjectCode: "CS 301",
+      subjectName: "Algorithms",
+      group: "02",
+      room: "302.B08 - Giảng đường",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 3,
+      startTime: "11:30",
+      endTime: "13:00",
+      colorHue: "mint",
+      source: "IMPORTED",
+    },
+    {
+      id: 8,
+      title: "Phát triển ứng dụng di động (CSW 430)",
+      subjectCode: "CSW 430",
+      subjectName: "Phát triển ứng dụng di động",
+      group: "01",
+      room: "ONLINE 3 - Virtual Room",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ONLINE",
+      dayOfWeek: 3,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "brand",
+      source: "IMPORTED",
+    },
+    {
+      id: 9,
+      title: "Phát triển ứng dụng di động (CSW 430) (LAB)",
+      subjectCode: "CSW 430",
+      subjectName: "Phát triển ứng dụng di động",
+      group: "01",
+      room: "LAB405.B08 - Lab máy tính",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "LAB",
+      dayOfWeek: 4,
+      startTime: "07:30",
+      endTime: "11:30",
+      colorHue: "brand",
+      source: "IMPORTED",
+    },
+    {
+      id: 10,
+      title: "Department Academic Committee",
+      subjectName: "Department Academic Committee",
+      room: "Boardroom B02 - Tòa nhà B",
+      locationType: "ROOM",
+      dayOfWeek: 4,
+      startTime: "14:00",
+      endTime: "15:00",
+      source: "MANUAL",
+      notes: "Curriculum review & allocation planning meeting",
+    },
+    {
+      id: 11,
+      title: "Kỹ năng lập trình chuyên nghiệp (CSE 422)",
+      subjectCode: "CSE 422",
+      subjectName: "Kỹ năng lập trình chuyên nghiệp",
+      group: "E",
+      room: "221.B08 - Phòng học nhỏ",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "ROOM",
+      dayOfWeek: 4,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "info",
+      source: "IMPORTED",
+    },
+    {
+      id: 12,
+      title: "Thesis Committee Defense — B. Nguyen",
+      subjectName: "Thesis Committee Defense",
+      room: "Meeting Room 402 - Tòa nhà A",
+      locationType: "ROOM",
+      dayOfWeek: 5,
+      startTime: "13:00",
+      endTime: "14:00",
+      source: "MANUAL",
+      notes: "Undergraduate capstone final evaluation panel",
+    },
+    {
+      id: 13,
+      title: "Kỹ năng lập trình chuyên nghiệp (CSE 422) (LAB)",
+      subjectCode: "CSE 422",
+      subjectName: "Kỹ năng lập trình chuyên nghiệp",
+      group: "E",
+      room: "LAB403.B08 - Lab máy tính",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "LAB",
+      dayOfWeek: 6,
+      startTime: "07:30",
+      endTime: "11:30",
+      colorHue: "info",
+      source: "IMPORTED",
+    },
+    {
+      id: 14,
+      title: "Thiết kế trải nghiệm người dùng (CSW 437) (Studio)",
+      subjectCode: "CSW 437",
+      subjectName: "Thiết kế trải nghiệm người dùng",
+      group: "E1",
+      room: "LAB405.B08 - Lab máy tính",
+      lecturerName: "Dr. Amara Chen",
+      locationType: "LAB",
+      dayOfWeek: 6,
+      startTime: "12:30",
+      endTime: "16:30",
+      colorHue: "coral",
+      source: "IMPORTED",
+    },
   ];
+  return raw.map((b) => ({ ...b, date: b.date ?? MOCK_DAY_DATES[b.dayOfWeek] }));
 }
 
 // Stands in for GET /users/me/schedule-entries (student) — self-imported
 // class timetable (Pages.txt #32, net-new), feeding the conflict filter on
-// GET /lecturers/{id}/slots. No prior admin-imported seed rows, since this
-// data source is student-owned from the start.
+// GET /lecturers/{id}/slots.
 export function getMockStudentScheduleBlocks(): ScheduleBlock[] {
-  return [
-    { id: 1, title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
-    { id: 2, title: "CS 220 — Data Structures", dayOfWeek: 2, startTime: "13:30", endTime: "15:00", source: "IMPORTED" },
-    { id: 3, title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+  const raw: ScheduleBlock[] = [
+    {
+      id: 1,
+      title: "Thiết kế trải nghiệm người dùng (CSW 437)",
+      subjectCode: "CSW 437",
+      subjectName: "Thiết kế trải nghiệm người dùng",
+      group: "E1",
+      room: "213.B08 - Phòng học vừa",
+      lecturerName: "Anirban Mitra",
+      locationType: "ROOM",
+      dayOfWeek: 1,
+      startTime: "09:30",
+      endTime: "11:30",
+      colorHue: "coral",
+      source: "IMPORTED",
+    },
+    {
+      id: 2,
+      title: "Phát triển ứng dụng di động (CSW 430)",
+      subjectCode: "CSW 430",
+      subjectName: "Phát triển ứng dụng di động",
+      group: "01",
+      room: "ONLINE 3",
+      lecturerName: "Trần Văn Tài",
+      locationType: "ONLINE",
+      dayOfWeek: 1,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "brand",
+      source: "IMPORTED",
+    },
+    {
+      id: 3,
+      title: "Kỹ năng lập trình chuyên nghiệp (CSE 422)",
+      subjectCode: "CSE 422",
+      subjectName: "Kỹ năng lập trình chuyên nghiệp",
+      group: "E",
+      room: "221.B08",
+      lecturerName: "Rohit Kumar Kasera",
+      locationType: "ROOM",
+      dayOfWeek: 2,
+      startTime: "16:30",
+      endTime: "18:30",
+      colorHue: "info",
+      source: "IMPORTED",
+    },
+    {
+      id: 4,
+      title: "Phát triển ứng dụng di động (CSW 430) (LAB)",
+      subjectCode: "CSW 430",
+      subjectName: "Phát triển ứng dụng di động",
+      group: "01",
+      room: "LAB405.B08 - Lab máy tính",
+      lecturerName: "Nguyễn Hoàng Lý",
+      locationType: "LAB",
+      dayOfWeek: 4,
+      startTime: "07:30",
+      endTime: "11:30",
+      colorHue: "brand",
+      source: "IMPORTED",
+    },
+    {
+      id: 5,
+      title: "Kỹ năng lập trình chuyên nghiệp (CSE 422) (LAB)",
+      subjectCode: "CSE 422",
+      subjectName: "Kỹ năng lập trình chuyên nghiệp",
+      group: "E",
+      room: "LAB403.B08 - Lab máy tính",
+      lecturerName: "Rohit Kumar Kasera",
+      locationType: "LAB",
+      dayOfWeek: 6,
+      startTime: "07:30",
+      endTime: "11:30",
+      colorHue: "info",
+      source: "IMPORTED",
+    },
   ];
+  return raw.map((b) => ({ ...b, date: b.date ?? MOCK_DAY_DATES[b.dayOfWeek] }));
 }
 
 // Stands in for GET /users/me/schedule-imports — self-service import history

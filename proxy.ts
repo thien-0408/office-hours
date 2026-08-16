@@ -4,6 +4,7 @@ import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 
 const PUBLIC_PATHS = [
   "/",
+  "/welcome",
   "/login",
   "/register",
   "/public/office-hours",

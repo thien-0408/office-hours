@@ -8,7 +8,7 @@ extra scope beyond the 31-page list — it's the shell/overview screen these pag
 
 ## Public (no auth)
 
-- [X] 1. Landing / Home — `app/page.tsx`
+- [X] 1. Landing / Home — `app/page.tsx` (ProjectOne-referenced neo-brutalist rebuild, `components/landing/`; see `DESIGN.md` §1.1)
 - [X] 2. Public Office Hours listing — `app/public/office-hours/page.tsx`
 
 ## Auth (shared)

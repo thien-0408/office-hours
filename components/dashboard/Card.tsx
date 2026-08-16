@@ -3,12 +3,17 @@
 export function Card({
   className = "",
   children,
+  onClick,
 }: {
   className?: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
   return (
-    <div className={`rounded-2xl border border-[var(--paper-200)] bg-white p-5 ${className}`}>
+    <div
+      onClick={onClick}
+      className={`rounded-2xl border border-[var(--paper-200)] bg-white p-5 ${className}`}
+    >
       {children}
     </div>
   );

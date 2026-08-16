@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AlertTriangle, CalendarDays, Clock, Scale, Search, TrendingUp, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
@@ -9,8 +10,9 @@ import {
   getMockLecturerSlotsToday,
   getMockOfficeHours,
   getMockStudentBookings,
-  getMockTodaysAvailableSlots,
+  getMockSuggestedLecturerSlots,
   getMockWeeklyActivity,
+  type SuggestedSlot,
 } from "@/lib/office-hours/mock-data";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
@@ -24,10 +26,12 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { SlotsTodayList } from "@/components/dashboard/SlotsTodayList";
 import { StaggerGroup, StaggerItem } from "@/components/dashboard/StaggerGroup";
 import { StatTile } from "@/components/dashboard/StatTile";
+import { SuggestedSlotsCard } from "@/components/dashboard/SuggestedSlotsCard";
 import { TaskList, type Task } from "@/components/dashboard/TaskList";
-import { TodaysAvailabilityCard } from "@/components/dashboard/TodaysAvailabilityCard";
 import { UpcomingList } from "@/components/dashboard/UpcomingList";
+import { useToast } from "@/components/ToastProvider";
 import type { AuthUser } from "@/lib/auth/types";
+import type { Booking } from "@/lib/office-hours/types";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -74,13 +78,37 @@ export default function DashboardPage() {
 }
 
 function StudentDashboard({ user }: { user: AuthUser }) {
-  const bookings = getMockStudentBookings();
+  const toast = useToast();
+  const [bookings, setBookings] = useState<Booking[]>(() => getMockStudentBookings());
+  const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>(() => getMockSuggestedLecturerSlots());
+
   const upcoming = bookings.filter((b) => b.status === "PENDING" || b.status === "CONFIRMED");
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
   const slotsThisWeek = getMockOfficeHours({ page: 0, size: 500 }).totalElements;
   const weeklyActivity = getMockWeeklyActivity();
   const todayKey = new Date().toDateString();
-  const todaysAvailability = getMockTodaysAvailableSlots();
+
+  function handleBookSuccess(slot: SuggestedSlot, topic: string) {
+    const nextId = bookings.length === 0 ? 1 : Math.max(...bookings.map((b) => b.id)) + 1;
+    const newBooking: Booking = {
+      id: nextId,
+      lecturerName: slot.lecturerName,
+      studentName: user.fullName,
+      department: slot.department,
+      topic: topic.trim() || "Office Hours Consultation",
+      startAt: slot.startAt,
+      endAt: slot.endAt,
+      status: "PENDING",
+    };
+
+    setBookings((prev) => [newBooking, ...prev]);
+    // Remove booked slot from suggestions
+    setSuggestedSlots((prev) => prev.filter((s) => s.id !== slot.id));
+
+    toast.success(`Booking request sent to ${slot.lecturerName}`, {
+      description: "Slot is held for you pending confirmation.",
+    });
+  }
 
   return (
     <DashboardColumns
@@ -104,9 +132,12 @@ function StudentDashboard({ user }: { user: AuthUser }) {
       }
     >
       <StaggerGroup className="flex flex-col gap-6">
+        {/* Suggested / Available Lecturer Slots */}
         <StaggerItem>
-          <SectionHeader title="Available today" href="/dashboard/lecturers" />
-          <TodaysAvailabilityCard slots={todaysAvailability} />
+          <SuggestedSlotsCard
+            slots={suggestedSlots}
+            onBookSuccess={handleBookSuccess}
+          />
         </StaggerItem>
 
         <StaggerItem className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -118,10 +149,10 @@ function StudentDashboard({ user }: { user: AuthUser }) {
         <StaggerItem>
           <FeaturedActionCard
             icon={Search}
-            title="Find a Lecturer"
-            description="Browse availability across every department and book a conflict-free slot in minutes."
+            title="Browse All Faculty"
+            description="Explore office hours across all departments and discover weekly availability."
             href="/dashboard/lecturers"
-            actionLabel="Browse lecturers"
+            actionLabel="Explore faculty directory"
           />
         </StaggerItem>
 
