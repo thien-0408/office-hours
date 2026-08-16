@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
+import { PillTag, CapIcon } from "@/components/landing/shared";
 
 export default function ForgotPasswordForm() {
   const { forgotPassword } = useAuth();
@@ -26,6 +27,9 @@ export default function ForgotPasswordForm() {
 
   return (
     <div className={AUTH_CARD_CLASS}>
+      <div className="mb-2">
+        <PillTag icon={<CapIcon />}>Account Recovery</PillTag>
+      </div>
       <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">Forgot password?</h1>
 
       {submitted ? (

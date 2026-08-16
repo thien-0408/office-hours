@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
+import { PillTag, CapIcon } from "@/components/landing/shared";
 
 export default function ResetPasswordForm() {
   const router = useRouter();
@@ -41,6 +42,9 @@ export default function ResetPasswordForm() {
   if (!token) {
     return (
       <div className={AUTH_CARD_CLASS}>
+        <div className="mb-2">
+          <PillTag icon={<CapIcon />}>Security</PillTag>
+        </div>
         <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">Invalid reset link</h1>
         <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
           This link is missing its reset token. Request a new one below.
@@ -54,7 +58,10 @@ export default function ResetPasswordForm() {
 
   return (
     <div className={AUTH_CARD_CLASS}>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-5">Set a new password</h1>
+      <div className="mb-2">
+        <PillTag icon={<CapIcon />}>Account Security</PillTag>
+      </div>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">Set a new password</h1>
 
       {error && (
         <div className="mb-3">

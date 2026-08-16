@@ -169,7 +169,7 @@ export function PolaroidCard({
     // border-blue-950 + a flat offset shadow, no blur — applied here instead
     // of a soft blurred drop shadow, per explicit request.
     <div
-      className={`w-[260px] rounded-2xl border-2 border-blue-950 bg-white p-3 pb-4 shadow-[7px_7px_0_0_#0b1b49] ${className}`}
+      className={`w-[260px] rounded-2xl border-2 border-blue-950 bg-white p-3 pb-4 shadow-[7px_7px_0_0_#0b1b49] transition-transform hover:-translate-y-1 ${className}`}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
       <div className={`relative flex h-[205px] w-full items-center justify-center overflow-hidden rounded-xl ${accentBg}`}>
