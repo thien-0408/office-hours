@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Marquee } from "@/components/landing/shared";
+import { Marquee, SmoothAnchor } from "@/components/landing/shared";
 
 const TICKER = ["100% money-back on complaints", "Free for students", "Fair waitlist", "Conflict-checked", "Senior-built"];
 
@@ -24,9 +24,10 @@ export default function LandingFooter() {
         <div className="mx-auto w-full max-w-[1180px] px-6">
           <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
             <div>
-              <Link href="/" className="flex items-center gap-1 text-[15px] font-bold text-white">
-                Office
-                <span className="rounded-md bg-[var(--po-accent)] px-1.5 py-0.5 text-[var(--po-text-primary)]">Hours</span>
+              <Link href="/" className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- plain SVG asset; icon-only mark since the full lockup's dark wordmark text is illegible on this dark footer */}
+                <img src="/logos/concept-4-interlocking-loop.svg" alt="" className="h-8 w-8" />
+                <span className="text-[15px] font-bold text-white">OfficeHours</span>
               </Link>
               <p className="mt-4 max-w-[30ch] text-[12.5px] leading-relaxed text-white/50">
                 Conflict-free office hours booking, built for campus. Free for every student and
@@ -39,9 +40,9 @@ export default function LandingFooter() {
               <ul className="mt-4 flex flex-col gap-2.5">
                 {NAV.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="text-[13px] font-semibold text-white/70 hover:text-white">
+                    <SmoothAnchor href={link.href} className="text-[13px] font-semibold text-white/70 hover:text-white">
                       {link.label}
-                    </a>
+                    </SmoothAnchor>
                   </li>
                 ))}
               </ul>

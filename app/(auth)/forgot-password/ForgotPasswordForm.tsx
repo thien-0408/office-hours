@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
+import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 
 export default function ForgotPasswordForm() {
   const { forgotPassword } = useAuth();
@@ -24,32 +25,32 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full p-12 sm:p-15 rounded-[28px] bg-white/10 backdrop-blur-lg shadow-2xl text-white flex flex-col font-sans">
-      <h1 className="text-2xl font-bold text-white mb-2">Forgot password?</h1>
+    <div className={AUTH_CARD_CLASS}>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">Forgot password?</h1>
 
       {submitted ? (
         <>
-          <p className="text-sm text-white/80 mb-6 leading-relaxed">
-            If an account exists for <span className="font-semibold text-white">{email}</span>, we&apos;ve
+          <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
+            If an account exists for <span className="font-bold text-[var(--po-text-primary)]">{email}</span>, we&apos;ve
             sent a link to reset your password. It expires in 30 minutes.
           </p>
           <button
             type="button"
             onClick={() => setSubmitted(false)}
-            className="text-xs font-semibold text-white/80 hover:text-white hover:underline text-left mb-6 w-fit"
+            className={`text-xs text-left mb-6 w-fit ${AUTH_LINK_CLASS}`}
           >
             Didn&apos;t get it? Try another email
           </button>
         </>
       ) : (
         <>
-          <p className="text-sm text-white/70 mb-6 leading-relaxed">
+          <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
             Enter the email on your account and we&apos;ll send you a link to reset your password.
           </p>
 
           <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="email" className="text-xs font-semibold text-white">
+              <label htmlFor="email" className={AUTH_LABEL_CLASS}>
                 Email
               </label>
               <input
@@ -61,24 +62,20 @@ export default function ForgotPasswordForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+                className={AUTH_INPUT_CLASS}
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 mt-2 rounded-xl bg-[#0b132b] text-white font-bold text-sm hover:bg-[#121f42] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg"
-            >
+            <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
               {isSubmitting ? "Sending…" : "Send reset link"}
             </button>
           </form>
         </>
       )}
 
-      <p className="text-xs text-white/80 text-center mt-6">
-        <Link href="/login" className="font-bold text-white hover:underline">
-          ← Back to login
+      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
+        <Link href="/login" className={AUTH_LINK_CLASS}>
+          &larr; Back to login
         </Link>
       </p>
     </div>

@@ -1,77 +1,50 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 540 120"
-     width="540"
-     height="120"
-     fill="none">
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="540" height="120" fill="none">
   <defs>
-    <!-- Accent Gradient -->
-    <linearGradient id="chosenPointGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2dd4bf"/>
-      <stop offset="100%" stop-color="#0d9488"/>
+    <linearGradient id="logoWithText_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
     </linearGradient>
-
-    <!-- Soft Glow -->
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
+    <linearGradient id="logoWithText_purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="logoWithText_teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
   </defs>
 
   <!-- ===================================================== -->
-  <!-- Logo Mark -->
+  <!-- Logo Mark (Concept 4: Interlocking OH Loop) -->
   <!-- ===================================================== -->
-  <g id="logo-mark">
+  <g id="logo-mark" transform="translate(10, 0)">
+    <!-- Left Ring: Advisor Loop ('O') -->
+    <circle cx="46" cy="60" r="28" stroke="url(#logoWithText_blue)" stroke-width="8" stroke-linecap="round"/>
 
-    <!-- Queue Column 1 -->
-    <circle cx="30" cy="24" r="5.5" fill="#94a3b8" opacity="0.45"/>
-    <circle cx="30" cy="48" r="5.5" fill="#94a3b8" opacity="0.45"/>
-    <circle cx="30" cy="72" r="5.5" fill="#94a3b8" opacity="0.45"/>
-    <circle cx="30" cy="96" r="5.5" fill="#94a3b8" opacity="0.45"/>
+    <!-- Right Ring: Student / Clock Loop ('H') -->
+    <circle cx="74" cy="60" r="28" stroke="url(#logoWithText_purple)" stroke-width="8" stroke-linecap="round"/>
 
-    <!-- Queue Column 2 -->
-    <circle cx="62" cy="36" r="6" fill="#64748b" opacity="0.65"/>
-    <circle cx="62" cy="60" r="6" fill="#64748b" opacity="0.65"/>
-    <circle cx="62" cy="84" r="6" fill="#64748b" opacity="0.65"/>
+    <!-- Intersecting Overlap / Synced Meeting Bridge -->
+    <path d="M60 40 C65 46, 65 74, 60 80" stroke="url(#logoWithText_teal)" stroke-width="8" stroke-linecap="round"/>
 
-    <!-- Queue Column 3 -->
-    <circle cx="94" cy="48" r="6.5" fill="#475569" opacity="0.85"/>
-    <circle cx="94" cy="72" r="6.5" fill="#475569" opacity="0.85"/>
-
-    <!-- Queue Flow -->
-    <path
-      d="M30 24 L132 60
-         M30 96 L132 60"
-      stroke="#cbd5e1"
-      stroke-width="1"
-      stroke-dasharray="2 3"
-      opacity="0.4"/>
-
-    <!-- Chosen Point -->
-    <circle
-      cx="134"
-      cy="60"
-      r="14"
-      fill="url(#chosenPointGrad)"
-      filter="url(#softGlow)"/>
-
+    <!-- Synchronized Active Node -->
+    <circle cx="60" cy="60" r="6" fill="#10b981"/>
+    <circle cx="60" cy="60" r="10" stroke="#10b981" stroke-width="2" opacity="0.5"/>
   </g>
 
   <!-- ===================================================== -->
-  <!-- Brand Name -->
+  <!-- Brand Name Typography -->
   <!-- ===================================================== -->
   <g id="logo-text">
     <text
-      x="175"
+      x="135"
       y="71"
       font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
       font-size="44"
       font-weight="700"
       letter-spacing="-1.2"
       fill="#0f172a">
-      Office<tspan font-weight="400" fill="#334155">Hours</tspan>
+      Office<tspan font-weight="400" fill="#6d28d9">Hours</tspan>
     </text>
   </g>
-
 </svg>

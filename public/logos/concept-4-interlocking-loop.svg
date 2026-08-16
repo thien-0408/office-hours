@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <defs>
+    <linearGradient id="c4_grad_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="c4_grad_teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="c4_grad_purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left Ring: Advisor Loop ('O') -->
+  <circle cx="46" cy="60" r="28" stroke="url(#c4_grad_blue)" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Right Ring: Student / Clock Loop ('H') -->
+  <circle cx="74" cy="60" r="28" stroke="url(#c4_grad_purple)" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Intersecting Overlap / Synced Slot -->
+  <path d="M60 40 C65 46, 65 74, 60 80" stroke="url(#c4_grad_teal)" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Synchronized Meeting Point -->
+  <circle cx="60" cy="60" r="6" fill="#10b981"/>
+  <circle cx="60" cy="60" r="10" stroke="#10b981" stroke-width="2" opacity="0.5"/>
+</svg>

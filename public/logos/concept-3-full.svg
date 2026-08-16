@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100" fill="none">
+  <defs>
+    <linearGradient id="c3_full_body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="c3_full_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon Mark -->
+  <g transform="translate(10, 10)">
+    <circle cx="40" cy="40" r="38" stroke="url(#c3_full_body)" stroke-width="5"/>
+    <circle cx="40" cy="40" r="32" stroke="#93c5fd" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>
+
+    <path d="M26 18 L54 18" stroke="url(#c3_full_body)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M26 62 L54 62" stroke="url(#c3_full_body)" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M27 22 L40 38 L53 22 Z" fill="url(#c3_full_body)"/>
+    <path d="M27 58 L40 42 L53 58 Z" fill="url(#c3_full_body)"/>
+
+    <circle cx="40" cy="40" r="3.5" fill="url(#c3_full_gold)"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="110" y="58" font-family="'Archivo', system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" letter-spacing="-0.5" fill="#0b1b49">
+    OFFICE<tspan font-weight="400" fill="#d97706">HOURS</tspan>
+  </text>
+  <text x="112" y="75" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10.5" font-weight="700" letter-spacing="2" fill="#64748b">
+    UNIVERSITY ADVISING PLATFORM
+  </text>
+</svg>

@@ -1,11 +1,40 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import "@/components/landing/projectone.css";
 
 // Shared primitives for the /landing route's ProjectOne-referenced system —
 // pill buttons, micro eyebrow labels, polaroid photo cards, checkmark
 // chips. See components/landing/tokens.ts for the color/type scale these
-// draw from.
+// draw from. Client boundary (rather than per-component "use client") is
+// needed for SmoothAnchor's onClick below; every other export here is plain
+// presentational JSX, so making the whole module client-side costs nothing.
+
+export function SmoothAnchor({
+  href,
+  children,
+  className = "",
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  function handleClick(e: MouseEvent<HTMLAnchorElement>) {
+    const id = href.replace("#", "");
+    const target = document.getElementById(id);
+    if (!target) return;
+    e.preventDefault();
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }
+
+  return (
+    <a href={href} onClick={handleClick} className={className}>
+      {children}
+    </a>
+  );
+}
 
 // Neo-brutalist hard-shadow card recipe, lifted from app/page.tsx's
 // value-prop cards (docs/DESIGN.md §1.1) and applied across every card-like
@@ -40,7 +69,7 @@ export function LimeButton({
     // full rounding.
     <Link
       href={href}
-      className={`inline-flex items-center gap-2.5 rounded-full border-2 border-blue-950 bg-[var(--po-accent)] py-3 pl-6 pr-2 text-[13px] font-bold text-[var(--po-text-primary)] transition-transform hover:-translate-y-0.5 ${className}`}
+      className={`inline-flex items-center gap-2.5 rounded-full border-2 border-blue-950 bg-[var(--po-accent)] py-3 pl-6 pr-2 text-[13px] font-bold uppercase tracking-[0.03em] text-[var(--po-text-primary)] transition-transform hover:-translate-y-0.5 ${className}`}
     >
       {children}
       <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--po-text-primary)] text-[var(--po-accent)]">
@@ -67,7 +96,7 @@ export function DarkButton({
     // above) since that's how the reference draws its dark variant.
     <Link
       href={href}
-      className={`inline-flex items-center gap-2.5 rounded-full border-2 border-blue-950 bg-[var(--po-text-primary)] py-3 pl-6 pr-2 text-[13px] font-bold text-[var(--po-text-tertiary)] transition-transform hover:-translate-y-0.5 ${className}`}
+      className={`inline-flex items-center gap-2.5 rounded-full border-2 border-blue-950 bg-[var(--po-text-primary)] py-3 pl-6 pr-2 text-[13px] font-bold uppercase tracking-[0.03em] text-[var(--po-text-tertiary)] transition-transform hover:-translate-y-0.5 ${className}`}
     >
       {children}
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--po-text-primary)]">
@@ -89,11 +118,34 @@ export function Eyebrow({ children, className = "" }: { children: ReactNode; cla
   );
 }
 
-export function PillTag({ children }: { children: ReactNode }) {
+export function PillTag({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--po-text-primary)] px-3 py-1.5 text-[10px] font-bold text-[var(--po-text-tertiary)]">
-      <span className="h-1.5 w-1.5 rounded-full bg-[var(--po-accent)]" />
+      {icon ?? <span className="h-1.5 w-1.5 rounded-full bg-[var(--po-accent)]" />}
       {children}
+    </span>
+  );
+}
+
+// Small glyph for PillTag's icon slot — a stand-in for the reference's
+// feather/paper-plane brand mark, themed to campus scheduling instead
+// (a simple graduation-cap outline).
+export function CapIcon({ className = "h-3 w-3" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m2 9 10-5 10 5-10 5-10-5Z" />
+      <path d="M6 11v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5" />
+    </svg>
+  );
+}
+
+// Checkmark-circle for footnote/guarantee-style lines — replaces a plain dot.
+export function CheckDot({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <span className={`flex items-center justify-center rounded-full bg-[var(--po-accent)] text-[var(--po-text-primary)] ${className}`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="h-[65%] w-[65%]">
+        <path d="m4 12 5 5L20 6" />
+      </svg>
     </span>
   );
 }
@@ -117,13 +169,13 @@ export function PolaroidCard({
     // border-blue-950 + a flat offset shadow, no blur — applied here instead
     // of a soft blurred drop shadow, per explicit request.
     <div
-      className={`w-[220px] rounded-2xl border-2 border-blue-950 bg-white p-2.5 pb-3.5 shadow-[6px_6px_0_0_#0b1b49] ${className}`}
+      className={`w-[260px] rounded-2xl border-2 border-blue-950 bg-white p-3 pb-4 shadow-[7px_7px_0_0_#0b1b49] ${className}`}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <div className={`relative flex h-[170px] w-full items-center justify-center overflow-hidden rounded-xl ${accentBg}`}>
+      <div className={`relative flex h-[205px] w-full items-center justify-center overflow-hidden rounded-xl ${accentBg}`}>
         {children}
       </div>
-      <p className="mt-2.5 truncate px-1 text-[13px] font-semibold text-[var(--po-text-primary)]">{caption}</p>
+      <p className="mt-3 truncate px-1 text-[14px] font-semibold text-[var(--po-text-primary)]">{caption}</p>
     </div>
   );
 }

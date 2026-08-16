@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { CheckBadge, NEO_LIGHT, NEO_DARK } from "@/components/landing/shared";
+import { CheckBadge, NEO_LIGHT, NEO_DARK, LimeButton } from "@/components/landing/shared";
 
 type Tone = "lime" | "paper" | "dark";
 
@@ -32,17 +31,7 @@ export default function ValueGrid() {
             We Make Booking Office Hours Insanely Simple.
           </h2>
           <div className="mt-6">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--po-accent)] py-3 pl-5 pr-2 text-[13px] font-bold text-[var(--po-text-primary)]"
-            >
-              Start booking
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--po-text-primary)] text-[var(--po-accent)]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </span>
-            </Link>
+            <LimeButton href="/register">Start booking</LimeButton>
           </div>
         </div>
 

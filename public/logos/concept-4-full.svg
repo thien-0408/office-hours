@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100" fill="none">
+  <defs>
+    <linearGradient id="c4_full_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="c4_full_teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="c4_full_purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon Mark -->
+  <g transform="translate(10, 10)">
+    <circle cx="32" cy="40" r="22" stroke="url(#c4_full_blue)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="54" cy="40" r="22" stroke="url(#c4_full_purple)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M43 25 C47 30, 47 50, 43 55" stroke="url(#c4_full_teal)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="43" cy="40" r="4" fill="#10b981"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="110" y="58" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="800" letter-spacing="-0.8" fill="#0f172a">
+    Office<tspan font-weight="600" fill="#7c3aed">Hours</tspan>
+  </text>
+  <text x="112" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600" letter-spacing="1.5" fill="#64748b">
+    SEAMLESS ADVISING &amp; CALENDAR SYNC
+  </text>
+</svg>

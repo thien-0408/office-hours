@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfficeHours Logo Concepts Showcase</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+    }
+
+    [data-theme="dark"] {
+      --bg: #09090b;
+      --card-bg: #121216;
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.5px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin: 0 0 20px 0;
+    }
+
+    .theme-toggle {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 28px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      display: flex;
+      flex-col: column;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+
+    .logo-preview-box {
+      background: var(--bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      padding: 24px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 110px;
+      margin-bottom: 16px;
+    }
+
+    .logo-preview-box img {
+      max-width: 100%;
+      height: auto;
+      max-height: 75px;
+    }
+
+    .mark-preview-box {
+      background: var(--bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 70px;
+      margin-bottom: 16px;
+    }
+
+    .mark-preview-box img {
+      width: 54px;
+      height: 54px;
+    }
+
+    .meta {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--text-muted);
+      border-top: 1px solid var(--card-border);
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>OfficeHours — Logo Design Concepts</h1>
+      <p class="subtitle">Curated visual identity concepts designed for the university scheduling & fairness engine</p>
+      <button class="theme-toggle" onclick="toggleTheme()">Toggle Light / Dark Mode</button>
+    </header>
+
+    <div class="grid">
+      <!-- CONCEPT 1 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 01</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Icon + Wordmark</span>
+          </div>
+          <h2 class="card-title">The Open Portal & Clock Gate</h2>
+          <p class="card-desc">Architectural O+H monogram forming an open door portal with an illuminated 10:15 time pointer.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-1-full.svg" alt="Concept 1 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-1-open-portal.svg" alt="Concept 1 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>brand-blue + cyan</span>
+        </div>
+      </div>
+
+      <!-- CONCEPT 2 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 02</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Queue / Convergence</span>
+          </div>
+          <h2 class="card-title">Shift Matrix & Time Convergence</h2>
+          <p class="card-desc">A refined multi-node schedule queue converging conflict-free into a confirmed booking focal point.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-2-full.svg" alt="Concept 2 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-2-matrix-convergence.svg" alt="Concept 2 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>cobalt + neon-teal</span>
+        </div>
+      </div>
+
+      <!-- CONCEPT 3 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 03</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Academic Heritage</span>
+          </div>
+          <h2 class="card-title">Academic Hourglass & Column</h2>
+          <p class="card-desc">Classical academic architectural column capital blended with a precision geometric hourglass and gold time core.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-3-full.svg" alt="Concept 3 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-3-academic-hourglass.svg" alt="Concept 3 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>deep-navy + amber-gold</span>
+        </div>
+      </div>
+
+      <!-- CONCEPT 4 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 04</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Connection Loop</span>
+          </div>
+          <h2 class="card-title">Interlocking OH Loop</h2>
+          <p class="card-desc">Two fluid interlocking rings representing Student and Faculty joining together at an active synchronized meeting node.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-4-full.svg" alt="Concept 4 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-4-interlocking-loop.svg" alt="Concept 4 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>royal-blue + violet + mint</span>
+        </div>
+      </div>
+
+      <!-- CONCEPT 5 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 05</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Precision Engine</span>
+          </div>
+          <h2 class="card-title">07:30 Shift Compass & Dial</h2>
+          <p class="card-desc">Technical squircle icon badge locking directly onto the 07:30 Ca Sáng shift standard with verified check badge.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-5-full.svg" alt="Concept 5 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-5-shift-dial.svg" alt="Concept 5 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>slate-900 + electric-lime</span>
+        </div>
+      </div>
+
+      <!-- CONCEPT 6 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Concept 06</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Advising Horizon</span>
+          </div>
+          <h2 class="card-title">The Open Door & Horizon</h2>
+          <p class="card-desc">Welcoming open faculty door with sunlit advising horizon beam and subtle corner time arc.</p>
+          
+          <div class="logo-preview-box">
+            <img src="./concept-6-full.svg" alt="Concept 6 Full Logo">
+          </div>
+          <div class="mark-preview-box">
+            <img src="./concept-6-open-door.svg" alt="Concept 6 Mark">
+          </div>
+        </div>
+        <div class="meta">
+          <span>Vector SVG</span>
+          <span>warm-coral + royal-blue</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>

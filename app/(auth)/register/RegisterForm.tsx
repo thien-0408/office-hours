@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { RegisterPayload } from "@/lib/auth/types";
+import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 
 const ROLES: { value: RegisterPayload["role"]; label: string }[] = [
   { value: "STUDENT", label: "Student" },
@@ -44,21 +45,21 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="w-full p-5 sm:p-15 rounded-[28px] bg-white/10 backdrop-blur-lg shadow-2xl text-white flex flex-col font-sans">
-      <p className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-[var(--brand-200)] mb-2">
+    <div className={AUTH_CARD_CLASS}>
+      <p className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-[var(--po-text-secondary)] mb-2">
         Join the pilot
       </p>
-      <h1 className="text-2xl font-bold text-white mb-5">Create account</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-5">Create account</h1>
 
       {error && (
-        <p className="text-xs text-[var(--danger-300)] mb-3" role="alert">
+        <p className="text-xs text-red-600 mb-3" role="alert">
           {error}
         </p>
       )}
 
       <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="fullName" className="text-xs font-semibold text-white">
+          <label htmlFor="fullName" className={AUTH_LABEL_CLASS}>
             Full name
           </label>
           <input
@@ -70,12 +71,12 @@ export default function RegisterForm() {
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+            className={AUTH_INPUT_CLASS}
           />
         </div>
 
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="email" className="text-xs font-semibold text-white">
+          <label htmlFor="email" className={AUTH_LABEL_CLASS}>
             Email
           </label>
           <input
@@ -87,12 +88,12 @@ export default function RegisterForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+            className={AUTH_INPUT_CLASS}
           />
         </div>
 
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="password" className="text-xs font-semibold text-white">
+          <label htmlFor="password" className={AUTH_LABEL_CLASS}>
             Password
           </label>
           <input
@@ -105,7 +106,7 @@ export default function RegisterForm() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+            className={AUTH_INPUT_CLASS}
           />
         </div>
 
@@ -116,7 +117,7 @@ export default function RegisterForm() {
               type="button"
               aria-pressed={role === r.value}
               onClick={() => setRole(r.value)}
-              className="flex-1 text-[13px] font-semibold text-white/70 bg-white/10 border border-white/20 rounded-xl py-2.5 cursor-pointer transition-colors aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="flex-1 text-[13px] font-bold text-[var(--po-text-secondary)] bg-white border-2 border-[var(--po-border)] rounded-xl py-2.5 cursor-pointer transition-colors aria-pressed:bg-[var(--po-text-primary)] aria-pressed:text-white aria-pressed:border-blue-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)]"
             >
               {r.label}
             </button>
@@ -124,7 +125,7 @@ export default function RegisterForm() {
         </div>
 
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="department" className="text-xs font-semibold text-white">
+          <label htmlFor="department" className={AUTH_LABEL_CLASS}>
             Department <span className="opacity-60 font-normal">(optional)</span>
           </label>
           <input
@@ -134,22 +135,18 @@ export default function RegisterForm() {
             placeholder="Computer Science"
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+            className={AUTH_INPUT_CLASS}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3 mt-2 rounded-xl bg-[#0b132b] text-white font-bold text-sm hover:bg-[#121f42] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg"
-        >
+        <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
           {isSubmitting ? "Creating account…" : "Create account"}
         </button>
       </form>
 
-      <p className="text-xs text-white/80 text-center mt-6">
+      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
         Already have an account?{" "}
-        <Link href="/login" className="font-bold text-white hover:underline">
+        <Link href="/login" className={AUTH_LINK_CLASS}>
           Log in
         </Link>
       </p>

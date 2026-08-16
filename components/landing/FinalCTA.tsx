@@ -18,7 +18,7 @@ export default function FinalCTA() {
           <DarkButton href="/register">Get started free</DarkButton>
           <Link
             href="/public/office-hours"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--po-text-primary)] py-2.5 pl-5 pr-2 text-[13px] font-bold text-[var(--po-text-primary)] transition-transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--po-text-primary)] py-2.5 pl-5 pr-2 text-[13px] font-bold uppercase tracking-[0.03em] text-[var(--po-text-primary)] transition-transform hover:-translate-y-0.5"
           >
             Browse lecturers
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--po-text-primary)] text-[var(--po-accent)]">

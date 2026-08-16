@@ -14,42 +14,62 @@ export function LogoWithText({ className }: { className?: string }) {
       aria-label="OfficeHours"
     >
       <defs>
-        <linearGradient id="logoWithTextGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2dd4bf" />
-          <stop offset="100%" stopColor="#0d9488" />
+        <linearGradient id="logoWithText_blue_inline" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#1d4ed8" />
         </linearGradient>
-        <filter id="logoWithTextGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
+        <linearGradient id="logoWithText_purple_inline" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#8b5cf6" />
+          <stop offset="100%" stopColor="#6d28d9" />
+        </linearGradient>
+        <linearGradient id="logoWithText_teal_inline" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#10b981" />
+          <stop offset="100%" stopColor="#059669" />
+        </linearGradient>
       </defs>
 
-      <g>
-        <circle cx="30" cy="24" r="5.5" fill="#94a3b8" opacity="0.45" />
-        <circle cx="30" cy="48" r="5.5" fill="#94a3b8" opacity="0.45" />
-        <circle cx="30" cy="72" r="5.5" fill="#94a3b8" opacity="0.45" />
-        <circle cx="30" cy="96" r="5.5" fill="#94a3b8" opacity="0.45" />
-
-        <circle cx="62" cy="36" r="6" fill="#64748b" opacity="0.65" />
-        <circle cx="62" cy="60" r="6" fill="#64748b" opacity="0.65" />
-        <circle cx="62" cy="84" r="6" fill="#64748b" opacity="0.65" />
-
-        <circle cx="94" cy="48" r="6.5" fill="#475569" opacity="0.85" />
-        <circle cx="94" cy="72" r="6.5" fill="#475569" opacity="0.85" />
-
-        <path
-          d="M30 24 L132 60 M30 96 L132 60"
-          stroke="#cbd5e1"
-          strokeWidth="1"
-          strokeDasharray="2 3"
-          opacity="0.4"
+      {/* ===================================================== */}
+      {/* Concept 4: Interlocking OH Loop Mark */}
+      {/* ===================================================== */}
+      <g transform="translate(10, 0)">
+        {/* Left Ring: Advisor Loop ('O') */}
+        <circle
+          cx="46"
+          cy="60"
+          r="28"
+          stroke="url(#logoWithText_blue_inline)"
+          strokeWidth="8"
+          strokeLinecap="round"
         />
 
-        <circle cx="134" cy="60" r="14" fill="url(#logoWithTextGrad)" filter="url(#logoWithTextGlow)" />
+        {/* Right Ring: Student / Clock Loop ('H') */}
+        <circle
+          cx="74"
+          cy="60"
+          r="28"
+          stroke="url(#logoWithText_purple_inline)"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+
+        {/* Intersecting Overlap / Synced Meeting Bridge */}
+        <path
+          d="M60 40 C65 46, 65 74, 60 80"
+          stroke="url(#logoWithText_teal_inline)"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+
+        {/* Synchronized Active Node */}
+        <circle cx="60" cy="60" r="6" fill="#10b981" />
+        <circle cx="60" cy="60" r="10" stroke="#10b981" strokeWidth="2" opacity="0.5" />
       </g>
 
+      {/* ===================================================== */}
+      {/* Brand Typography */}
+      {/* ===================================================== */}
       <text
-        x="175"
+        x="135"
         y="71"
         fontFamily="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
         fontSize="44"
@@ -58,7 +78,7 @@ export function LogoWithText({ className }: { className?: string }) {
         fill="currentColor"
       >
         Office
-        <tspan fontWeight="400" fillOpacity="0.72">
+        <tspan fontWeight="400" fillOpacity="0.75">
           Hours
         </tspan>
       </text>

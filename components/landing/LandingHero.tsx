@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import LandingNav from "@/components/landing/LandingNav";
-import { LimeButton, DarkButton, PillTag, PolaroidCard } from "@/components/landing/shared";
+import { LimeButton, DarkButton, PillTag, PolaroidCard, CapIcon, CheckDot } from "@/components/landing/shared";
 
 // Photos self-hosted from Unsplash (images.unsplash.com, Unsplash License —
 // free for commercial use, no attribution required) rather than fetched at
@@ -17,10 +17,10 @@ import heroCafe from "@/assets/photos/landing/hero-cafe.jpg";
 import heroAdvising from "@/assets/photos/landing/hero-advising.jpg";
 
 const POLAROIDS = [
-  { src: heroLecture, caption: "Dr. Elena Ruiz", rotate: -8, pos: "left-[9%] top-[8%]", delay: 0.3 },
-  { src: heroAdvising, caption: "Advising, Tue 2pm", rotate: 6, pos: "right-[8%] top-[15%]", delay: 0.4 },
-  { src: heroLibrary, caption: "Priya Nair", rotate: -6, pos: "left-[13%] bottom-[20%]", delay: 0.5 },
-  { src: heroCafe, caption: "Marcus Webb", rotate: 5, pos: "right-[11%] bottom-[9%]", delay: 0.6 },
+  { src: heroLecture, caption: "Dr. Elena Ruiz", rotate: -16, pos: "left-[2%] top-[6%]", delay: 0.3 },
+  { src: heroAdvising, caption: "Advising, Tue 2pm", rotate: 14, pos: "right-[1%] top-[13%]", delay: 0.4 },
+  { src: heroLibrary, caption: "Priya Nair", rotate: -13, pos: "left-[4%] bottom-[10%]", delay: 0.5 },
+  { src: heroCafe, caption: "Marcus Webb", rotate: 17, pos: "right-[3%] bottom-[2%]", delay: 0.6 },
 ];
 
 export default function LandingHero() {
@@ -30,7 +30,7 @@ export default function LandingHero() {
     <section className="relative overflow-hidden bg-[var(--po-bg)]">
       <LandingNav />
 
-      <div className="relative mx-auto flex min-h-[860px] w-full max-w-[1280px] flex-col items-center px-6 pb-16 pt-6">
+      <div className="relative mx-auto flex min-h-[940px] w-full max-w-[1280px] flex-col items-center px-6 pb-16 pt-6">
         <motion.div
           initial={reduceMotion ? undefined : { opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +49,7 @@ export default function LandingHero() {
             className={`absolute z-10 hidden lg:block ${p.pos}`}
           >
             <PolaroidCard caption={p.caption} rotate={0} accentBg="bg-slate-100">
-              <Image src={p.src} alt="" fill sizes="220px" className="object-cover" />
+              <Image src={p.src} alt="" fill sizes="260px" className="object-cover" />
             </PolaroidCard>
           </motion.div>
         ))}
@@ -60,7 +60,7 @@ export default function LandingHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
           >
-            <PillTag>Built for campus scheduling</PillTag>
+            <PillTag icon={<CapIcon />}>Built for campus scheduling</PillTag>
           </motion.div>
 
           <motion.p
@@ -107,7 +107,7 @@ export default function LandingHero() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold text-[var(--po-text-secondary)]"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--po-accent)]" />
+            <CheckDot />
             Free for every student and lecturer
           </motion.p>
         </div>

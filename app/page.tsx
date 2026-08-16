@@ -3,6 +3,7 @@ import { PROJECT_ONE_TOKENS } from "@/components/landing/tokens";
 import { satoshi } from "@/components/landing/fonts";
 import LandingHero from "@/components/landing/LandingHero";
 import ChecklistSection from "@/components/landing/ChecklistSection";
+import TimetablePreview from "@/components/landing/TimetablePreview";
 import ValueGrid from "@/components/landing/ValueGrid";
 import { Marquee } from "@/components/landing/shared";
 import ProcessTimeline from "@/components/landing/ProcessTimeline";
@@ -27,6 +28,7 @@ export default function LandingPage() {
     <div className={`flex flex-1 flex-col bg-[var(--po-bg)] ${satoshi.className}`} style={PROJECT_ONE_TOKENS}>
       <LandingHero />
       <ChecklistSection />
+      <TimetablePreview />
       <ValueGrid />
       <Marquee items={TICKER} />
       <ProcessTimeline />

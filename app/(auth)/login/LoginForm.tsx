@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ToastProvider";
+import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -44,31 +45,31 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="w-full p-12 sm:p-15 rounded-[28px] bg-white/10 backdrop-blur-lg shadow-2xl text-white flex flex-col font-sans">
-      <h1 className="text-2xl font-bold text-white mb-5">Login</h1>
+    <div className={AUTH_CARD_CLASS}>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-5">Login</h1>
 
       {error && (
-        <p className="text-xs text-[var(--danger-300)] mb-3" role="alert">
+        <p className="text-xs text-red-600 mb-3" role="alert">
           {error}
         </p>
       )}
 
       {process.env.NODE_ENV !== "production" && (
-        <div className="mb-4 rounded-lg border border-white/25 bg-white/10 px-3.5 py-2.5 text-[11.5px] text-white/85">
-          <p className="font-semibold text-white mb-1">Dev test accounts (no backend yet)</p>
+        <div className="mb-4 rounded-xl border-2 border-[var(--po-border)] bg-[var(--po-bg)] px-3.5 py-2.5 text-[11.5px] text-[var(--po-text-primary)]/85">
+          <p className="font-bold text-[var(--po-text-primary)] mb-1">Dev test accounts (no backend yet)</p>
           <ul className="space-y-0.5 font-mono">
             <li>student@officehours.dev</li>
             <li>lecturer@officehours.dev</li>
             <li>admin@officehours.dev</li>
           </ul>
-          <p className="mt-1 text-white/60">Password: password123</p>
+          <p className="mt-1 text-[var(--po-text-secondary)]">Password: password123</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
         {/* Email Field */}
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="email" className="text-xs font-semibold text-white">
+          <label htmlFor="email" className={AUTH_LABEL_CLASS}>
             Email
           </label>
           <input
@@ -80,13 +81,13 @@ export default function LoginForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+            className={AUTH_INPUT_CLASS}
           />
         </div>
 
         {/* Password Field */}
         <div className="flex flex-col gap-1.5 text-left">
-          <label htmlFor="password" className="text-xs font-semibold text-white">
+          <label htmlFor="password" className={AUTH_LABEL_CLASS}>
             Password
           </label>
           <div className="relative flex items-center">
@@ -99,12 +100,12 @@ export default function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-white/40 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-white focus:ring-2 focus:ring-white/50 transition-all"
+              className={`${AUTH_INPUT_CLASS} pr-10`}
             />
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute right-3 text-[var(--po-text-secondary)] hover:text-[var(--po-text-primary)] transition-colors"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -124,23 +125,19 @@ export default function LoginForm() {
 
         {/* Forgot Password Link */}
         <div className="text-left mt-0.5">
-          <Link href="/forgot-password" className="text-xs font-semibold text-white hover:underline">
+          <Link href="/forgot-password" className={`text-xs ${AUTH_LINK_CLASS}`}>
             Forgot Password?
           </Link>
         </div>
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3 mt-2 rounded-xl bg-[#0b132b] text-white font-bold text-sm hover:bg-[#121f42] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg"
-        >
+        <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
           {isSubmitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
       {/* Social Options Header */}
-      <p className="text-xs text-white/90 text-center mt-5 mb-2.5">
+      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-5 mb-2.5">
         or continue with
       </p>
 
@@ -148,7 +145,7 @@ export default function LoginForm() {
       <div className="flex items-center justify-center gap-3 p-3 mb-6 ">
         <button
           type="button"
-          className="flex items-center justify-center w-[74px] h-9 rounded-lg bg-white border border-black/10 hover:bg-slate-50 active:scale-95 transition-all"
+          className="flex items-center justify-center w-[74px] h-9 rounded-xl bg-white border-2 border-[var(--po-border)] hover:bg-[var(--po-bg)] active:scale-95 transition-all"
           aria-label="Sign in with Google"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
@@ -160,7 +157,7 @@ export default function LoginForm() {
         </button>
         <button
           type="button"
-          className="flex items-center justify-center w-[74px] h-9 rounded-lg bg-black border border-black/40 hover:bg-slate-900 active:scale-95 transition-all"
+          className="flex items-center justify-center w-[74px] h-9 rounded-xl bg-black border-2 border-blue-950 hover:bg-slate-900 active:scale-95 transition-all"
           aria-label="Sign in with GitHub"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
@@ -169,7 +166,7 @@ export default function LoginForm() {
         </button>
         <button
           type="button"
-          className="flex items-center justify-center w-[74px] h-9 rounded-lg bg-[#1877F2] border border-black/10 hover:brightness-110 active:scale-95 transition-all"
+          className="flex items-center justify-center w-[74px] h-9 rounded-xl bg-[#1877F2] border-2 border-[var(--po-border)] hover:brightness-110 active:scale-95 transition-all"
           aria-label="Sign in with Facebook"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
@@ -179,9 +176,9 @@ export default function LoginForm() {
       </div>
 
       {/* Switch Line */}
-      <p className="text-xs text-white/80 text-center">
+      <p className="text-xs text-[var(--po-text-secondary)] text-center">
         Don&apos;t have an account yet?{" "}
-        <Link href="/register" className="font-bold text-white hover:underline">
+        <Link href="/register" className={AUTH_LINK_CLASS}>
           Register for free
         </Link>
       </p>

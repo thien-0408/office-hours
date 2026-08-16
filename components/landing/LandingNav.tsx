@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SmoothAnchor } from "@/components/landing/shared";
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
@@ -10,21 +11,16 @@ const LINKS = [
 export default function LandingNav() {
   return (
     <header className="mx-auto flex w-full max-w-[1280px] items-center justify-between px-6 py-8">
-      <Link
-        href="/"
-        className="flex items-center gap-1 text-[18px] font-bold tracking-[-0.01em] text-[var(--po-text-primary)]"
-      >
-        Office
-        <span className="rounded-md bg-[var(--po-text-primary)] px-2 py-0.5 text-[var(--po-accent)]">
-          Hours
-        </span>
+      <Link href="/" className="flex items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- plain SVG asset, no benefit from next/image's raster optimizer */}
+        <img src="/logos/concept-4-full.svg" alt="OfficeHours" className="h-10 w-auto" />
       </Link>
 
       <nav className="hidden items-center gap-9 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--po-text-primary)] md:flex">
         {LINKS.map((link) => (
-          <a key={link.href} href={link.href} className="transition-opacity hover:opacity-60">
+          <SmoothAnchor key={link.href} href={link.href} className="transition-opacity hover:opacity-60">
             {link.label}
-          </a>
+          </SmoothAnchor>
         ))}
       </nav>
 
