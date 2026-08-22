@@ -10,11 +10,79 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ScheduleSourceBadge, TimetableImport } from "@/components/dashboard/TimetableImport";
 import {
   getMockAdminScheduleEntries,
-  getMockLecturers,
+  getMockAdminUsers,
   getMockOfficeHours,
   getMockScheduleImportHistory,
 } from "@/lib/office-hours/mock-data";
 import type { AdminScheduleEntry, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
+
+type OwnerRole = "LECTURER" | "STUDENT";
+
+function OwnerRoleBadge({ role }: { role: OwnerRole }) {
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-semibold uppercase tracking-wide ${
+        role === "LECTURER" ? "bg-[var(--brand-50)] text-[var(--brand-700)]" : "bg-[var(--mint-100)] text-[var(--mint-700)]"
+      }`}
+    >
+      {role === "LECTURER" ? "Lecturer" : "Student"}
+    </span>
+  );
+}
+
+// Shared "who is this on behalf of" picker for the Import and Manual Entry
+// tabs — admin's schedule tools are a support fallback for *any* user
+// (FR-5a), not lecturers only, so both tabs need a role + person selection
+// upstream of building an AdminScheduleEntry.
+function OwnerPicker({
+  ownerRole,
+  setOwnerRole,
+  ownerName,
+  setOwnerName,
+}: {
+  ownerRole: OwnerRole;
+  setOwnerRole: (role: OwnerRole) => void;
+  ownerName: string;
+  setOwnerName: (name: string) => void;
+}) {
+  const people = getMockAdminUsers().filter((u) => u.role === ownerRole && u.active);
+
+  return (
+    <Card>
+      <SectionHeader title="On behalf of" />
+      <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">Role</span>
+          <FilterTabs
+            options={[
+              { value: "LECTURER" as OwnerRole, label: "Lecturer" },
+              { value: "STUDENT" as OwnerRole, label: "Student" },
+            ]}
+            value={ownerRole}
+            onChange={(role) => {
+              setOwnerRole(role);
+              const next = getMockAdminUsers().filter((u) => u.role === role && u.active)[0];
+              setOwnerName(next?.fullName ?? "");
+            }}
+          />
+        </div>
+        <FormField label={ownerRole === "LECTURER" ? "Lecturer" : "Student"}>
+          <select
+            value={ownerName}
+            onChange={(e) => setOwnerName(e.target.value)}
+            className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] sm:w-64"
+          >
+            {people.map((p) => (
+              <option key={p.id} value={p.fullName}>
+                {p.fullName}
+              </option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+    </Card>
+  );
+}
 
 type Tab = "IMPORT" | "MANUAL" | "SEARCH";
 
@@ -38,9 +106,17 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium"
 
 // ---- Manual Entry tab -------------------------------------------------------
 
-function ManualEntryTab({ entries, setEntries }: { entries: AdminScheduleEntry[]; setEntries: React.Dispatch<React.SetStateAction<AdminScheduleEntry[]>> }) {
-  const lecturers = getMockLecturers();
-  const [lecturerName, setLecturerName] = useState(lecturers[0]?.name ?? "");
+function ManualEntryTab({
+  entries,
+  setEntries,
+  ownerName,
+  ownerRole,
+}: {
+  entries: AdminScheduleEntry[];
+  setEntries: React.Dispatch<React.SetStateAction<AdminScheduleEntry[]>>;
+  ownerName: string;
+  ownerRole: OwnerRole;
+}) {
   const [title, setTitle] = useState("");
   const [dayOfWeek, setDayOfWeek] = useState("1");
   const [startTime, setStartTime] = useState("09:00");
@@ -51,11 +127,11 @@ function ManualEntryTab({ entries, setEntries }: { entries: AdminScheduleEntry[]
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !ownerName) return;
     const nextId = entries.length === 0 ? 1 : Math.max(...entries.map((row) => row.id)) + 1;
     setEntries((list) => [
       ...list,
-      { id: nextId, lecturerName, title: title.trim(), dayOfWeek: Number(dayOfWeek), startTime, endTime, source: "MANUAL" },
+      { id: nextId, ownerName, ownerRole, title: title.trim(), dayOfWeek: Number(dayOfWeek), startTime, endTime, source: "MANUAL" },
     ]);
     setTitle("");
   }
@@ -66,19 +142,6 @@ function ManualEntryTab({ entries, setEntries }: { entries: AdminScheduleEntry[]
         <SectionHeader title="Add a schedule block" />
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-4">
-            <FormField label="Lecturer">
-              <select
-                value={lecturerName}
-                onChange={(e) => setLecturerName(e.target.value)}
-                className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
-              >
-                {lecturers.map((l) => (
-                  <option key={l.id} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
             <FormField label="Title">
               <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Department committee" className="w-56" />
             </FormField>
@@ -121,8 +184,9 @@ function ManualEntryTab({ entries, setEntries }: { entries: AdminScheduleEntry[]
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-semibold text-[var(--ink-900)]">{entry.title}</p>
                     <ScheduleSourceBadge source={entry.source} />
+                    <OwnerRoleBadge role={entry.ownerRole} />
                   </div>
-                  <p className="text-[13px] text-[var(--ink-600)]">{entry.lecturerName}</p>
+                  <p className="text-[13px] text-[var(--ink-600)]">{entry.ownerName}</p>
                   <p className="text-[12.5px] text-[var(--ink-500)] tabular-nums mt-0.5">
                     {DAY_LABEL_LONG[entry.dayOfWeek]} · {entry.startTime}–{entry.endTime}
                   </p>
@@ -233,11 +297,18 @@ export default function AdminSchedulePage() {
   const [entries, setEntries] = useState<AdminScheduleEntry[]>(() => getMockAdminScheduleEntries());
   const [history, setHistory] = useState<ScheduleImportHistoryEntry[]>(() => getMockScheduleImportHistory());
 
+  const [ownerRole, setOwnerRole] = useState<OwnerRole>("LECTURER");
+  const [ownerName, setOwnerName] = useState(
+    () => getMockAdminUsers().filter((u) => u.role === "LECTURER" && u.active)[0]?.fullName ?? ""
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Schedule</h1>
-        <p className="text-sm text-[var(--ink-600)]">Import teaching schedules, enter blocks manually, and browse open slots across lecturers.</p>
+        <p className="text-sm text-[var(--ink-600)]">
+          Import or manually enter busy-block schedules on behalf of any student or lecturer who can&apos;t self-serve, and browse open slots across lecturers.
+        </p>
       </div>
 
       <FilterTabs
@@ -250,6 +321,10 @@ export default function AdminSchedulePage() {
         onChange={setTab}
       />
 
+      {(tab === "IMPORT" || tab === "MANUAL") && (
+        <OwnerPicker ownerRole={ownerRole} setOwnerRole={setOwnerRole} ownerName={ownerName} setOwnerName={setOwnerName} />
+      )}
+
       {tab === "IMPORT" && (
         <TimetableImport
           entries={entries}
@@ -260,7 +335,9 @@ export default function AdminSchedulePage() {
           description="Admin fallback for a user who can't self-serve — parses an EIU 'lịch học' export entirely in your browser (day-column + room-anchor clustering) — nothing is uploaded to a server. Students and lecturers can import their own on their My Schedule page."
           buildEntry={(row, dayOfWeek, id): AdminScheduleEntry => ({
             id,
-            lecturerName: row.lecturerName,
+            ownerName,
+            ownerRole,
+            lecturerName: row.lecturerName !== "Chưa rõ" ? row.lecturerName : undefined,
             title: row.subjectCode !== "N/A" ? `${row.subjectName} (${row.subjectCode})` : row.subjectName,
             dayOfWeek,
             startTime: row.startTime,
@@ -269,7 +346,7 @@ export default function AdminSchedulePage() {
           })}
         />
       )}
-      {tab === "MANUAL" && <ManualEntryTab entries={entries} setEntries={setEntries} />}
+      {tab === "MANUAL" && <ManualEntryTab entries={entries} setEntries={setEntries} ownerName={ownerName} ownerRole={ownerRole} />}
       {tab === "SEARCH" && <SlotSearchTab />}
     </div>
   );

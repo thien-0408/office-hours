@@ -221,12 +221,15 @@ export interface Semester {
   active: boolean;
 }
 
-// Admin-scoped variant of ScheduleBlock (above) — same shape plus which
-// lecturer it belongs to, since admin's Schedule Import/Manual Entry (#24/#25)
-// spans every lecturer while a lecturer's own /dashboard/schedule doesn't
-// need that field.
+// Admin-scoped variant of ScheduleBlock (above) — same shape plus who the
+// busy block belongs to, since admin's Schedule Import/Manual Entry (#24/#25)
+// is a support fallback for *any* user (FR-5a), not just lecturers. Distinct
+// from the inherited optional `lecturerName` (the instructor teaching that
+// specific class, relevant when ownerRole is STUDENT) — ownerName is whose
+// timetable this entry blocks time on.
 export interface AdminScheduleEntry extends ScheduleBlock {
-  lecturerName: string;
+  ownerName: string;
+  ownerRole: "STUDENT" | "LECTURER";
 }
 
 // One row parsed out of an EIU timetable PDF via lib/timetable/parse-pdf.ts —

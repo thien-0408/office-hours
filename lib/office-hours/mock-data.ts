@@ -1321,12 +1321,14 @@ export function getMockSemesters(): Semester[] {
 // to list and delete.
 export function getMockAdminScheduleEntries(): AdminScheduleEntry[] {
   return [
-    { id: 1, lecturerName: "Dr. Amara Chen", title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
-    { id: 2, lecturerName: "Dr. Amara Chen", title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
-    { id: 3, lecturerName: "Dr. Amara Chen", title: "CS 410 — Capstone Seminar", dayOfWeek: 2, startTime: "09:00", endTime: "10:30", source: "IMPORTED" },
-    { id: 4, lecturerName: "Prof. Daniel Reyes", title: "CS 220 — Data Structures", dayOfWeek: 2, startTime: "13:30", endTime: "15:00", source: "IMPORTED" },
-    { id: 5, lecturerName: "Dr. Priya Nair", title: "MATH 210 — Linear Algebra", dayOfWeek: 4, startTime: "08:00", endTime: "09:30", source: "IMPORTED" },
-    { id: 6, lecturerName: "Dr. Amara Chen", title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
+    { id: 1, ownerName: "Dr. Amara Chen", ownerRole: "LECTURER", title: "CS 301 — Algorithms", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 2, ownerName: "Dr. Amara Chen", ownerRole: "LECTURER", title: "CS 301 — Algorithms", dayOfWeek: 3, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 3, ownerName: "Dr. Amara Chen", ownerRole: "LECTURER", title: "CS 410 — Capstone Seminar", dayOfWeek: 2, startTime: "09:00", endTime: "10:30", source: "IMPORTED" },
+    { id: 4, ownerName: "Prof. Daniel Reyes", ownerRole: "LECTURER", title: "CS 220 — Data Structures", dayOfWeek: 2, startTime: "13:30", endTime: "15:00", source: "IMPORTED" },
+    { id: 5, ownerName: "Dr. Priya Nair", ownerRole: "LECTURER", title: "MATH 210 — Linear Algebra", dayOfWeek: 4, startTime: "08:00", endTime: "09:30", source: "IMPORTED" },
+    { id: 6, ownerName: "Dr. Amara Chen", ownerRole: "LECTURER", title: "Department committee", dayOfWeek: 4, startTime: "14:00", endTime: "15:00", source: "MANUAL" },
+    { id: 7, ownerName: "Linh Pham", ownerRole: "STUDENT", title: "CS 301 — Algorithms", lecturerName: "Dr. Amara Chen", dayOfWeek: 1, startTime: "11:30", endTime: "13:00", source: "IMPORTED" },
+    { id: 8, ownerName: "Huy Tran", ownerRole: "STUDENT", title: "MATH 210 — Linear Algebra", lecturerName: "Dr. Priya Nair", dayOfWeek: 4, startTime: "08:00", endTime: "09:30", source: "IMPORTED" },
   ];
 }
 

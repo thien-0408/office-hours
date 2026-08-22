@@ -10,6 +10,7 @@ import { Card } from "@/components/dashboard/Card";
 import { MetaRow } from "@/components/dashboard/MetaRow";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { RescheduleModal } from "@/components/dashboard/RescheduleModal";
 import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getMockBookingById, getMockBookingTimeline } from "@/lib/office-hours/mock-data";
@@ -37,6 +38,7 @@ export default function BookingDetailPage() {
   }
 
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [rescheduling, setRescheduling] = useState(false);
   const [meetingNotes, setMeetingNotes] = useState("");
   const [attended, setAttended] = useState(true);
   const [recordSaved, setRecordSaved] = useState(false);
@@ -125,9 +127,8 @@ export default function BookingDetailPage() {
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title="Coming soon"
-                  className="px-4 py-2 rounded-xl border border-[var(--paper-200)] text-[var(--ink-400)] text-sm font-bold cursor-not-allowed"
+                  onClick={() => setRescheduling(true)}
+                  className="px-4 py-2 rounded-xl border border-[var(--paper-200)] text-[var(--ink-700)] text-sm font-bold hover:bg-[var(--paper-50)] transition-colors"
                 >
                   Reschedule
                 </button>
@@ -223,6 +224,16 @@ export default function BookingDetailPage() {
         <SectionHeader title="Timeline" />
         <BookingTimeline events={timeline} />
       </Card>
+
+      <RescheduleModal
+        open={rescheduling}
+        booking={booking}
+        onClose={() => setRescheduling(false)}
+        onConfirm={({ startAt, endAt, topic }) => {
+          setBooking((b) => (b ? { ...b, startAt, endAt, topic: topic || null, status: "PENDING" } : b));
+          toast.success("New request sent");
+        }}
+      />
 
       <ConfirmModal
         open={pendingAction !== null}

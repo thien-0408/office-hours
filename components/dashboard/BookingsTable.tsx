@@ -43,10 +43,22 @@ export function BookingsTable({
   bookings,
   perspective = "student",
   getRowHref,
+  isCancellable,
+  onCancelBooking,
+  isSelectable,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
 }: {
   bookings: Booking[];
   perspective?: Perspective;
   getRowHref?: (booking: Booking) => string;
+  isCancellable?: (booking: Booking) => boolean;
+  onCancelBooking?: (booking: Booking) => void;
+  isSelectable?: (booking: Booking) => boolean;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number) => void;
+  onToggleSelectAll?: (ids: number[]) => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("startAt");
   const [ascending, setAscending] = useState(true);
@@ -87,11 +99,25 @@ export function BookingsTable({
     );
   }
 
+  const selectableIds = sorted.filter((b) => !isSelectable || isSelectable(b)).map((b) => b.id);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds?.has(id));
+
   return (
     <Card className="p-0 overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--paper-200)]">
+            {onToggleSelectAll && (
+              <th className="px-5 py-3 w-10">
+                <input
+                  type="checkbox"
+                  aria-label="Select all"
+                  checked={allSelected}
+                  onChange={() => onToggleSelectAll(allSelected ? [] : selectableIds)}
+                  className="w-4 h-4 accent-[var(--brand-500)]"
+                />
+              </th>
+            )}
             <th className="text-left px-5 py-3">
               <SortButton label={nameColumnLabel} active={sortKey === "name"} onClick={() => handleSort("name")} />
             </th>
@@ -102,6 +128,7 @@ export function BookingsTable({
             <th className="text-left px-5 py-3">
               <SortButton label="Status" active={sortKey === "status"} onClick={() => handleSort("status")} />
             </th>
+            {onCancelBooking && <th className="px-5 py-3" />}
           </tr>
         </thead>
         <tbody>
@@ -124,6 +151,19 @@ export function BookingsTable({
               key={booking.id}
               className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors"
             >
+              {onToggleSelectAll && (
+                <td className="px-5 py-3.5">
+                  {(!isSelectable || isSelectable(booking)) && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select booking with ${booking[primaryField]}`}
+                      checked={selectedIds?.has(booking.id) ?? false}
+                      onChange={() => onToggleSelect?.(booking.id)}
+                      className="w-4 h-4 accent-[var(--brand-500)]"
+                    />
+                  )}
+                </td>
+              )}
               <td className="px-5 py-3.5">
                 {getRowHref ? (
                   <Link href={getRowHref(booking)} className="block no-underline hover:no-underline">
@@ -143,6 +183,23 @@ export function BookingsTable({
               <td className="px-5 py-3.5">
                 <StatusBadge status={booking.status} />
               </td>
+              {onCancelBooking && (
+                <td className="px-5 py-3.5 text-right">
+                  {(!isCancellable || isCancellable(booking)) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onCancelBooking(booking);
+                      }}
+                      className="text-[13px] font-bold text-[var(--danger-700)] hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
             );
           })}
