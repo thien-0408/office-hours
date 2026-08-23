@@ -207,7 +207,7 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--paper-200)] bg-white/70 backdrop-blur-xl">
+        <header className="sticky top-0 z-21 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--paper-200)] bg-white/70 backdrop-blur-xl">
           <div className="flex items-center gap-2 md:hidden">
             <button
               type="button"
