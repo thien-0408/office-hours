@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import {
-  Clock,
   ExternalLink,
   Laptop,
   MapPin,
@@ -10,7 +9,6 @@ import {
   School,
   Trash2,
 } from "lucide-react";
-import { Card } from "@/components/dashboard/Card";
 import type { ScheduleBlock } from "@/lib/office-hours/types";
 import {
   DAY_METADATA,
@@ -72,153 +70,148 @@ export function TimetableAgenda({
   }, [activeDays, blocks, todayDayOfWeek]);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-7 p-1 sm:p-2">
       {groupedDays.map(({ dayNum, meta, isToday, blocks: dayBlocks, totalHours, dayDate }) => (
-        <div key={dayNum} className="flex flex-col gap-2.5">
-          {/* Day Section Header */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[var(--ink-900)]">
-                {meta.en} <span className="text-[var(--ink-500)] font-medium">({meta.vn})</span>
+        <section key={dayNum} className="min-w-0">
+          <div className="mb-2.5 flex items-end justify-between gap-4 px-1">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {isToday && <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-500)]" />}
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--ink-400)]">
+                  {meta.short}
+                </span>
+                {dayDate && (
+                  <span className="text-[10px] font-semibold tabular-nums text-[var(--ink-500)]">{dayDate}</span>
+                )}
+              </div>
+              <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-[var(--ink-900)]">
+                {meta.en} <span className="font-medium text-[var(--ink-400)]">· {meta.vn}</span>
               </h2>
-              {dayDate && (
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[var(--brand-100)] text-[var(--brand-800)] border border-[var(--brand-200)]">
-                  {dayDate}
-                </span>
-              )}
-              {isToday && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--brand-500)] text-white shadow-xs">
-                  Today
-                </span>
-              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-[var(--ink-500)] tabular-nums">
-                {dayBlocks.length} session{dayBlocks.length === 1 ? "" : "s"}
-                {totalHours > 0 && ` · ${totalHours.toFixed(1)}h total`}
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="text-[10.5px] font-medium tabular-nums text-[var(--ink-400)]">
+                {dayBlocks.length} {dayBlocks.length === 1 ? "session" : "sessions"}
+                {totalHours > 0 && ` · ${Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1)}h`}
               </span>
               {onAddManualBlock && (
                 <button
                   type="button"
                   onClick={() => onAddManualBlock(dayNum)}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] transition-colors"
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold text-[var(--ink-600)] transition-colors hover:bg-[var(--paper-100)] hover:text-[var(--ink-900)]"
                 >
-                  <Plus className="w-3 h-3" />
-                  Add event
+                  <Plus className="h-3 w-3" />
+                  Add
                 </button>
               )}
             </div>
           </div>
 
-          {/* Day Blocks List */}
           {dayBlocks.length === 0 ? (
-            <Card className="py-6 text-center border-dashed border-[var(--paper-200)] bg-[var(--paper-50)]/40">
-              <p className="text-xs text-[var(--ink-400)]">No scheduled classes or commitments</p>
-            </Card>
+            <div className="rounded-lg border border-dashed border-[var(--paper-200)] bg-[var(--paper-50)]/35 px-4 py-5 text-center">
+              <p className="text-[11px] font-medium text-[var(--ink-400)]">No scheduled classes</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {dayBlocks.map((block) => {
+            <div className="overflow-hidden rounded-xl border border-[var(--paper-200)] bg-white">
+              {dayBlocks.map((block, index) => {
                 const styleTokens = getBlockColorStyles(block);
                 const shift = getShiftForTime(block.startTime);
                 const isLab = block.locationType === "LAB" || block.room?.toUpperCase().includes("LAB");
                 const isOnline = block.locationType === "ONLINE" || block.room?.toUpperCase().includes("ONLINE");
 
                 return (
-                  <Card
+                  <button
+                    type="button"
                     key={block.id}
-                    className={`relative p-4 overflow-hidden border transition-all hover:shadow-md cursor-pointer ${styleTokens.bg} ${styleTokens.border}`}
                     onClick={() => onSelectBlock?.(block)}
+                    className={`group grid w-full grid-cols-[86px_minmax(0,1fr)] text-left transition-colors ${
+                      index > 0 ? "border-t border-[var(--paper-200)]" : ""
+                    }`}
                   >
-                    {/* Left Accent Bar */}
-                    <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${styleTokens.accentBar}`} />
+                    <div className="flex flex-col border-r border-[var(--paper-200)] bg-[var(--paper-50)]/45 px-3 py-4">
+                      <span className="text-[12px] font-semibold tabular-nums text-[var(--ink-800)]">{block.startTime}</span>
+                      <span className="mt-0.5 text-[10px] font-medium tabular-nums text-[var(--ink-400)]">{block.endTime}</span>
+                      <span className="mt-auto pt-3 text-[9.5px] font-medium text-[var(--ink-400)]">
+                        {getDurationLabel(block.startTime, block.endTime)}
+                      </span>
+                    </div>
 
-                    <div className="flex flex-col gap-2 pl-1">
-                      {/* Top Row: Code / Shift / Duration / Source */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {block.subjectCode && block.subjectCode !== "N/A" && (
-                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
-                              {block.subjectCode}
-                            </span>
-                          )}
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-black/5 text-[var(--ink-700)]">
-                            {shift.vn}
-                          </span>
-                          {block.group && block.group !== "N/A" && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white/80 text-[var(--ink-800)] border border-black/5">
-                              Nhóm {block.group}
-                            </span>
-                          )}
+                    <div className={`min-w-0 px-4 py-3.5 ${styleTokens.bg}`}>
+                      <div className="flex min-w-0 items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className={`h-1.5 w-1.5 rounded-full ${styleTokens.dot}`} />
+                            {block.subjectCode && block.subjectCode !== "N/A" && (
+                              <span className={`text-[9.5px] font-bold uppercase tracking-[0.09em] ${styleTokens.badgeText}`}>
+                                {block.subjectCode}
+                              </span>
+                            )}
+                            {block.group && block.group !== "N/A" && (
+                              <span className="text-[9.5px] font-medium text-[var(--ink-500)]">· Group {block.group}</span>
+                            )}
+                            <span className="text-[9.5px] font-medium text-[var(--ink-400)]">· {shift.vn}</span>
+                          </div>
+
+                          <h3 className="mt-1.5 text-[13px] font-semibold leading-5 tracking-[-0.01em] text-[var(--ink-900)]">
+                            {block.subjectName || block.title}
+                          </h3>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold tabular-nums text-[var(--ink-700)]">
-                            {getDurationLabel(block.startTime, block.endTime)}
-                          </span>
-                          {block.source === "MANUAL" && onDeleteBlock && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
+                        {block.source === "MANUAL" && onDeleteBlock && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDeleteBlock(block.id);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                event.stopPropagation();
                                 onDeleteBlock(block.id);
-                              }}
-                              className="text-[var(--ink-400)] hover:text-[var(--danger-700)] transition-colors p-1"
-                              title="Delete manual entry"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
+                              }
+                            }}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--ink-300)] opacity-0 transition-all hover:bg-white/70 hover:text-[var(--danger-700)] group-hover:opacity-100"
+                            title="Delete manual entry"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </span>
+                        )}
                       </div>
 
-                      {/* Course Title */}
-                      <div>
-                        <h3 className="text-sm font-bold text-[var(--ink-900)] leading-snug">
-                          {block.subjectName || block.title}
-                        </h3>
-                      </div>
-
-                      {/* Details Strip */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2 border-t border-black/5 text-xs text-[var(--ink-600)]">
-                        <div className="flex items-center gap-1.5 font-semibold tabular-nums text-[var(--ink-800)]">
-                          <Clock className="w-3.5 h-3.5 text-[var(--brand-500)] shrink-0" />
-                          <span>{block.startTime} – {block.endTime}</span>
-                        </div>
-
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10.5px] font-medium text-[var(--ink-500)]">
                         {block.room && (
-                          <div className="flex items-center gap-1.5 truncate">
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
                             {isLab ? (
-                              <Laptop className="w-3.5 h-3.5 text-[var(--brand-600)] shrink-0" />
+                              <Laptop className="h-3.5 w-3.5 shrink-0" />
                             ) : isOnline ? (
-                              <ExternalLink className="w-3.5 h-3.5 text-[var(--info-600)] shrink-0" />
+                              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                             ) : (
-                              <MapPin className="w-3.5 h-3.5 text-[var(--coral-500)] shrink-0" />
+                              <MapPin className="h-3.5 w-3.5 shrink-0" />
                             )}
                             <span className="truncate">{block.room}</span>
-                          </div>
+                          </span>
                         )}
 
                         {block.lecturerName && (
-                          <div className="flex items-center gap-1.5 sm:col-span-2 text-[11.5px] text-[var(--ink-500)]">
-                            <School className="w-3.5 h-3.5 text-[var(--mint-600)] shrink-0" />
-                            <span>GV: {block.lecturerName}</span>
-                          </div>
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <School className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{block.lecturerName}</span>
+                          </span>
                         )}
                       </div>
 
                       {block.notes && (
-                        <p className="text-[11.5px] text-[var(--ink-500)] italic pt-1">
-                          Note: {block.notes}
-                        </p>
+                        <p className="mt-2 line-clamp-2 text-[10.5px] leading-4 text-[var(--ink-400)]">{block.notes}</p>
                       )}
                     </div>
-                  </Card>
+                  </button>
                 );
               })}
             </div>
           )}
-        </div>
+        </section>
       ))}
     </div>
   );

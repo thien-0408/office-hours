@@ -1,12 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Clock,
   ExternalLink,
   Laptop,
   MapPin,
-  Plus,
   School,
   Trash2,
   Users,
@@ -27,7 +26,8 @@ export const DAY_METADATA: Record<number, { en: string; vn: string; short: strin
   7: { en: "Sunday", vn: "Chủ Nhật", short: "Sun" },
 };
 
-// 30-minute interval slots from 07:30 to 20:30
+// 30-minute boundaries from 07:30 to 20:30. A visual row is the interval
+// between two consecutive entries, not the label itself.
 export const TIME_SLOTS_FULL = [
   "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00",
   "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00",
@@ -60,14 +60,13 @@ export function getShiftForTime(time: string): { name: string; vn: string; hue: 
   const m = timeToMinutes(time);
   if (m < 12 * 60 + 30) {
     return { name: "Morning", vn: "Ca Sáng", hue: "var(--brand-500)" };
-  } else if (m < 16 * 60 + 30) {
-    return { name: "Afternoon", vn: "Ca Chiều", hue: "var(--coral-500)" };
-  } else {
-    return { name: "Evening", vn: "Ca Tối", hue: "var(--info-500)" };
   }
+  if (m < 16 * 60 + 30) {
+    return { name: "Afternoon", vn: "Ca Chiều", hue: "var(--coral-500)" };
+  }
+  return { name: "Evening", vn: "Ca Tối", hue: "var(--info-500)" };
 }
 
-// Map color hues based on subject code or hue property
 export function getBlockColorStyles(block: ScheduleBlock): {
   bg: string;
   border: string;
@@ -75,88 +74,161 @@ export function getBlockColorStyles(block: ScheduleBlock): {
   badgeBg: string;
   badgeText: string;
   accentBar: string;
+  dot: string;
 } {
   const hue = block.colorHue || (
     block.subjectCode?.includes("430")
       ? "brand"
       : block.subjectCode?.includes("437")
-      ? "coral"
-      : block.subjectCode?.includes("422")
-      ? "info"
-      : block.subjectCode?.includes("301")
-      ? "mint"
-      : block.subjectCode?.includes("410")
-      ? "rose"
-      : block.source === "MANUAL"
-      ? "warning"
-      : "brand"
+        ? "coral"
+        : block.subjectCode?.includes("422")
+          ? "info"
+          : block.subjectCode?.includes("301")
+            ? "mint"
+            : block.subjectCode?.includes("410")
+              ? "rose"
+              : block.source === "MANUAL"
+                ? "warning"
+                : "brand"
   );
 
   switch (hue) {
     case "brand":
       return {
-        bg: "bg-[var(--brand-50)]/90 hover:bg-[var(--brand-100)]",
-        border: "border-[var(--brand-300)]",
-        text: "text-[var(--brand-900)]",
-        badgeBg: "bg-[var(--brand-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--brand-50)]/70 hover:bg-[var(--brand-50)]",
+        border: "border-[var(--brand-200)]",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--brand-700)]",
         accentBar: "bg-[var(--brand-500)]",
+        dot: "bg-[var(--brand-500)]",
       };
     case "coral":
       return {
-        bg: "bg-[var(--coral-100)]/80 hover:bg-[var(--coral-100)]",
-        border: "border-[var(--coral-500)]/40",
-        text: "text-[var(--coral-700)]",
-        badgeBg: "bg-[var(--coral-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--coral-100)]/50 hover:bg-[var(--coral-100)]/65",
+        border: "border-[var(--coral-500)]/25",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--coral-700)]",
         accentBar: "bg-[var(--coral-500)]",
+        dot: "bg-[var(--coral-500)]",
       };
     case "mint":
       return {
-        bg: "bg-[var(--mint-100)]/80 hover:bg-[var(--mint-100)]",
-        border: "border-[var(--mint-500)]/40",
-        text: "text-[var(--mint-700)]",
-        badgeBg: "bg-[var(--mint-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--mint-100)]/45 hover:bg-[var(--mint-100)]/65",
+        border: "border-[var(--mint-500)]/25",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--mint-700)]",
         accentBar: "bg-[var(--mint-500)]",
+        dot: "bg-[var(--mint-500)]",
       };
     case "rose":
       return {
-        bg: "bg-[var(--rose-100)]/80 hover:bg-[var(--rose-100)]",
-        border: "border-[var(--rose-500)]/40",
-        text: "text-[var(--rose-700)]",
-        badgeBg: "bg-[var(--rose-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--rose-100)]/45 hover:bg-[var(--rose-100)]/65",
+        border: "border-[var(--rose-500)]/25",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--rose-700)]",
         accentBar: "bg-[var(--rose-500)]",
+        dot: "bg-[var(--rose-500)]",
       };
     case "info":
       return {
-        bg: "bg-[var(--info-100)]/80 hover:bg-[var(--info-100)]",
-        border: "border-[var(--info-500)]/40",
-        text: "text-[var(--info-700)]",
-        badgeBg: "bg-[var(--info-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--info-100)]/50 hover:bg-[var(--info-100)]/65",
+        border: "border-[var(--info-500)]/25",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--info-700)]",
         accentBar: "bg-[var(--info-500)]",
+        dot: "bg-[var(--info-500)]",
       };
     case "warning":
       return {
-        bg: "bg-[var(--warning-100)]/80 hover:bg-[var(--warning-100)]",
-        border: "border-[var(--warning-500)]/40",
-        text: "text-[var(--warning-700)]",
-        badgeBg: "bg-[var(--warning-500)]",
-        badgeText: "text-white",
+        bg: "bg-[var(--warning-100)]/50 hover:bg-[var(--warning-100)]/65",
+        border: "border-[var(--warning-500)]/25",
+        text: "text-[var(--ink-900)]",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--warning-700)]",
         accentBar: "bg-[var(--warning-500)]",
+        dot: "bg-[var(--warning-500)]",
       };
     default:
       return {
-        bg: "bg-[var(--paper-100)] hover:bg-[var(--paper-200)]",
+        bg: "bg-[var(--paper-50)] hover:bg-[var(--paper-100)]",
         border: "border-[var(--paper-200)]",
         text: "text-[var(--ink-900)]",
-        badgeBg: "bg-[var(--ink-700)]",
-        badgeText: "text-white",
+        badgeBg: "bg-transparent",
+        badgeText: "text-[var(--ink-700)]",
         accentBar: "bg-[var(--ink-500)]",
+        dot: "bg-[var(--ink-500)]",
       };
   }
+}
+
+/**
+ * Return the exact visual rectangle for a schedule block. No visual spacing is
+ * subtracted from the duration, so the lower edge lands on the true end-time
+ * boundary (e.g. 09:30–11:30 ends exactly on the 11:30 line).
+ */
+export function getBlockPosition(
+  startTime: string,
+  endTime: string,
+  windowStartMin: number,
+  windowEndMin: number,
+  rowHeight: number
+): { top: number; height: number } {
+  const start = Math.max(timeToMinutes(startTime), windowStartMin);
+  const end = Math.min(timeToMinutes(endTime), windowEndMin);
+  const duration = Math.max(0, end - start);
+  return {
+    top: ((start - windowStartMin) / 30) * rowHeight,
+    height: (duration / 30) * rowHeight,
+  };
+}
+
+/**
+ * Convert inclusive dragged row indexes to an exclusive end-time range.
+ * Selecting only the 09:30 row therefore means 09:30–10:00.
+ */
+export function selectionRangeFromSlots(
+  anchorIndex: number,
+  currentIndex: number,
+  slots: string[]
+): { startTime: string; endTime: string } {
+  const maxRowIndex = Math.max(0, slots.length - 2);
+  const a = Math.min(Math.max(anchorIndex, 0), maxRowIndex);
+  const b = Math.min(Math.max(currentIndex, 0), maxRowIndex);
+  const first = Math.min(a, b);
+  const last = Math.max(a, b);
+  return {
+    startTime: slots[first],
+    endTime: slots[last + 1],
+  };
+}
+
+/**
+ * Normalize a drag that starts inside one row and ends on a snapped time
+ * boundary. The anchor row is always fully included, so a click remains a
+ * single 30-minute selection while exact boundary releases never overshoot.
+ */
+export function selectionRangeFromDrag(
+  anchorRowIndex: number,
+  edgeBoundaryIndex: number,
+  slots: string[]
+): { startTime: string; endTime: string } {
+  const maxRowIndex = Math.max(0, slots.length - 2);
+  const maxBoundaryIndex = Math.max(1, slots.length - 1);
+  const anchor = Math.min(Math.max(anchorRowIndex, 0), maxRowIndex);
+  const edge = Math.min(Math.max(edgeBoundaryIndex, 0), maxBoundaryIndex);
+
+  const startBoundary = edge <= anchor ? edge : anchor;
+  const endBoundary = edge <= anchor ? anchor + 1 : Math.max(anchor + 1, edge);
+
+  return {
+    startTime: slots[startBoundary],
+    endTime: slots[Math.min(endBoundary, slots.length - 1)],
+  };
 }
 
 interface LayoutBlock extends ScheduleBlock {
@@ -164,47 +236,99 @@ interface LayoutBlock extends ScheduleBlock {
   totalCols: number;
 }
 
-// Compute overlapping blocks layout within a day
+function layoutCluster(cluster: ScheduleBlock[]): LayoutBlock[] {
+  const columnEnds: number[] = [];
+  const assigned = cluster.map((block) => {
+    const start = timeToMinutes(block.startTime);
+    let colIndex = columnEnds.findIndex((end) => end <= start);
+    if (colIndex === -1) {
+      colIndex = columnEnds.length;
+      columnEnds.push(timeToMinutes(block.endTime));
+    } else {
+      columnEnds[colIndex] = timeToMinutes(block.endTime);
+    }
+    return { ...block, colIndex, totalCols: 1 };
+  });
+
+  const totalCols = Math.max(1, columnEnds.length);
+  return assigned.map((block) => ({ ...block, totalCols }));
+}
+
+// Compute overlapping blocks using transitive overlap clusters. This keeps
+// widths stable when A overlaps B and B overlaps C, even if A does not overlap C.
 function layoutDayBlocks(blocks: ScheduleBlock[]): LayoutBlock[] {
   if (blocks.length === 0) return [];
-  const sorted = [...blocks].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-  
+
+  const sorted = [...blocks].sort((a, b) => {
+    const startDiff = timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
+    if (startDiff !== 0) return startDiff;
+    return timeToMinutes(a.endTime) - timeToMinutes(b.endTime);
+  });
+
   const result: LayoutBlock[] = [];
-  const activeClusters: LayoutBlock[][] = [];
+  let cluster: ScheduleBlock[] = [];
+  let clusterEnd = -Infinity;
+
+  const flush = () => {
+    if (cluster.length > 0) result.push(...layoutCluster(cluster));
+    cluster = [];
+    clusterEnd = -Infinity;
+  };
 
   for (const block of sorted) {
     const start = timeToMinutes(block.startTime);
-
-    // Find cluster that overlaps
-    let placed = false;
-    for (const cluster of activeClusters) {
-      const clusterEnd = Math.max(...cluster.map((b) => timeToMinutes(b.endTime)));
-      if (start < clusterEnd) {
-        // Place in first available colIndex
-        const usedCols = new Set(cluster.filter((b) => timeToMinutes(b.endTime) > start).map((b) => b.colIndex));
-        let col = 0;
-        while (usedCols.has(col)) col++;
-        const layoutItem: LayoutBlock = { ...block, colIndex: col, totalCols: Math.max(cluster.length + 1, col + 1) };
-        cluster.push(layoutItem);
-        // Update all items in this cluster
-        const maxCol = Math.max(...cluster.map((b) => b.colIndex)) + 1;
-        cluster.forEach((b) => {
-          b.totalCols = maxCol;
-        });
-        result.push(layoutItem);
-        placed = true;
-        break;
-      }
-    }
-
-    if (!placed) {
-      const layoutItem: LayoutBlock = { ...block, colIndex: 0, totalCols: 1 };
-      activeClusters.push([layoutItem]);
-      result.push(layoutItem);
-    }
+    const end = timeToMinutes(block.endTime);
+    if (cluster.length > 0 && start >= clusterEnd) flush();
+    cluster.push(block);
+    clusterEnd = Math.max(clusterEnd, end);
   }
+  flush();
 
   return result;
+}
+
+type DragSelection = {
+  dayNum: number;
+  anchorIndex: number;
+  edgeBoundaryIndex: number;
+  pointerId: number;
+};
+
+function daySummary(blocks: ScheduleBlock[]): string {
+  if (blocks.length === 0) return "No classes";
+  const minutes = blocks.reduce(
+    (sum, block) => sum + Math.max(0, timeToMinutes(block.endTime) - timeToMinutes(block.startTime)),
+    0
+  );
+  const hours = minutes / 60;
+  const hoursText = Number.isInteger(hours) ? `${hours}h` : `${hours.toFixed(1)}h`;
+  return `${blocks.length} ${blocks.length === 1 ? "session" : "sessions"} · ${hoursText}`;
+}
+
+function pointerRowIndex(
+  event: ReactPointerEvent<HTMLDivElement>,
+  rowHeight: number,
+  rowCount: number
+): number {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const localY = Math.max(0, Math.min(rect.height - 1, event.clientY - rect.top));
+  return Math.min(rowCount - 1, Math.max(0, Math.floor(localY / rowHeight)));
+}
+
+function pointerBoundaryIndex(
+  event: ReactPointerEvent<HTMLDivElement>,
+  rowHeight: number,
+  boundaryCount: number
+): number {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+  return Math.min(boundaryCount - 1, Math.max(0, Math.round(localY / rowHeight)));
+}
+
+function timeBoundaryLabelTransform(index: number, lastIndex: number): string {
+  if (index === 0) return "translateY(3px)";
+  if (index === lastIndex) return "translateY(calc(-100% - 3px))";
+  return "translateY(-50%)";
 }
 
 export function TimetableGrid({
@@ -219,12 +343,12 @@ export function TimetableGrid({
   dayRange?: DayRangeFilter;
   shiftFilter?: ShiftFilter;
   onSelectBlock?: (block: ScheduleBlock) => void;
-  onAddManualBlock?: (dayOfWeek: number, startTime?: string) => void;
+  onAddManualBlock?: (dayOfWeek: number, startTime?: string, endTime?: string) => void;
   onDeleteBlock?: (id: number) => void;
 }) {
   const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(null);
+  const [dragSelection, setDragSelection] = useState<DragSelection | null>(null);
 
-  // Determine active days list
   const activeDays = useMemo(() => {
     switch (dayRange) {
       case "WORKDAYS":
@@ -236,10 +360,9 @@ export function TimetableGrid({
     }
   }, [dayRange]);
 
-  // Determine active time bounds based on shift filter
   const { startMin, endMin, displaySlots } = useMemo(() => {
-    let s = timeToMinutes("07:30"); // 450
-    let e = timeToMinutes("20:30"); // 1230
+    let s = timeToMinutes("07:30");
+    let e = timeToMinutes("20:30");
 
     if (shiftFilter === "MORNING") {
       s = timeToMinutes("07:30");
@@ -260,7 +383,6 @@ export function TimetableGrid({
     return { startMin: s, endMin: e, displaySlots: filteredSlots };
   }, [shiftFilter]);
 
-  // Group and layout blocks per active day
   const dayLayouts = useMemo(() => {
     const map = new Map<number, LayoutBlock[]>();
     activeDays.forEach((d) => {
@@ -268,7 +390,6 @@ export function TimetableGrid({
         if (b.dayOfWeek !== d) return false;
         const bStart = timeToMinutes(b.startTime);
         const bEnd = timeToMinutes(b.endTime);
-        // Check overlap with active shift window
         return bStart < endMin && bEnd > startMin;
       });
       map.set(d, layoutDayBlocks(dayBlocks));
@@ -276,254 +397,315 @@ export function TimetableGrid({
     return map;
   }, [activeDays, blocks, startMin, endMin]);
 
-  // Current day index (1 = Mon, 7 = Sun)
   const todayDayOfWeek = useMemo(() => {
     const d = new Date().getDay();
     return d === 0 ? 7 : d;
   }, []);
 
-  const slotRowHeight = 44; // px per 30 minutes
-  const totalGridHeight = (displaySlots.length - 1) * slotRowHeight;
+  // 48px keeps the timetable dense, but every row still means exactly 30 minutes.
+  const slotRowHeight = 48;
+  const rowCount = Math.max(0, displaySlots.length - 1);
+  const totalGridHeight = rowCount * slotRowHeight;
 
   function handleBlockClick(block: ScheduleBlock) {
     setSelectedBlock(block);
     onSelectBlock?.(block);
   }
 
+  function beginSelection(dayNum: number, event: ReactPointerEvent<HTMLDivElement>) {
+    if (!onAddManualBlock || event.button !== 0 || rowCount === 0) return;
+    if ((event.target as HTMLElement).closest("[data-timetable-block='true']")) return;
+
+    event.preventDefault();
+    const index = pointerRowIndex(event, slotRowHeight, rowCount);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragSelection({ dayNum, anchorIndex: index, edgeBoundaryIndex: index + 1, pointerId: event.pointerId });
+  }
+
+  function updateSelection(dayNum: number, event: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragSelection || dragSelection.dayNum !== dayNum || dragSelection.pointerId !== event.pointerId) return;
+    const edgeBoundaryIndex = pointerBoundaryIndex(event, slotRowHeight, displaySlots.length);
+    if (edgeBoundaryIndex !== dragSelection.edgeBoundaryIndex) {
+      setDragSelection((current) => current ? { ...current, edgeBoundaryIndex } : current);
+    }
+  }
+
+  function finishSelection(dayNum: number, event: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragSelection || dragSelection.dayNum !== dayNum || dragSelection.pointerId !== event.pointerId) return;
+    const edgeBoundaryIndex = pointerBoundaryIndex(event, slotRowHeight, displaySlots.length);
+    const range = selectionRangeFromDrag(dragSelection.anchorIndex, edgeBoundaryIndex, displaySlots);
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragSelection(null);
+    onAddManualBlock?.(dayNum, range.startTime, range.endTime);
+  }
+
+  function cancelSelection(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragSelection || dragSelection.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragSelection(null);
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {/* Timetable container */}
-      <div className="border border-[var(--paper-200)] bg-[var(--bg-surface)] rounded-2xl shadow-sm overflow-hidden">
-        {/* Scroll wrapper */}
+      <div className="overflow-hidden rounded-xl border border-[var(--paper-200)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
         <div className="overflow-x-auto">
-          <div className="min-w-[780px]">
-            {/* Header row: Days of the week */}
-            <div className="grid border-b border-[var(--paper-200)] bg-[var(--paper-50)] sticky top-0 z-20"
-                 style={{ gridTemplateColumns: `80px repeat(${activeDays.length}, minmax(0, 1fr))` }}>
-              
-              {/* Top-left corner: Time header */}
-              <div className="p-3 border-r border-[var(--paper-200)] flex flex-col justify-center items-center text-center">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-500)]">Time</span>
-                <span className="text-[10px] text-[var(--ink-400)]">07:30 Start</span>
+          <div className="min-w-[900px]">
+            {/* Editorial header: flat columns rather than a row of rounded dashboard cards. */}
+            <div
+              className="sticky top-0 z-30 grid border-b border-[var(--paper-200)] bg-white/95 backdrop-blur-md"
+              style={{ gridTemplateColumns: `82px repeat(${activeDays.length}, minmax(0, 1fr))` }}
+            >
+              <div className="flex min-h-[70px] flex-col justify-end border-r border-[var(--paper-200)] px-3 pb-3">
+                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--ink-400)]">Time</span>
+                <span className="mt-1 text-[10px] font-medium text-[var(--ink-500)]">30 min grid</span>
               </div>
 
-              {/* Day headers */}
               {activeDays.map((dayNum) => {
                 const meta = DAY_METADATA[dayNum];
                 const isToday = dayNum === todayDayOfWeek;
                 const dayBlocks = dayLayouts.get(dayNum) || [];
-                const totalHours = dayBlocks.reduce((acc, b) => {
-                  return acc + (timeToMinutes(b.endTime) - timeToMinutes(b.startTime)) / 60;
-                }, 0);
-
                 const dayDate = dayBlocks.find((b) => b.date)?.date;
 
                 return (
                   <div
                     key={dayNum}
-                    className={`py-3 px-3 border-r border-[var(--paper-200)] last:border-r-0 flex flex-col items-center justify-center transition-colors ${
-                      isToday ? "bg-[var(--brand-50)]/70 text-[var(--brand-900)]" : ""
+                    className={`min-h-[70px] border-r border-[var(--paper-200)] px-3.5 py-3 last:border-r-0 ${
+                      isToday ? "bg-[var(--brand-50)]/40" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                      <span className="text-[13px] font-bold text-[var(--ink-900)]">{meta.en}</span>
-                      <span className="text-[11px] font-medium text-[var(--ink-500)]">({meta.vn})</span>
-                      {dayDate && (
-                        <span className="px-1.5 py-0.5 rounded text-[10.5px] font-extrabold bg-[var(--brand-100)] text-[var(--brand-800)] border border-[var(--brand-200)]">
-                          {dayDate}
-                        </span>
-                      )}
-                      {isToday && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--brand-500)] text-white shadow-xs">
-                          Today
-                        </span>
-                      )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {isToday && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-500)]" />}
+                          <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--ink-400)]">
+                            {meta.short}
+                          </span>
+                          {dayDate && (
+                            <span className="text-[10px] font-semibold tabular-nums text-[var(--ink-500)]">{dayDate}</span>
+                          )}
+                        </div>
+                        <h3 className="mt-1 text-[13px] font-semibold tracking-[-0.01em] text-[var(--ink-900)]">
+                          {meta.en}
+                        </h3>
+                      </div>
+                      <span className="pt-0.5 text-[10px] font-medium text-[var(--ink-400)]">{meta.vn}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[var(--ink-500)]">
-                      <span>{dayBlocks.length} session{dayBlocks.length === 1 ? "" : "s"}</span>
-                      {totalHours > 0 && <span>· {totalHours.toFixed(1)}h</span>}
-                    </div>
+                    <p className="mt-1.5 text-[10.5px] font-medium text-[var(--ink-500)]">{daySummary(dayBlocks)}</p>
                   </div>
                 );
               })}
             </div>
 
-            {/* Grid Body */}
             <div className="relative flex" style={{ height: `${totalGridHeight}px` }}>
-              {/* Left Time Axis Gutter */}
-              <div className="w-[80px] shrink-0 border-r border-[var(--paper-200)] bg-[var(--paper-50)]/50 select-none relative z-10">
+              {/* Time labels sit on boundaries, not in the middle of rows. */}
+              <div className="relative z-20 w-[82px] shrink-0 border-r border-[var(--paper-200)] bg-[var(--paper-50)]/45 select-none">
                 {displaySlots.map((timeStr, idx) => {
-                  if (idx === displaySlots.length - 1) return null;
-                  const isHour = timeStr.endsWith(":00") || timeStr === "07:30";
-                  const shift = getShiftForTime(timeStr);
-                  const isShiftStart = timeStr === "07:30" || timeStr === "12:30" || timeStr === "16:30";
-
+                  const minutes = timeToMinutes(timeStr);
+                  const isHour = minutes % 60 === 0;
+                  const isShiftBoundary = timeStr === "12:30" || timeStr === "16:30";
                   return (
-                    <div
-                      key={timeStr}
-                      className={`relative flex items-center justify-end pr-2.5 border-b border-[var(--paper-200)]/60 text-right ${
-                        isShiftStart ? "border-t border-t-[var(--ink-300)]" : ""
-                      }`}
-                      style={{ height: `${slotRowHeight}px` }}
-                    >
-                      {isShiftStart && (
-                        <div
-                          className="absolute left-1 top-1 text-[8.5px] font-bold uppercase tracking-wider px-1 rounded"
-                          style={{ color: shift.hue }}
-                        >
-                          {shift.vn}
-                        </div>
-                      )}
-                      <span
-                        className={`text-[11.5px] tabular-nums ${
-                          isHour
-                            ? "font-bold text-[var(--ink-800)]"
-                            : "font-normal text-[var(--ink-400)]"
+                    <div key={timeStr}>
+                      <div
+                        className={`absolute left-3 right-0 border-t ${
+                          isHour ? "border-[var(--paper-300)]" : "border-[var(--paper-200)]/85"
                         }`}
+                        style={{ top: `${idx * slotRowHeight}px` }}
+                      />
+                      <div
+                        className="absolute right-3 z-10 bg-[var(--paper-50)] px-1.5 tabular-nums"
+                        style={{
+                          top: `${idx * slotRowHeight}px`,
+                          transform: timeBoundaryLabelTransform(idx, displaySlots.length - 1),
+                        }}
                       >
-                        {timeStr}
-                      </span>
+                        <span
+                          className={
+                            isHour
+                              ? "text-[11px] font-semibold text-[var(--ink-700)]"
+                              : "text-[10px] font-medium text-[var(--ink-400)]"
+                          }
+                        >
+                          {timeStr}
+                        </span>
+                      </div>
+                      {isShiftBoundary && (
+                        <span
+                          className="absolute left-2 z-10 bg-[var(--paper-50)] px-1 text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--ink-400)]"
+                          style={{ top: `${idx * slotRowHeight + 7}px` }}
+                        >
+                          {getShiftForTime(timeStr).vn}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Day Columns Matrix */}
-              <div className="flex-1 grid relative"
-                   style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}>
-                
-                {/* Horizontal grid guide lines */}
-                <div className="absolute inset-0 pointer-events-none flex flex-col">
+              <div
+                className="relative grid flex-1"
+                style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}
+              >
+                {/* Exact shared time-boundary guides across all days. */}
+                <div className="pointer-events-none absolute inset-0 z-0">
                   {displaySlots.map((timeStr, idx) => {
-                    if (idx === displaySlots.length - 1) return null;
-                    const isShiftStart = timeStr === "12:30" || timeStr === "16:30";
+                    const isHour = timeToMinutes(timeStr) % 60 === 0;
                     return (
                       <div
-                        key={`grid-line-${timeStr}`}
-                        className={`w-full border-b ${
-                          isShiftStart
-                            ? "border-b-[var(--paper-300)] border-dashed"
-                            : "border-b-[var(--paper-100)]"
+                        key={`boundary-${timeStr}`}
+                        className={`absolute inset-x-0 border-t ${
+                          isHour ? "border-[var(--paper-300)]" : "border-[var(--paper-200)]/75"
                         }`}
-                        style={{ height: `${slotRowHeight}px` }}
+                        style={{ top: `${idx * slotRowHeight}px` }}
                       />
                     );
                   })}
                 </div>
 
-                {/* Day Columns and Blocks */}
                 {activeDays.map((dayNum) => {
                   const dayBlocks = dayLayouts.get(dayNum) || [];
                   const isToday = dayNum === todayDayOfWeek;
+                  const isDraggingHere = dragSelection?.dayNum === dayNum;
+                  const selectionRange = isDraggingHere && dragSelection
+                    ? selectionRangeFromDrag(dragSelection.anchorIndex, dragSelection.edgeBoundaryIndex, displaySlots)
+                    : null;
+                  const selectionStartBoundary = selectionRange
+                    ? displaySlots.indexOf(selectionRange.startTime)
+                    : 0;
+                  const selectionEndBoundary = selectionRange
+                    ? displaySlots.indexOf(selectionRange.endTime)
+                    : 0;
+                  const selectionRows = Math.max(0, selectionEndBoundary - selectionStartBoundary);
 
                   return (
                     <div
                       key={`col-${dayNum}`}
-                      className={`relative border-r border-[var(--paper-200)] last:border-r-0 h-full ${
-                        isToday ? "bg-[var(--brand-50)]/20" : ""
-                      }`}
+                      className={`relative h-full select-none border-r border-[var(--paper-200)] last:border-r-0 ${
+                        isToday ? "bg-[var(--brand-50)]/15" : ""
+                      } ${onAddManualBlock ? "cursor-crosshair" : ""}`}
+                      onPointerDown={(event) => beginSelection(dayNum, event)}
+                      onPointerMove={(event) => updateSelection(dayNum, event)}
+                      onPointerUp={(event) => finishSelection(dayNum, event)}
+                      onPointerCancel={cancelSelection}
                     >
-                      {/* Slot click areas for adding manual events */}
-                      {onAddManualBlock &&
-                        displaySlots.map((slotTime, idx) => {
-                          if (idx === displaySlots.length - 1) return null;
-                          return (
-                            <div
-                              key={`slot-click-${slotTime}`}
-                              onClick={() => onAddManualBlock(dayNum, slotTime)}
-                              className="group/slot absolute left-0 right-0 cursor-pointer z-0 transition-colors hover:bg-[var(--brand-50)]/40 flex items-center justify-center"
-                              style={{
-                                top: `${idx * slotRowHeight}px`,
-                                height: `${slotRowHeight}px`,
-                              }}
-                              title={`Click to add event at ${DAY_METADATA[dayNum].en} ${slotTime}`}
-                            >
-                              <Plus className="w-3.5 h-3.5 text-[var(--brand-500)] opacity-0 group-hover/slot:opacity-80 transition-opacity" />
-                            </div>
-                          );
-                        })}
+                      {dayBlocks.length === 0 && !isDraggingHere && (
+                        <div className="pointer-events-none absolute inset-x-0 top-4 text-center">
+                          <span className="text-[10px] font-medium text-[var(--ink-300)]">No classes</span>
+                        </div>
+                      )}
 
-                      {/* Rendered Event Blocks */}
+                      {isDraggingHere && dragSelection && selectionRange && (
+                        <div
+                          className="pointer-events-none absolute inset-x-1.5 z-20 rounded-md border border-[var(--brand-400)] bg-[var(--brand-100)]/55 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)]"
+                          style={{
+                            top: `${selectionStartBoundary * slotRowHeight}px`,
+                            height: `${selectionRows * slotRowHeight}px`,
+                          }}
+                        >
+                          <div className="m-2 inline-flex items-center rounded-md border border-[var(--brand-200)] bg-white/92 px-2 py-1 text-[10px] font-semibold tabular-nums text-[var(--brand-700)] shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+                            {selectionRange.startTime} – {selectionRange.endTime}
+                          </div>
+                        </div>
+                      )}
+
                       {dayBlocks.map((block) => {
                         const bStart = Math.max(timeToMinutes(block.startTime), startMin);
                         const bEnd = Math.min(timeToMinutes(block.endTime), endMin);
                         const durationMins = bEnd - bStart;
                         if (durationMins <= 0) return null;
 
-                        const topOffset = ((bStart - startMin) / 30) * slotRowHeight;
-                        const blockHeight = (durationMins / 30) * slotRowHeight - 4; // 4px spacing
+                        const { top: topOffset, height: blockHeight } = getBlockPosition(
+                          block.startTime,
+                          block.endTime,
+                          startMin,
+                          endMin,
+                          slotRowHeight
+                        );
 
                         const widthPct = 100 / block.totalCols;
                         const leftPct = block.colIndex * widthPct;
-
                         const styleTokens = getBlockColorStyles(block);
                         const isLab = block.locationType === "LAB" || block.room?.toUpperCase().includes("LAB");
                         const isOnline = block.locationType === "ONLINE" || block.room?.toUpperCase().includes("ONLINE");
+                        const isCompact = blockHeight < 96;
+                        const isVeryCompact = blockHeight < 68;
 
                         return (
                           <div
                             key={block.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            data-timetable-block="true"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.stopPropagation();
                               handleBlockClick(block);
                             }}
-                            className={`absolute rounded-xl border p-2.5 shadow-xs cursor-pointer transition-all duration-150 hover:shadow-md hover:scale-[1.01] overflow-hidden flex flex-col justify-between z-10 ${styleTokens.bg} ${styleTokens.border} ${styleTokens.text}`}
+                            className={`group absolute z-10 overflow-hidden rounded-lg border shadow-[0_1px_2px_rgba(15,23,42,0.035)] transition-[box-shadow,background-color] duration-150 hover:shadow-[0_4px_14px_rgba(15,23,42,0.08)] ${styleTokens.bg} ${styleTokens.border} ${styleTokens.text}`}
                             style={{
-                              top: `${topOffset + 2}px`,
-                              height: `${Math.max(blockHeight, 38)}px`,
-                              left: `calc(${leftPct}% + 3px)`,
-                              width: `calc(${widthPct}% - 6px)`,
+                              top: `${topOffset}px`,
+                              height: `${blockHeight}px`,
+                              left: `calc(${leftPct}% + 4px)`,
+                              width: `calc(${widthPct}% - 8px)`,
                             }}
                           >
-                            {/* Accent color left strip */}
-                            <div className={`absolute top-0 bottom-0 left-0 w-1 ${styleTokens.accentBar}`} />
-
-                            {/* Top row: Code / Group / Source */}
-                            <div className="flex items-start justify-between gap-1 pl-1">
-                              <div className="flex flex-wrap items-center gap-1">
-                                {block.subjectCode && block.subjectCode !== "N/A" && (
-                                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
+                            <button
+                              type="button"
+                              className="flex h-full w-full cursor-pointer flex-col p-2.5 text-left"
+                              title={`${block.subjectName || block.title} · ${block.startTime}–${block.endTime}`}
+                            >
+                              <div className="flex min-w-0 items-center gap-1.5">
+                                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${styleTokens.dot}`} />
+                                {block.subjectCode && block.subjectCode !== "N/A" ? (
+                                  <span className={`truncate text-[9.5px] font-bold uppercase tracking-[0.08em] ${styleTokens.badgeText}`}>
                                     {block.subjectCode}
+                                  </span>
+                                ) : (
+                                  <span className="truncate text-[9.5px] font-bold uppercase tracking-[0.08em] text-[var(--ink-500)]">
+                                    Manual
                                   </span>
                                 )}
                                 {block.group && block.group !== "N/A" && (
-                                  <span className="px-1 py-0.5 rounded text-[9.5px] font-semibold bg-white/70 text-[var(--ink-700)] border border-black/5">
-                                    Nhóm: {block.group}
-                                  </span>
+                                  <span className="truncate text-[9.5px] font-medium text-[var(--ink-500)]">· {block.group}</span>
                                 )}
                               </div>
-                              <span className="text-[10.5px] font-bold tabular-nums shrink-0 opacity-80">
-                                {getDurationLabel(block.startTime, block.endTime)}
-                              </span>
-                            </div>
 
-                            {/* Title / Subject Name */}
-                            <div className="pl-1 my-0.5 flex-1 flex flex-col justify-center">
-                              <p className="text-[12px] font-bold leading-tight line-clamp-2" title={block.title}>
+                              <p
+                                className={`mt-2 font-semibold leading-[1.35] tracking-[-0.01em] text-[var(--ink-900)] ${
+                                  isVeryCompact ? "line-clamp-1 text-[11px]" : isCompact ? "line-clamp-2 text-[11.5px]" : "line-clamp-3 text-[12px]"
+                                }`}
+                              >
                                 {block.subjectName || block.title}
                               </p>
-                            </div>
 
-                            {/* Bottom row: Time & Room */}
-                            <div className="flex flex-wrap items-center justify-between gap-1 pl-1 text-[11px] pt-1 border-t border-black/5">
-                              <div className="flex items-center gap-1 font-semibold tabular-nums opacity-90">
-                                <Clock className="w-3 h-3 shrink-0" />
-                                <span>{block.startTime}–{block.endTime}</span>
-                              </div>
-
-                              {block.room && (
-                                <div className="flex items-center gap-1 font-medium truncate max-w-[120px]" title={block.room}>
-                                  {isLab ? (
-                                    <Laptop className="w-3 h-3 text-[var(--brand-600)] shrink-0" />
-                                  ) : isOnline ? (
-                                    <ExternalLink className="w-3 h-3 text-[var(--info-600)] shrink-0" />
-                                  ) : (
-                                    <MapPin className="w-3 h-3 text-[var(--ink-500)] shrink-0" />
+                              <div className="mt-auto min-w-0 pt-2">
+                                <div className="flex items-center justify-between gap-2 border-t border-black/[0.055] pt-1.5">
+                                  <span className="whitespace-nowrap text-[10px] font-semibold tabular-nums text-[var(--ink-700)]">
+                                    {block.startTime}–{block.endTime}
+                                  </span>
+                                  {!isVeryCompact && (
+                                    <span className="text-[9.5px] font-medium tabular-nums text-[var(--ink-500)]">
+                                      {getDurationLabel(block.startTime, block.endTime)}
+                                    </span>
                                   )}
-                                  <span className="truncate">{block.room.split("-")[0]}</span>
                                 </div>
-                              )}
-                            </div>
+
+                                {!isCompact && block.room && (
+                                  <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[9.5px] font-medium text-[var(--ink-500)]">
+                                    {isLab ? (
+                                      <Laptop className="h-3 w-3 shrink-0" />
+                                    ) : isOnline ? (
+                                      <ExternalLink className="h-3 w-3 shrink-0" />
+                                    ) : (
+                                      <MapPin className="h-3 w-3 shrink-0" />
+                                    )}
+                                    <span className="truncate">{block.room}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
                           </div>
                         );
                       })}
@@ -536,87 +718,93 @@ export function TimetableGrid({
         </div>
       </div>
 
+      {onAddManualBlock && (
+        <p className="px-1 text-[10.5px] text-[var(--ink-400)]">
+          Drag vertically inside a day to select a time range. A short click creates one 30-minute slot.
+        </p>
+      )}
+
       {/* Session Details Modal */}
       {selectedBlock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[var(--bg-surface)] border border-[var(--paper-200)] rounded-2xl shadow-xl max-w-lg w-full overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                {selectedBlock.subjectCode && (
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--brand-500)] text-white">
-                    {selectedBlock.subjectCode}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px] animate-in fade-in duration-150">
+          <div className="w-full max-w-lg overflow-hidden rounded-xl border border-[var(--paper-200)] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${getBlockColorStyles(selectedBlock).dot}`} />
+                  {selectedBlock.subjectCode && (
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.1em] ${getBlockColorStyles(selectedBlock).badgeText}`}>
+                      {selectedBlock.subjectCode}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--ink-400)]">
+                    {selectedBlock.source === "IMPORTED" ? "AAO import" : "Manual event"}
                   </span>
-                )}
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--paper-100)] text-[var(--ink-600)] uppercase tracking-wide">
-                  {selectedBlock.source === "IMPORTED" ? "AAO Import" : "Manual Block"}
-                </span>
+                </div>
+                <h2 className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--ink-900)]">
+                  {selectedBlock.subjectName || selectedBlock.title}
+                </h2>
+                <p className="mt-1 text-xs text-[var(--ink-500)]">
+                  {DAY_METADATA[selectedBlock.dayOfWeek]?.en} ({DAY_METADATA[selectedBlock.dayOfWeek]?.vn})
+                  {selectedBlock.date ? ` · ${selectedBlock.date}` : ""} · {getShiftForTime(selectedBlock.startTime).vn}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedBlock(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--ink-400)] hover:bg-[var(--paper-100)] hover:text-[var(--ink-700)] transition-colors"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--ink-400)] transition-colors hover:bg-[var(--paper-100)] hover:text-[var(--ink-700)]"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <h2 className="text-lg font-bold text-[var(--ink-900)] mb-1">
-              {selectedBlock.subjectName || selectedBlock.title}
-            </h2>
-            <p className="text-xs text-[var(--ink-500)] mb-4">
-              {DAY_METADATA[selectedBlock.dayOfWeek]?.en} ({DAY_METADATA[selectedBlock.dayOfWeek]?.vn}){selectedBlock.date ? ` · Ngày ${selectedBlock.date}` : ""} · {getShiftForTime(selectedBlock.startTime).vn}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 p-3.5 bg-[var(--paper-50)] border border-[var(--paper-200)] rounded-xl mb-4 text-xs">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[var(--brand-500)] shrink-0" />
-                <div>
-                  <p className="text-[var(--ink-400)] font-medium">Time & Duration</p>
-                  <p className="font-bold text-[var(--ink-800)] tabular-nums">
-                    {selectedBlock.startTime} – {selectedBlock.endTime} ({getDurationLabel(selectedBlock.startTime, selectedBlock.endTime)})
-                  </p>
+            <div className="divide-y divide-[var(--paper-200)] border-y border-[var(--paper-200)] text-xs">
+              <div className="grid grid-cols-[110px_1fr] gap-3 py-3">
+                <span className="text-[var(--ink-400)]">Time</span>
+                <div className="flex items-center gap-2 font-semibold tabular-nums text-[var(--ink-800)]">
+                  <Clock className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+                  {selectedBlock.startTime} – {selectedBlock.endTime}
+                  <span className="font-medium text-[var(--ink-400)]">· {getDurationLabel(selectedBlock.startTime, selectedBlock.endTime)}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[var(--coral-500)] shrink-0" />
-                <div>
-                  <p className="text-[var(--ink-400)] font-medium">Room / Facility</p>
-                  <p className="font-bold text-[var(--ink-800)] truncate" title={selectedBlock.room}>
-                    {selectedBlock.room || "Campus Room"}
-                  </p>
+              <div className="grid grid-cols-[110px_1fr] gap-3 py-3">
+                <span className="text-[var(--ink-400)]">Room / facility</span>
+                <div className="flex items-center gap-2 font-semibold text-[var(--ink-800)]">
+                  <MapPin className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+                  <span className="truncate">{selectedBlock.room || "Campus room"}</span>
                 </div>
               </div>
 
               {selectedBlock.group && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-[var(--info-500)] shrink-0" />
-                  <div>
-                    <p className="text-[var(--ink-400)] font-medium">Class Group / Nhóm</p>
-                    <p className="font-bold text-[var(--ink-800)]">{selectedBlock.group}</p>
+                <div className="grid grid-cols-[110px_1fr] gap-3 py-3">
+                  <span className="text-[var(--ink-400)]">Class group</span>
+                  <div className="flex items-center gap-2 font-semibold text-[var(--ink-800)]">
+                    <Users className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+                    {selectedBlock.group}
                   </div>
                 </div>
               )}
 
               {selectedBlock.lecturerName && (
-                <div className="flex items-center gap-2">
-                  <School className="w-4 h-4 text-[var(--mint-500)] shrink-0" />
-                  <div>
-                    <p className="text-[var(--ink-400)] font-medium">Instructor / GV</p>
-                    <p className="font-bold text-[var(--ink-800)]">{selectedBlock.lecturerName}</p>
+                <div className="grid grid-cols-[110px_1fr] gap-3 py-3">
+                  <span className="text-[var(--ink-400)]">Instructor</span>
+                  <div className="flex items-center gap-2 font-semibold text-[var(--ink-800)]">
+                    <School className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+                    {selectedBlock.lecturerName}
                   </div>
                 </div>
               )}
             </div>
 
             {selectedBlock.notes && (
-              <div className="p-3 bg-[var(--paper-50)] border border-[var(--paper-200)] rounded-xl mb-4 text-xs text-[var(--ink-600)]">
-                <span className="font-semibold text-[var(--ink-800)]">Notes: </span>
+              <p className="mt-4 text-xs leading-5 text-[var(--ink-500)]">
+                <span className="font-semibold text-[var(--ink-700)]">Note · </span>
                 {selectedBlock.notes}
-              </div>
+              </p>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--paper-200)]">
+            <div className="mt-5 flex items-center justify-between">
               {selectedBlock.source === "MANUAL" && onDeleteBlock ? (
                 <button
                   type="button"
@@ -624,19 +812,19 @@ export function TimetableGrid({
                     onDeleteBlock(selectedBlock.id);
                     setSelectedBlock(null);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--danger-700)] hover:bg-[var(--danger-100)] transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[var(--danger-700)] transition-colors hover:bg-[var(--danger-100)]"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete manual block
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete event
                 </button>
               ) : (
-                <span className="text-[11px] text-[var(--ink-400)]">AAO Synchronized Schedule</span>
+                <span className="text-[10.5px] text-[var(--ink-400)]">AAO synchronized schedule</span>
               )}
 
               <button
                 type="button"
                 onClick={() => setSelectedBlock(null)}
-                className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-xs font-bold hover:bg-[var(--brand-600)] transition-colors"
+                className="rounded-lg bg-[var(--ink-900)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Done
               </button>
