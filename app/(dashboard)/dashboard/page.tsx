@@ -55,6 +55,17 @@ function subtitleFor(role: AuthUser["role"]): string {
   }
 }
 
+function roleLabelFor(role: AuthUser["role"]): string {
+  switch (role) {
+    case "STUDENT":
+      return "Student workspace";
+    case "LECTURER":
+      return "Lecturer workspace";
+    case "ADMIN":
+      return "Admin workspace";
+  }
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   if (!user) return null; // (dashboard)/layout.tsx redirects before this ever renders unauthenticated
@@ -62,13 +73,30 @@ export default function DashboardPage() {
   const firstName = user.fullName.split(" ")[0];
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">
-          {greeting()}, {firstName}
-        </h1>
-        <p className="text-sm text-[var(--ink-600)]">{subtitleFor(user.role)}</p>
-      </div>
+    <div className="flex flex-col gap-7">
+      <header className="flex flex-col gap-3 border-b border-[var(--paper-200)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-400)]">
+              Overview
+            </span>
+            <span className="h-1 w-1 rounded-full bg-[var(--paper-300)]" />
+            <span className="text-[11px] font-medium text-[var(--ink-500)]">
+              {roleLabelFor(user.role)}
+            </span>
+          </div>
+
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink-900)] sm:text-[28px]">
+            {greeting()}, {firstName}
+          </h1>
+          <p className="mt-1.5 text-sm leading-6 text-[var(--ink-500)]">{subtitleFor(user.role)}</p>
+        </div>
+
+        <div className="hidden items-center gap-2 text-[11px] font-medium text-[var(--ink-400)] sm:flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--mint-500)]" />
+          Workspace up to date
+        </div>
+      </header>
 
       {user.role === "STUDENT" && <StudentDashboard user={user} />}
       {user.role === "LECTURER" && <LecturerDashboard user={user} />}
@@ -131,7 +159,7 @@ function StudentDashboard({ user }: { user: AuthUser }) {
         </StaggerGroup>
       }
     >
-      <StaggerGroup className="flex flex-col gap-6">
+      <StaggerGroup className="flex flex-col gap-5">
         {/* Suggested / Available Lecturer Slots */}
         <StaggerItem>
           <SuggestedSlotsCard
@@ -140,7 +168,7 @@ function StudentDashboard({ user }: { user: AuthUser }) {
           />
         </StaggerItem>
 
-        <StaggerItem className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={upcoming.length} label="Upcoming bookings" />
           <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={pendingCount} label="Pending confirmation" />
           <StatTile icon={Users} tone={ACCENT_TOKENS.mint} value={slotsThisWeek} label="Open slots this week" />
@@ -210,8 +238,8 @@ function LecturerDashboard({ user }: { user: AuthUser }) {
         </StaggerGroup>
       }
     >
-      <StaggerGroup className="flex flex-col gap-6">
-        <StaggerItem className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <StaggerGroup className="flex flex-col gap-5">
+        <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={toReview.length} label="Bookings to review" />
           <StatTile icon={CalendarDays} tone={HUE_TOKENS.success} value={confirmedToday} label="Confirmed today" />
           <StatTile icon={AlertTriangle} tone={HUE_TOKENS.danger} value={`${noShowRate}%`} label="No-show rate" />
@@ -264,8 +292,8 @@ function AdminDashboard({ user }: { user: AuthUser }) {
         </StaggerGroup>
       }
     >
-      <StaggerGroup className="flex flex-col gap-6">
-        <StaggerItem className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <StaggerGroup className="flex flex-col gap-5">
+        <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile icon={Users} tone={ACCENT_TOKENS.coral} value={stats.activeUsers} label="Active users" />
           <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={stats.bookingsThisWeek} label="Bookings this week" />
           <StatTile icon={TrendingUp} tone={ACCENT_TOKENS.mint} value={`${stats.utilizationPct}%`} label="Slot utilization" />
