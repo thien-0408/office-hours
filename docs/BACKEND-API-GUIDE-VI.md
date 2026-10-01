@@ -4,8 +4,8 @@
 > (`capstone-officehours-plan.md`, `capstone-api-endpoints.md`, `capstone-db-schema.md`, `allocate-engine.md`) cùng với code frontend hiện có
 > (`lib/office-hours/types.ts`, `lib/auth/*`, `app/api/auth/*`, `lib/office-hours/mock-data.ts`).
 >
-> **Trạng thái:** backend **chưa tồn tại**. Mọi thứ dưới đây là *hợp đồng đề xuất* (proposed contract). Frontend hiện chạy bằng mock data
-> (chỉ `/auth/*` đã được gọi thật, có fallback sang tài khoản mock khi backend không reachable). Khi có điểm mâu thuẫn, mục 3 liệt kê và đề xuất cách chốt.
+> **Trạng thái:** backend **chưa tồn tại**. Mọi thứ dưới đây là *hợp đồng* đã được đội thống nhất (các mâu thuẫn ở mục 3 **đã chốt và đã áp dụng** vào 4 file thiết kế gốc và vào FE). Frontend hiện chạy bằng mock data
+> (chỉ `/auth/*` đã được gọi thật, có fallback sang tài khoản mock khi backend không reachable).
 >
 > Thuật ngữ kỹ thuật (endpoint, enum, tên cột…) giữ nguyên tiếng Anh để khớp code.
 
@@ -31,7 +31,7 @@
 - Lỗi phải trả **RFC 7807-style**: `{ status, error, message, path, timestamp, details? }` (FE đọc `message` để hiển thị — `ApiError` trong `lib/api-server.ts`).
 - Các route BFF hiện có: `login`, `logout`, `me`, `refresh`, `register`, `forgot-password`, `reset-password`.
   Các module còn lại (bookings, slots…) FE chưa có route BFF — khi nối API thật sẽ thêm route proxy tương tự.
-- **SSE (`/notifications/stream`)**: `EventSource` trình duyệt không gửi được header `Authorization`; cần route proxy phía Next.js (đọc cookie rồi forward) hoặc backend hỗ trợ xác thực qua cookie. Cần chốt (mục 3, #12).
+- **SSE (`/notifications/stream`)**: `EventSource` trình duyệt không gửi được header `Authorization`, nên **BFF của Next.js proxy luồng SSE** (đọc cookie rồi forward kèm bearer token). Giữ thêm `GET /notifications?since=` làm fallback polling.
 
 ---
 
@@ -49,30 +49,29 @@
 
 ---
 
-## 3. Kết quả rà soát — các điểm cần chốt TRƯỚC khi code
+## 3. Các điểm đã chốt (kết quả rà soát)
 
-Sắp theo mức độ rủi ro. Mỗi mục có **đề xuất** để dev chốt nhanh.
+Mỗi mục: quyết định + nơi đã áp dụng. “Tài liệu” = 4 file gốc trong `docs/` (và file này); “FE” = code frontend.
 
-| # | Mức | Vấn đề | Đề xuất |
+| # | Vấn đề | Quyết định | Đã áp dụng |
 |---|---|---|---|
-| 1 | **Cao** | **`dayOfWeek` không nhất quán**: `availability_rules` và `recurring_bookings` dùng `0–6` (0=CN); `schedule_entries` dùng `1–7` (1=T2); FE `AvailabilityRule` ghi `1–5`, `RecurringSeries` ghi `0=CN..6`; query `/lecturers?dayOfWeek=` ghi `1–7`. Sai một chỗ là slot lệch ngày. | Thống nhất **ISO 1–7** ở DB (CHECK `BETWEEN 1 AND 7`), API và FE. Sửa lại `RecurringSeries.dayOfWeek` + `DAY_OPTIONS` phía FE. |
-| 2 | **Cao** | **Reschedule**: API là `POST /bookings/{id}/reschedule {newSlotId}` (chọn *slot có sẵn*), nhưng FE `RescheduleModal` cho nhập **ngày/giờ tự do + topic**. Hai bên không khớp. | Chốt theo API: FE đổi sang chọn slot từ slot picker. Nếu giữ nhập tự do thì backend phải tự tìm/khớp slot và trả 422 khi không có. |
-| 3 | **Cao** | **Chỉ chặn trùng khi `status = CONFIRMED`** (exclusion constraint có `WHERE status='CONFIRMED'`). Nhiều booking `PENDING` cùng slot được phép → lecturer `confirm` booking thứ hai sẽ vi phạm constraint. | Chấp nhận (là thiết kế có chủ đích) nhưng **`/confirm` phải bắt `exclusion_violation` → trả `409`** và tự động `DECLINE`/thông báo các PENDING còn lại; UI lecturer cần xử lý 409. |
-| 4 | Cao | **Booking DTO của FE thiếu id**: `Booking` chỉ có `lecturerName`, `studentName`… không có `id` của slot/lecturer/student. Booking detail, reschedule, link tới slot picker cần các id này. | Response booking trả **thêm** `slotId`, `lecturerId`, `studentId` (additive, không phá FE). |
-| 5 | Cao | **Waitlist: DB theo slot, FE theo "mẫu mong muốn"**. DB: `waitlist_entries (slot_id, student_id)` + `position` không có cột. FE `WaitlistEntry` có `desiredSlotLabel` ("Weekday mornings"), `position`. | Chốt: waitlist **gắn slot cụ thể** (đúng với allocation). `desiredSlotLabel` do backend dựng từ slot; `position` tính động (rank theo `requested_at` hoặc `priority_score`). FE sửa copy cho khớp. |
-| 6 | Trung | **Lecturer directory**: `GET /lecturers` trả `{id, slug, name, department, photoUrl, blurb}` nhưng bảng `users` **không có** `slug`, `photo_url`, `blurb`. | Thêm bảng `lecturer_profiles` (1–1 với `users`) hoặc thêm cột nullable; `slug` sinh từ tên + unique. |
-| 7 | Trung | **Notification**: DB lưu `type` dạng `booking.confirmed` + `payload jsonb`; FE dùng enum `BOOKING_CONFIRMED…` và có `title`, `body`, `read`, `bookingId`. SSE event catalogue (`booking.pending`, `waitlist.expired`…) lệch với FE enum (`REMINDER` không có bên API). | Backend render `title/body` theo locale (en/vi) hoặc trả `type` + `payload` để FE tự dịch (đề xuất — FE đã có i18n). Chốt danh mục event chung, thêm `booking.pending`, `waitlist.expired`, `reminder.*`. |
-| 8 | Trung | **Group booking: add bằng email hay `studentId`?** FE `ParticipantManager` nhập **email**; API/DB dùng `participantIds`/`student_id`. Email không tồn tại thì sao? | Đề xuất: backend nhận `participantEmails[]`, resolve sang user; email không tồn tại → `422` kèm danh sách email lỗi (không tự tạo tài khoản). |
-| 9 | Trung | **Import schedule**: doc API mô tả job bất đồng bộ (`importId`, `rowsProcessed`…), FE chỉ có `ScheduleImportHistoryEntry {fileName, importedAt, rowCount, status}` và hiện **parse PDF phía client** (`pdfjs-dist`, `lib/timetable/parse-pdf.ts`). Doc plan còn nhắc CSV. | MVP: dùng **client fast-path** `POST /users/me/schedule-entries/batch` (JSON đã parse). Pipeline staging/SSE (§6.4) để **giai đoạn sau**. Chốt định dạng AAO thật là PDF và sửa plan. |
-| 10 | Trung | **Override authorization**: ai được `override` — mọi Admin hay admin theo khoa? FE hiện cho mọi Admin, không kiểm tra khoa. | Chốt "mọi Admin" cho MVP (ghi rõ là quyết định có chủ đích) + luôn ghi `allocation_events` `OVERRIDDEN`. |
-| 11 | Trung | **Import: thay thế hay nối thêm** khi student import lại cùng học kỳ. | Đề xuất `REPLACE` theo học kỳ làm mặc định (đã có `mode`). |
-| 12 | Thấp | **SSE + cookie httpOnly**: `EventSource` không set header Authorization. | Next.js route proxy đọc cookie → mở stream tới backend bằng `Authorization`; hoặc dùng polling `GET /notifications?since=` làm fallback. |
-| 13 | Thấp | **`citext`** có sẵn không? Ngược lại dùng unique index `LOWER(email)`. | Kiểm tra môi trường pilot; fallback đã mô tả ở schema. |
-| 14 | Thấp | **Capacity group booking** không thể là `CHECK` (đếm bảng con). | Trigger `AFTER INSERT` hoặc kiểm tra ở service + test. |
-| 15 | Thấp | **Retention** `allocation_events`, `notifications` tăng không giới hạn. | Quyết định partition/archive trước pilot nếu chạy stress test. |
-| 16 | Thấp | **`allocate()` đang viết bằng TypeScript** (`lib/allocation/engine.ts`) cho mô phỏng phía client; backend phải **cài lại** và cho kết quả giống hệt với cùng seed. | Xem mục 8 (PRNG mulberry32 + seededHash, test vector). |
-
----
+| 1 | `dayOfWeek` lệch (`0–6` và `1–7`) | **ISO 1–7 (1 = Thứ Hai … 7 = Chủ Nhật)** ở DB, API, FE | Tài liệu: `availability_rules` và `recurring_bookings` đổi `CHECK` sang 1–7, ERD sửa; FE: comment `RecurringSeries` + `nextOccurrences` chuyển ISO↔`Date#getDay()` |
+| 2 | Reschedule: API `{newSlotId}` vs FE nhập tay ngày/giờ | **Giữ API** — người dùng *chọn slot trống* của cùng lecturer | FE: `RescheduleModal` viết lại thành slot picker, `onConfirm({ newSlotId, startAt, endAt })`; tài liệu ghi rõ không nhận ngày giờ tự do |
+| 3 | Chỉ `CONFIRMED` bị exclusion constraint → nhiều `PENDING` cùng slot | Giữ thiết kế; `/confirm` bắt `exclusion_violation` → **`409` `SLOT_ALREADY_CONFIRMED`** và tự `DECLINE` các `PENDING` còn lại của slot trong cùng transaction | Tài liệu (API §5, schema §3.2) |
+| 4 | `Booking` ở FE thiếu id | Thêm **`slotId`, `lecturerId`, `studentId`** (bắt buộc trong type) | FE: `types.ts` + toàn bộ mock booking; tài liệu API §5 |
+| 5 | Waitlist theo slot (DB) vs theo "mẫu mong muốn" (FE) | Waitlist **gắn một slot cụ thể**; `desiredSlotLabel` dựng từ slot (vd `"Tue 10:00-10:30"`), `position` tính khi đọc; job quét hết hạn offer | FE: `WaitlistEntry.slotId`, mock + trang waitlist; tài liệu API §6, schema §4.1 |
+| 6 | Lecturer directory cần `slug/photoUrl/blurb` mà `users` không có | Bảng mới **`lecturer_profiles`** (1–1 với lecturer) | Tài liệu: schema §1.1b + inventory, API §5.0 |
+| 7 | Event/enum notification lệch nhau | **Một danh mục event duy nhất** (xem 6.9): thêm `booking.pending`, `waitlist.expired`, `reminder.upcoming` | FE: `NotificationType` + `notification-config`; tài liệu API §8, schema §5 |
+| 8 | Group booking thêm bằng email hay id | API nhận **`participantEmails[]`** (resolve sang user); email không tồn tại → `422` kèm danh sách email lỗi, **không tự tạo tài khoản** | Tài liệu: API §5/§5.1, schema §3.3 |
+| 9 | Cách import lịch học | **Client parse PDF → gom toàn bộ dòng thành một mảng JSON → backend chỉ validate và lưu.** Không có pipeline PDF/job/staging ở MVP | Tài liệu: API §4 viết lại, plan (FR-5, NFR-4, scope), schema §2.4–2.5; FE: type `ScheduleBatchPayload`, `ScheduleImportMode` |
+| 10 | Quyền override | **Mọi Admin** (quyết định có chủ đích cho MVP), luôn ghi `allocation_events` `OVERRIDDEN` | Giữ nguyên tài liệu; ghi nhận ở đây |
+| 11 | Import lại cùng học kỳ | Mặc định **`REPLACE`** (giữ block `MANUAL`), `MERGE` là tùy chọn | Tài liệu schema §8 #7, API §4 |
+| 12 | SSE với cookie httpOnly | BFF proxy SSE + polling fallback | Mục 1.1 + API §8 |
+| 13 | `citext` | Dùng nếu khả dụng; fallback `LOWER(email)` unique index | Schema §1.1 (không đổi) |
+| 14 | Capacity group booking | Trigger `AFTER INSERT` hoặc kiểm tra ở service + test | Schema §3.3 (không đổi) |
+| 15 | Retention `allocation_events`/`notifications` | Quyết định partition/archive trước pilot nếu chạy stress | Schema §8 #5 (không đổi) |
+| 16 | `allocate()` viết bằng TS, backend phải cài lại | Backend cài lại theo mục 8, kiểm bằng test vector sinh từ bản TS | Mục 8 |
+| 17 | `ON CONFLICT` ở lệnh commit import cần **unique** index nhưng schema chỉ có index thường | `uq_schedule_entries_dedup` là **UNIQUE ... NULLS NOT DISTINCT** (PostgreSQL 15+) | Tài liệu: schema §2.3 |
 
 ## 4. Vai trò & phân quyền nhanh
 
@@ -94,9 +93,9 @@ DDL đầy đủ nằm ở `capstone-db-schema.md`; phần này là bản đồ 
 
 | Nhóm | Bảng | Ghi chú |
 |---|---|---|
-| Danh tính | `users`, `password_reset_tokens`, `semesters` | `email` unique (citext hoặc `LOWER`), `semesters` chỉ **một** `is_active` (partial unique index) |
+| Danh tính | `users`, `lecturer_profiles`, `password_reset_tokens`, `semesters` | `email` unique (citext hoặc `LOWER`), `semesters` chỉ **một** `is_active` (partial unique index) |
 | Availability | `availability_rules`, `availability_exceptions` | Rule sinh ra `slots`; exception `BLOCK`/`ADD` áp khi sinh slot |
-| Nguồn xung đột | `schedule_entries`, `schedule_imports`, `schedule_import_staging` | `schedule_entries` **dùng chung** cho student & lecturer → query xung đột thống nhất |
+| Nguồn xung đột | `schedule_entries`, `schedule_imports` (staging: hoãn, không tạo ở MVP) | `schedule_entries` **dùng chung** cho student & lecturer → query xung đột thống nhất |
 | Đặt lịch | `slots`, `bookings`, `booking_participants`, `meeting_records`, `recurring_bookings` | `slots` được **materialize** (có id để waitlist/allocation tham chiếu) |
 | Phân bổ | `waitlist_entries`, `allocation_policies`, `allocation_events` | Phục vụ nghiên cứu: log đủ cả ứng viên `SKIPPED` |
 | Nghiên cứu | `synthetic_demand_runs`, `experiments` | Chỉ cho tool nghiên cứu, không phải dữ liệu sản phẩm |
@@ -119,7 +118,7 @@ DDL đầy đủ nằm ở `capstone-db-schema.md`; phần này là bản đồ 
 
 ### 5.3 Thứ tự migration (Flyway) — chú ý FK vòng
 
-`V1 extensions (btree_gist, citext)` → `users` → `password_reset_tokens` → `semesters` → `availability_*` → **`schedule_imports` (trước)** → `schedule_entries` → `schedule_import_staging` → `slots` → `bookings` (+ trigger + exclusion) → `booking_participants` → `meeting_records` → `recurring_bookings` (+ `ALTER bookings ADD recurring_booking_id`) → `waitlist_entries` → `allocation_policies` → `allocation_events` → `synthetic_demand_runs`, `experiments` → `notifications`.
+`V1 extensions (btree_gist, citext)` → `users` → `lecturer_profiles` → `password_reset_tokens` → `semesters` → `availability_*` → **`schedule_imports` (trước)** → `schedule_entries` → `slots` → `bookings` (+ trigger + exclusion) → `booking_participants` → `meeting_records` → `recurring_bookings` (+ `ALTER bookings ADD recurring_booking_id`) → `waitlist_entries` → `allocation_policies` → `allocation_events` → `synthetic_demand_runs`, `experiments` → `notifications`.
 
 > `schedule_entries.import_batch_id` tham chiếu `schedule_imports` nên `schedule_imports` phải tạo **trước** (doc schema chỉ xếp sau cho dễ đọc).
 
@@ -186,38 +185,56 @@ DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes
 
 ### 6.4 Import lịch học/dạy — nguồn xung đột (FR-5, FR-5a)
 
-Student và lecturer **tự upload** thời khóa biểu AAO của chính mình (PDF). Backend phải xác thực đây đúng là file export của AAO (định dạng/chữ ký + MIME + schema) và từ chối nếu không. Admin chỉ là phương án hỗ trợ/giám sát.
+**Quyết định: trình duyệt parse PDF, backend chỉ nhận và lưu JSON.** Student/lecturer import thời khóa biểu AAO **của chính mình**. FE đọc PDF bằng Web Worker (`pdfjs-dist`, `lib/timetable/parse-pdf.ts`), **gom mọi dòng của mọi file thành một mảng** rồi gửi **một request**. Backend không có pipeline PDF/OCR, không lưu file, không job bất đồng bộ.
 
-**MVP đề xuất (làm trước):**
+**Mô hình tin cậy.** Backend không còn kiểm chứng được file có phải export AAO thật, và không cần: user chỉ ghi được vào lịch **của chính họ** (Admin: của user được chỉ định), nên rủi ro tối đa là user tự khai sai lịch của mình. Vì vậy backend **phải coi payload là input không tin cậy**:
+
+- validate từng dòng theo schema bên dưới (kiểu, enum, `dayOfWeek` 1–7, giờ `HH:mm`, `startTime < endTime`, giới hạn độ dài chuỗi);
+- giới hạn kích thước (gợi ý ≤ 2.000 dòng và ≤ 1 MB mỗi request) → `413`/`422` nếu vượt;
+- chủ sở hữu lấy từ **token** (`/users/me/...`) hoặc từ path (Admin) — **không bao giờ** từ `userId` trong body;
+- `mode` và khử trùng lặp thực hiện **phía server**;
+- có dòng lỗi thì **từ chối cả batch** (all-or-nothing) và trả `errors[] = { rowIndex, field, message }`.
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| POST | `/users/me/schedule-entries/batch` | S/L | **Fast-path:** FE parse PDF bằng Web Worker (`pdfjs-dist`) rồi gửi JSON đã cấu trúc `{ semesterId, mode: "REPLACE"\|"MERGE", rows: ParsedTimetableRow[] }`. Backend validate + ghi `schedule_entries`. |
+| POST | `/users/me/schedule-entries/batch` | S/L | **Endpoint import.** Body: `{ semesterId, mode, sourceFiles[], rows[] }`. Trả `201 { importId, mode, addedCount, skippedCount, replacedCount }`. Ghi một dòng `schedule_imports` (audit) và các dòng `schedule_entries` trong **một transaction**. |
+| POST | `/users/{userId}/schedule-entries/batch` | AD | Cùng body, import hộ user không tự làm được (FR-5a). Đối tượng là `userId` trên path. |
 | GET | `/users/me/schedule-entries` | S/L | Busy block của mình trong semester active → `ScheduleBlock[]`. |
+| GET | `/users/{userId}/schedule-entries` | O/AD | Lịch của một user (hỗ trợ/giám sát). |
+| POST | `/users/me/schedule-entries` | S/L | Thêm tay **một** block của mình (modal "Add schedule event", `source: MANUAL`). |
+| POST | `/users/{userId}/schedule-entries` | AD | Thêm tay một block hộ user. |
 | DELETE | `/schedule-entries/{id}` | O/AD | Xóa một block. |
-| GET | `/users/me/schedule-imports` | S/L | Lịch sử import của mình (xem mục 3 #9 về shape). |
-| POST | `/users/{userId}/schedule-entries` | AD | Thêm tay một block hộ user (`{ semesterId, title, dayOfWeek, startTime, endTime, room, locationType?, lecturerName? }`). |
-| GET | `/users/{userId}/schedule-entries` | O/AD | Xem lịch của user. |
-| GET | `/schedule-imports` | AD | Lịch sử import toàn hệ thống. |
+| GET | `/users/me/schedule-imports` | S/L | Lịch sử import của mình: `{ id, importedAt, mode, sourceFiles[], addedCount, skippedCount, status }[]` (FE `ScheduleImportHistoryEntry`; `rowCount` = `addedCount`). |
+| GET | `/schedule-imports` | AD | Lịch sử toàn hệ thống. |
 
-**Giai đoạn sau (pipeline lớn 50–200 trang, ≥10.000 dòng):**
+**Schema payload** (FE type `ScheduleBatchPayload`, `lib/office-hours/types.ts`):
+```json
+{
+  "semesterId": 12,
+  "mode": "REPLACE",
+  "sourceFiles": ["TimeTable-lecture.pdf", "TimeTable-lab.pdf"],
+  "rows": [
+    { "day": "Thứ 2", "date": "13/07", "startTime": "07:30", "endTime": "11:30",
+      "subjectCode": "CSE 422", "subjectName": "Kỹ năng lập trình chuyên nghiệp",
+      "group": "E", "room": "LAB403.B08", "lecturerName": "Rohit Kumar Kasera" }
+  ]
+}
+```
 
-| Method | Path | Role | Mô tả |
-|---|---|---|---|
-| POST | `/users/me/schedule-imports` | S/L | `multipart/form-data` (`files[]`, `semesterId`, `mode`). Job bất đồng bộ → `{ importId, status: "QUEUED", addedCount, skippedCount }`. |
-| GET | `/users/me/schedule-imports/{importId}` | O | Poll: `{ status: QUEUED\|PROCESSING\|COMPLETED\|FAILED, rowsProcessed, rowsFailed, rowsSkipped, errors[] }`. |
-| POST | `/schedule-imports` | AD | Admin upload hộ (`targetUserId`, `mode`). |
-| POST | `/schedule-imports/jobs` | AD | Khởi tạo bulk ingestion → `202 { importJobId, status:"QUEUED", totalFiles }`. |
-| GET | `/schedule-imports/jobs/{id}/progress` | O/AD | **SSE** tiến độ: `{ phase: PARSING\|DEDUPLICATING\|READY_FOR_REVIEW, percentComplete, pagesProcessed, totalPages, extractedRows, duplicateCount, errorCount }`. |
-| GET | `/schedule-imports/jobs/{id}/preview` | O/AD | Xem staging, phân trang: `?page=0&size=50&filterStatus=VALID,CONFLICT,DUPLICATE`. |
-| POST | `/schedule-imports/jobs/{id}/commit` | O/AD | `{ action: "COMMIT"\|"ROLLBACK", resolutionStrategy: "SKIP_DUPLICATES"\|"OVERWRITE", excludedTempIds[] }`. Batch insert (`JdbcTemplate.batchUpdate` size 1000 hoặc `COPY`). |
+| Trường | Kiểu / luật |
+|---|---|
+| `semesterId` | bắt buộc, phải tồn tại (mặc định: semester active) |
+| `mode` | `REPLACE` hoặc `MERGE` |
+| `sourceFiles` | tùy chọn, ≤ 20 tên, mỗi tên ≤ 255 ký tự (chỉ để audit) |
+| `rows[].day` | `"Thứ 2"`…`"Thứ 7"`, `"Chủ Nhật"` → server map sang `dayOfWeek` 1…7 (cũng chấp nhận số 1–7) |
+| `rows[].date` | tùy chọn `dd/MM` hoặc `dd/MM/yyyy`, ≤ 20 ký tự — chỉ mang tính thông tin (import dạng lịch lặp hằng tuần) |
+| `rows[].startTime`, `endTime` | `HH:mm` 24h, `startTime < endTime` |
+| `subjectCode`, `subjectName`, `group`, `room`, `lecturerName` | chuỗi, giới hạn theo cột của `schedule_entries`; `locationType` suy ra từ `room`/tên môn (`LAB`/`ROOM`/`ONLINE`/`OTHER`) nếu không gửi |
 
-Pipeline: `Upload → 202 + Job ID → Worker (stream parse) → Staging + dedup index → Preview phân trang → Commit nguyên tử`.
+- **`REPLACE`**: xóa các dòng `IMPORTED` cũ của user trong semester, **giữ** dòng `MANUAL`. **`MERGE`**: thêm mới và bỏ qua dòng trùng, dựa trên `(user_id, semester_id, day_of_week, start_time, end_time, subject_code)` — index **unique** `uq_schedule_entries_dedup` (`NULLS NOT DISTINCT`, PostgreSQL 15+).
+- **Hoãn / không làm ở MVP:** pipeline phía server (upload `multipart`, job, bảng staging, SSE tiến độ, preview, commit). Chỉ cân nhắc nếu Admin cần nạp file toàn khoa mà không thể parse ở trình duyệt.
 
-**DTO `ScheduleBlock`** (response `schedule-entries`):
-`{ id, title, dayOfWeek(1–7), date?("13/07"), startTime, endTime, source("IMPORTED"|"MANUAL"), subjectCode?, subjectName?, group?, room?, lecturerName?, locationType?("LAB"|"ROOM"|"ONLINE"|"OTHER"), colorHue?, notes? }`.
-
-**Dedup (`MERGE`)** dựa trên `(user_id, semester_id, day_of_week, start_time, end_time, subject_code)`. **`REPLACE`** xóa các dòng `IMPORTED` cũ nhưng **giữ** dòng `MANUAL`.
+**DTO `ScheduleBlock`** (response): `{ id, title, dayOfWeek(1–7), date?("13/07"), startTime, endTime, source("IMPORTED"|"MANUAL"), subjectCode?, subjectName?, group?, room?, lecturerName?, locationType?, colorHue?, notes? }`.
 
 **Query xung đột thống nhất:**
 ```sql
@@ -230,7 +247,7 @@ EXISTS (SELECT 1 FROM schedule_entries
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| GET | `/lecturers` | A | Duyệt/tìm lecturer. `?q=` (tên+khoa), `?department=`, `?dayOfWeek=1-7` (còn ≥1 slot trống ngày đó), `?availableOnly=true`. Trả phân trang `Lecturer { id, slug, name, department, photoUrl, blurb }`. |
+| GET | `/lecturers` | A | Duyệt/tìm lecturer (`slug`, `photoUrl`, `blurb` lấy từ bảng `lecturer_profiles`). `?q=` (tên+khoa), `?department=`, `?dayOfWeek=1-7` (còn ≥1 slot trống ngày đó), `?availableOnly=true`. Trả phân trang `Lecturer { id, slug, name, department, photoUrl, blurb }`. |
 | GET | `/lecturers/{id}` | A | Hồ sơ một lecturer. |
 | GET | `/users/me/suggested-slots` | S | Slot gợi ý **đã lọc trùng lịch học** của student. `?category=ALL\|CS\|MATH\|SOON` (`MATH` thực chất gồm Math/Physics/Economics; cân nhắc đổi tên). Trả `{ id, lecturerId, lecturerName, department, photoUrl, startAt, endAt, dayOfWeek, dayLabel, formattedTime, specialtyTag, blurb, isConflictFree }[]`. |
 | GET | `/lecturers/{lecturerId}/slots` | A | **Query lõi.** `?week=YYYY-Www` hoặc `?from=&to=`. Slot đặt được = availability − lịch dạy − booking hiện có, **và** lọc thêm theo `schedule_entries` của chính student đang gọi. Cache Redis TTL ngắn. Mục tiêu **< 300 ms** (NFR-1). Trả `BookableSlot { id, lecturerId, startAt, endAt, available, conflict }[]`. |
@@ -247,10 +264,10 @@ EXISTS (SELECT 1 FROM schedule_entries
 | POST | `/bookings` | S | `{ slotId, topic?, participantIds? }`. Validate lại xung đột. `201` + `status: PENDING`; `409` (thua race) kèm `{ waitlistAvailable: true }`; `422` (xung đột lịch). |
 | GET | `/bookings` | A | Student: booking của mình. Lecturer: booking cần duyệt. Admin lọc theo user. Lọc `?status=`. |
 | GET | `/bookings/{id}` | O/AD | Chi tiết + `participants`. |
-| POST | `/bookings/{id}/confirm` | L(chủ slot) | `PENDING → CONFIRMED`; thông báo student. **Bắt `exclusion_violation` → `409`** (mục 3 #3). |
+| POST | `/bookings/{id}/confirm` | L(chủ slot) | `PENDING → CONFIRMED`; thông báo student. Bắt `exclusion_violation` → **`409` `SLOT_ALREADY_CONFIRMED`**; sau lần confirm đầu tiên, tự `DECLINE` (kèm thông báo) các `PENDING` còn lại của slot trong cùng transaction (mục 3 #3). |
 | POST | `/bookings/{id}/decline` | L(chủ slot) | `{ reason? }` → `DECLINED`; có thể kích hoạt allocation nếu có waitlist. |
 | POST | `/bookings/{id}/cancel` | S/L (thành viên) | FR-9: áp **notice period** cấu hình được (từ chối nếu nằm trong cửa sổ, trừ Admin). → `CANCELLED`; kích hoạt allocation nếu slot có hàng đợi. |
-| POST | `/bookings/{id}/reschedule` | S | `{ newSlotId }` — tương đương cancel+create **trong một transaction**, cùng luật xung đột & notice period. (Xem mục 3 #2.) |
+| POST | `/bookings/{id}/reschedule` | S | `{ newSlotId }` — tương đương cancel+create **trong một transaction**, cùng luật xung đột & notice period. FE cho người dùng chọn slot từ `GET /lecturers/{id}/slots`; **không** nhận ngày giờ tự do (mục 3 #2). |
 | POST | `/bookings/{id}/complete` | L | `CONFIRMED` đã qua giờ → `COMPLETED` (hoặc job tự động sau `end_at`). |
 | POST | `/bookings/{id}/no-show` | L | FR-10 → `NO_SHOW`. |
 | PATCH | `/bookings/{id}/meeting-record` | L | `{ attended, notes? }` — `notes` là text tùy chọn, **không** phải trường LMS (giữ trần phạm vi). |
@@ -275,7 +292,7 @@ EXISTS (SELECT 1 FROM schedule_entries
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| POST | `/bookings/group` | S | `{ slotId, topic, participantStudentIds[] }` (hoặc `participantEmails[]`, mục 3 #8). Yêu cầu `slot.capacity > 1`. Tạo **một** row `bookings` + các row `booking_participants`. |
+| POST | `/bookings/group` | S | `{ slotId, topic, participantEmails[] }` — backend resolve email → user; email không có tài khoản → `422` kèm danh sách email lỗi (không tự tạo tài khoản; mục 3 #8). Yêu cầu `slot.capacity > 1`. Tạo **một** row `bookings` + các row `booking_participants`. |
 | POST | `/bookings/{id}/participants` | S(thành viên) | Thêm người (còn chỗ). |
 | DELETE | `/bookings/{id}/participants/{studentId}` | S(self)/AD | Rời/xóa. |
 
@@ -301,6 +318,8 @@ EXISTS (SELECT 1 FROM schedule_entries
 | POST | `/waitlist/{id}/decline` | S(owner, đang `OFFERED`) | Từ chối → chạy allocation cho ứng viên kế tiếp. |
 
 `WaitlistStatus`: `WAITING`, `OFFERED`, `FULFILLED`, `EXPIRED`, `CANCELLED`. Cần **job quét hết hạn** `offer_expires_at` → `EXPIRED` + chạy lại allocation.
+
+Mỗi entry thuộc **một slot cụ thể**. `GET /waitlist/me` trả `{ id, slotId, lecturerName, department, desiredSlotLabel, position, status, offeredStartAt?, offeredExpiresAt? }` — `desiredSlotLabel` dựng từ slot (vd `"Tue 10:00-10:30"`), `position` tính khi đọc (thứ hạng trong các entry `WAITING` của slot theo `requested_at` hoặc `priority_score`).
 
 ### 6.8 Allocation engine (FR-13, FR-14)
 
@@ -335,7 +354,21 @@ Cân nhắc **tạm cắt** research API nếu thiếu thời gian (đánh dấu
 | GET | `/notifications` | A | `?unreadOnly=true`. |
 | POST | `/notifications/{id}/read` | A(owner) | Đánh dấu đã đọc. |
 | POST | `/notifications/read-all` | A | Đọc tất cả. |
-| GET | `/notifications/stream` | A | **SSE** (`text/event-stream`): `booking.pending`, `booking.confirmed`, `booking.declined`, `booking.cancelled`, `waitlist.offered`, `waitlist.expired`. |
+| GET | `/notifications/stream` | A | **SSE** (`text/event-stream`), qua BFF proxy; phát các event trong bảng danh mục bên dưới. |
+
+**Danh mục event (nguồn duy nhất):**
+
+| Event (`notifications.type`) | FE `NotificationType` | Người nhận |
+|---|---|---|
+| `booking.pending` | `BOOKING_PENDING` | Lecturer |
+| `booking.confirmed` | `BOOKING_CONFIRMED` | Student |
+| `booking.declined` | `BOOKING_DECLINED` | Student |
+| `booking.cancelled` | `BOOKING_CANCELLED` | Bên còn lại |
+| `waitlist.offered` | `WAITLIST_OFFERED` | Student thắng |
+| `waitlist.expired` | `WAITLIST_EXPIRED` | Student hết hạn offer |
+| `reminder.upcoming` | `REMINDER` | Cả hai bên (vd. trước 24 giờ) |
+
+Response: `{ id, type, title, body, createdAt, read, bookingId? }`; `title`/`body` render theo locale (en/vi) của user, hoặc FE tự map `type`+`payload` sang chuỗi i18n.
 
 Kèm theo: gửi **email SMTP** cho cùng tập sự kiện (không có REST riêng) song song với SSE và ghi dòng `notifications`. Chốt danh mục event theo mục 3 #7.
 `NotificationPrefs` (FE): `{ bookingConfirmed, bookingDeclined, waitlistOffer, reminders }` — lưu theo user, thuộc `PATCH /users/me`.
@@ -437,15 +470,15 @@ FE type nằm ở `lib/office-hours/types.ts` và `lib/auth/types.ts`. Backend *
 | `PublicSlot`, `PublicOfficeHoursResponse` | `/public/office-hours` | phân trang Spring |
 | `TodayAvailabilitySlot` | (widget dashboard) | thêm `lecturerId`; chưa có endpoint riêng → dùng `/slots` hoặc thêm `/slots/today` |
 | `BookableSlot` | `/lecturers/{id}/slots` | `available=false` nếu đã có người đặt; `conflict=true` nếu trùng lịch của student |
-| `Booking`, `BookingParticipant` | `/bookings*` | thêm `slotId`, `lecturerId`, `studentId` |
+| `Booking`, `BookingParticipant` | `/bookings*` | có `slotId`, `lecturerId`, `studentId` (đã thêm vào FE) |
 | `BookingTimelineEvent` | `/bookings/{id}` (hoặc `/timeline`) | FE hiện suy ra từ status + startAt; backend nên trả lịch sử thật |
-| `Notification`, `NotificationPrefs` | `/notifications*` | `read` = `read_at != null`; `title/body` (mục 3 #7) |
+| `Notification`, `NotificationPrefs` | `/notifications*` | `read` = `read_at != null`; 7 `NotificationType` theo danh mục ở 6.9 |
 | `RecurringSeries`, `RecurringOccurrence` | `/bookings/recurring*` | `dayOfWeek` thống nhất ISO 1–7; `semester` là tên |
-| `WaitlistEntry`, `SlotWaitlistGroup` | `/waitlist/me`, `/lecturers/me/slot-waitlist` | `position` tính động; `desiredSlotLabel` dựng từ slot |
+| `WaitlistEntry`, `SlotWaitlistGroup` | `/waitlist/me`, `/lecturers/me/slot-waitlist` | có `slotId`; `position` tính động; `desiredSlotLabel` dựng từ slot |
 | `AvailabilityRule`, `AvailabilityException` | `/availability-*` | `slot_minutes`→`slotLengthMinutes`, `exception_date`→`date`, `active` suy từ effective range |
 | `ScheduleBlock`, `AdminScheduleEntry` | `/users/me/schedule-entries`, `/users/{id}/schedule-entries` | `group_code`→`group`, `date_label`→`date`, `AAO_IMPORT`→`IMPORTED`; admin thêm `ownerName`, `ownerRole` |
-| `ParsedTimetableRow` | body `/schedule-entries/batch` | `day` là chuỗi "Thứ 2".."Chủ Nhật" → map sang `dayOfWeek` |
-| `ScheduleImportHistoryEntry` | `/users/me/schedule-imports` | mục 3 #9 |
+| `ParsedTimetableRow`, `ScheduleBatchPayload`, `ScheduleImportMode` | body `POST /users/me/schedule-entries/batch` | `day` là chuỗi "Thứ 2".."Chủ Nhật" → map sang `dayOfWeek` |
+| `ScheduleImportHistoryEntry` | `/users/me/schedule-imports` | `rowCount` = `addedCount` |
 | `AdminUserRow` | `/users` | `is_active`→`active` |
 | `Semester` | `/semesters*` | `is_active`→`active` |
 | `AllocationPolicy`, `AllocationEvent` | `/allocation-*` | `AllocationEvent.overriddenByName` = tên admin |
@@ -465,13 +498,12 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 | **M0 — Nền tảng** | Project Spring Boot, Flyway, Docker compose (Postgres+Redis), RFC 7807 handler, security filter JWT, cấu hình timezone, seed | `docker compose up` chạy; `/actuator/health` OK; migration chạy từ DB trống |
 | **M1 — Auth & user** | §6.1; refresh/logout (Redis blacklist); forgot/reset | FE đăng nhập thật được (bỏ nhánh fallback mock); token reset dùng một lần, thu hồi refresh token |
 | **M2 — Semester & availability** | §6.2, §6.3; **sinh slot** từ rule+exception | Test: sửa rule không đụng slot đã book; BLOCK/ADD đúng |
-| **M3 — Schedule entries** | §6.4 (fast-path batch, CRUD, REPLACE/MERGE) | `MERGE` khử trùng lặp; `REPLACE` giữ block `MANUAL` |
+| **M3 — Schedule entries** | §6.4 (batch JSON, CRUD, REPLACE/MERGE, validate payload) | `MERGE` khử trùng lặp; `REPLACE` giữ block `MANUAL`; payload sai/quá lớn bị từ chối, không ghi dở dang |
 | **M4 — Slot & booking lõi** | §6.5, §6.6 + exclusion constraint + trigger denormalize | **Test đồng thời** (N request song song cùng slot → đúng 1 `CONFIRMED`, còn lại `409`); slot query p95 < 300 ms ở dữ liệu pilot |
 | **M5 — Notification** | §6.9 (bản ghi + SSE + email) | Sự kiện booking đẩy tới SSE; `read`/`read-all` |
 | **M6 — Waitlist & allocation** | §6.7, §6.8, §8 | Test vector khớp bản TS; mọi ứng viên có `allocation_events`; override ghi `OVERRIDDEN` đúng CHECK |
 | **M7 — Group/Recurring** | §6.6.1, §6.6.2 | Capacity được enforce; recurring bỏ qua tuần có exception |
 | **M8 — Analytics/Research (stretch)** | §6.10, §6.8.1 | Số liệu khớp mô phỏng FE trong sai số |
-| **M9 — Import lớn (stretch)** | §6.4 phần "giai đoạn sau" | Job không timeout; preview/commit nguyên tử |
 
 ### 10.1 Danh sách test bắt buộc
 
@@ -484,7 +516,9 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 7. **Override** bỏ qua policy nhưng vẫn ghi audit; bị loại khỏi metric mặc định.
 8. **RBAC** từng endpoint (đặc biệt row-level: student A không đọc booking của student B).
 9. **forgot-password** luôn `202`, không lộ email tồn tại; reset token dùng lại bị `400`.
-10. **Import**: `MERGE` không nhân đôi, `REPLACE` giữ `MANUAL`, file không phải AAO bị từ chối.
+10. **Import**: `MERGE` không nhân đôi, `REPLACE` giữ `MANUAL`; payload sai schema (giờ ngược, `dayOfWeek` ngoài 1–7, quá số dòng) → từ chối cả batch và **không ghi gì**; body chứa `userId` lạ không làm đổi chủ sở hữu; Student không gọi được endpoint Admin.
+11. **Confirm trùng**: hai `PENDING` cùng slot → confirm bản đầu OK, confirm bản hai `409`, các `PENDING` còn lại tự `DECLINED`.
+12. **Reschedule**: chỉ nhận `newSlotId` của đúng lecturer, còn trống và không xung đột lịch của student.
 
 ### 10.2 Bảo mật & vận hành (NFR-4, NFR-6, NFR-7)
 
@@ -499,11 +533,11 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 
 1. Slot listing có cần auth để tính xung đột theo từng student, hay có chế độ "raw availability" công khai? (Hiện: cần auth; `/public/office-hours` là bản tổng hợp công khai.)
 2. `POST /slots/{id}/run-allocation` có bị gọi bởi thứ gì ngoài job hệ thống không? Nếu không, chỉ giữ cho demo admin (nguyên tắc "không endpoint đầu cơ").
-3. Reschedule là **atomic một endpoint** hay hai lời gọi phía client? (Ảnh hưởng transaction của exclusion constraint.)
-4. Cần fallback polling `GET /notifications?since=` ngoài SSE không (PWA/nền)?
-5. Override: mọi Admin hay admin theo khoa; và có dùng mẫu thông báo riêng ("quản trị viên đã gán lại slot") để không gây hiểu lầm không?
+3. ~~Reschedule atomic hay hai lời gọi~~ — **đã chốt:** một endpoint `POST /bookings/{id}/reschedule`, một transaction.
+4. ~~Fallback polling~~ — **đã chốt:** giữ `GET /notifications?since=` làm fallback; còn cần xác nhận hành vi PWA khi chạy nền.
+5. Override: đã chốt **mọi Admin** cho MVP; còn mở: có dùng mẫu thông báo riêng ("quản trị viên đã gán lại slot") để không gây hiểu lầm không?
 6. Chiến lược retention/partition cho `allocation_events`, `notifications`.
-7. Định dạng AAO thực tế: chỉ PDF hay còn CSV/XLSX?
+7. ~~Định dạng AAO~~ — **đã chốt:** chỉ PDF, parse ở trình duyệt.
 
 ---
 

@@ -247,6 +247,9 @@ export function getMockStudentBookings(): Booking[] {
   return [
     {
       id: 1,
+      slotId: 5001,
+      lecturerId: 1,
+      studentId: 1001,
       lecturerName: "Dr. Amara Chen",
       studentName,
       department: "Computer Science",
@@ -256,6 +259,9 @@ export function getMockStudentBookings(): Booking[] {
     },
     {
       id: 2,
+      slotId: 5002,
+      lecturerId: 2,
+      studentId: 1001,
       lecturerName: "Prof. Daniel Reyes",
       studentName,
       department: "Computer Science",
@@ -265,6 +271,9 @@ export function getMockStudentBookings(): Booking[] {
     },
     {
       id: 3,
+      slotId: 5003,
+      lecturerId: 3,
+      studentId: 1001,
       lecturerName: "Dr. Priya Nair",
       studentName,
       department: "Mathematics",
@@ -274,6 +283,9 @@ export function getMockStudentBookings(): Booking[] {
     },
     {
       id: 4,
+      slotId: 5004,
+      lecturerId: 4,
+      studentId: 1001,
       lecturerName: "Prof. Michael Osei",
       studentName,
       department: "Physics",
@@ -283,6 +295,9 @@ export function getMockStudentBookings(): Booking[] {
     },
     {
       id: 5,
+      slotId: 5005,
+      lecturerId: 5,
+      studentId: 1001,
       lecturerName: "Dr. Laura Bianchi",
       studentName,
       department: "Economics",
@@ -316,6 +331,9 @@ export function getMockLecturerBookings(): Booking[] {
   return [
     {
       id: 101,
+      slotId: 5101,
+      lecturerId: 1,
+      studentId: 1100,
       lecturerName,
       studentName: "Linh Pham",
       department: "Computer Science",
@@ -325,6 +343,9 @@ export function getMockLecturerBookings(): Booking[] {
     },
     {
       id: 102,
+      slotId: 5102,
+      lecturerId: 1,
+      studentId: 1101,
       lecturerName,
       studentName: "Huy Tran",
       department: "Computer Science",
@@ -334,6 +355,9 @@ export function getMockLecturerBookings(): Booking[] {
     },
     {
       id: 103,
+      slotId: 5103,
+      lecturerId: 1,
+      studentId: 1102,
       lecturerName,
       studentName: "Anh Vu",
       department: "Computer Science",
@@ -343,6 +367,9 @@ export function getMockLecturerBookings(): Booking[] {
     },
     {
       id: 104,
+      slotId: 5104,
+      lecturerId: 1,
+      studentId: 1103,
       lecturerName,
       studentName: "Bao Nguyen",
       department: "Computer Science",
@@ -352,6 +379,9 @@ export function getMockLecturerBookings(): Booking[] {
     },
     {
       id: 105,
+      slotId: 5105,
+      lecturerId: 1,
+      studentId: 1104,
       lecturerName,
       studentName: "Chi Le",
       department: "Computer Science",
@@ -361,6 +391,9 @@ export function getMockLecturerBookings(): Booking[] {
     },
     {
       id: 106,
+      slotId: 5106,
+      lecturerId: 1,
+      studentId: 1105,
       lecturerName,
       studentName: "Duc Hoang",
       department: "Computer Science",
@@ -582,6 +615,9 @@ function getMockOtherLecturerBookings(): Booking[] {
   return [
     {
       id: 201,
+      slotId: 5201,
+      lecturerId: 2,
+      studentId: 1001,
       lecturerName: "Prof. Daniel Reyes",
       studentName: "Minh Nguyen",
       department: "Computer Science",
@@ -591,6 +627,9 @@ function getMockOtherLecturerBookings(): Booking[] {
     },
     {
       id: 202,
+      slotId: 5202,
+      lecturerId: 3,
+      studentId: 1106,
       lecturerName: "Dr. Priya Nair",
       studentName: "Thao Bui",
       department: "Mathematics",
@@ -600,6 +639,9 @@ function getMockOtherLecturerBookings(): Booking[] {
     },
     {
       id: 203,
+      slotId: 5203,
+      lecturerId: 4,
+      studentId: 1107,
       lecturerName: "Prof. Michael Osei",
       studentName: "Khoa Dang",
       department: "Physics",
@@ -828,17 +870,19 @@ export function getMockWaitlistEntries(): WaitlistEntry[] {
   return [
     {
       id: 1,
+      slotId: 6001,
       lecturerName: "Dr. Amara Chen",
       department: "Computer Science",
-      desiredSlotLabel: "Weekday mornings, 30 min",
+      desiredSlotLabel: "Tue 10:00-10:30",
       position: 2,
       status: "WAITING",
     },
     {
       id: 2,
+      slotId: 6002,
       lecturerName: "Prof. Daniel Reyes",
       department: "Computer Science",
-      desiredSlotLabel: "Tue/Thu afternoons, 30 min",
+      desiredSlotLabel: "Wed 14:00-14:30",
       position: 1,
       status: "OFFERED",
       offeredStartAt: hoursFromNow(20),
@@ -846,9 +890,10 @@ export function getMockWaitlistEntries(): WaitlistEntry[] {
     },
     {
       id: 3,
+      slotId: 6003,
       lecturerName: "Dr. Laura Bianchi",
       department: "Economics",
-      desiredSlotLabel: "Fridays, 30 min",
+      desiredSlotLabel: "Fri 11:00-11:30",
       position: 4,
       status: "WAITING",
     },

@@ -121,11 +121,11 @@ function StudentDashboard({ user }: { user: AuthUser }) {
   const waitlistCount = getMockWaitlistEntries().filter((w) => w.status === "WAITING" || w.status === "OFFERED").length;
   const weeklyActivity = getMockWeeklyActivity();
 
-  function handleReschedule(input: { startAt: string; endAt: string; topic: string }) {
+  function handleReschedule(input: { newSlotId: number; startAt: string; endAt: string }) {
     if (!rescheduling) return;
     const id = rescheduling.id;
     setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, startAt: input.startAt, endAt: input.endAt, topic: input.topic || b.topic } : b)),
+      prev.map((b) => (b.id === id ? { ...b, slotId: input.newSlotId, startAt: input.startAt, endAt: input.endAt, status: "PENDING" } : b)),
     );
     setRescheduling(null);
   }

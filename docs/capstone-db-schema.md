@@ -66,6 +66,20 @@ CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens (user_id);
 
 > One-time use, short TTL. On successful reset, all rows for the user (or at least all their refresh tokens) should be invalidated so a leaked old session can't survive a password change.
 
+### 1.1b `lecturer_profiles` (FR-6 support; backs `GET /lecturers`, `GET /lecturers/{id}`)
+
+```sql
+CREATE TABLE lecturer_profiles (
+    user_id     bigint PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    slug        varchar(80)  NOT NULL UNIQUE,   -- derived from full_name, e.g. 'amara-chen'; used in URLs
+    photo_url   text,
+    blurb       varchar(280),                   -- short description shown on the directory card
+    specialty   varchar(100)                    -- e.g. 'Algorithms & Capstone' (feeds suggested-slot tags)
+);
+```
+
+> `users` deliberately has no `slug`/`photo_url`/`blurb`; those exist only for lecturers. App-level guard (not expressible as a `CHECK` across tables): `user_id` must reference a user with `role = 'LECTURER'`.
+
 ### 1.2 `semesters` (FR-2)
 
 ```sql
@@ -93,7 +107,7 @@ CREATE TABLE availability_rules (
     id              bigserial PRIMARY KEY,
     lecturer_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
-    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0=Sunday
+    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- ISO: 1=Monday .. 7=Sunday (same as schedule_entries and the API/FE)
     start_time      time NOT NULL,
     end_time        time NOT NULL,
     slot_minutes    int NOT NULL CHECK (slot_minutes > 0),
@@ -162,7 +176,9 @@ CREATE TABLE schedule_entries (
 
 CREATE INDEX idx_schedule_entries_user_semester ON schedule_entries (user_id, semester_id);
 CREATE INDEX idx_schedule_entries_day ON schedule_entries (semester_id, day_of_week);
-CREATE INDEX idx_schedule_entries_dedup ON schedule_entries (user_id, semester_id, day_of_week, start_time, end_time, subject_code);
+-- MERGE-mode de-duplication. UNIQUE (not just an index) so `INSERT ... ON CONFLICT DO NOTHING` can use it;
+-- NULLS NOT DISTINCT (PostgreSQL 15+) so rows without a subject_code (MANUAL blocks) also collapse.
+CREATE UNIQUE INDEX uq_schedule_entries_dedup ON schedule_entries (user_id, semester_id, day_of_week, start_time, end_time, subject_code) NULLS NOT DISTINCT;
 ```
 
 > **Design notes (§10.1 of the plan):**
@@ -175,7 +191,9 @@ CREATE INDEX idx_schedule_entries_dedup ON schedule_entries (user_id, semester_i
 > 4. **Batch Ingestion Modes:** Supports both `REPLACE` (wipes previous imported rows while keeping `MANUAL` blocks) and `MERGE` (merges multiple PDF files, skipping identical sessions based on `idx_schedule_entries_dedup`) — matches the `import_mode` enum in §2.4 and the shipped FE's `ImportMode` type (`components/dashboard/TimetableImport.tsx`), which is `'REPLACE' | 'MERGE'`, not `MERGE_DEDUPLICATE` as earlier drafts of this doc called it. Note also that the multi-file batch loop and REPLACE/MERGE mode handling live in `TimetableImport.tsx`, not in `lib/timetable/parse-pdf.ts` — the latter remains a single-file, PDF-only parser.
 > 5. **Uniform Conflict Detection:** Storing both student enrolled classes and lecturer teaching in one generic table keeps conflict queries uniform: `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`.
 
-### 2.4 `schedule_imports` — audit trail for AAO export ingestion (supports FR-5 self-service endpoint `/users/me/schedule-imports` and FR-5a admin endpoint `/schedule-imports`)
+### 2.4 `schedule_imports` — audit trail for timetable batches (supports FR-5 `POST /users/me/schedule-entries/batch`, FR-5a `POST /users/{userId}/schedule-entries/batch` and the history endpoints)
+
+> **Import is client-parsed.** The browser parses the AAO PDF(s) and posts one JSON array of rows; the backend validates it and writes `schedule_entries` inside one transaction, plus one row here. So there is no upload/queue lifecycle in the MVP: a row is created as `COMPLETED` (or `FAILED` if the batch is rejected after validation started). `QUEUED`/`PROCESSING` are kept in the enum only for the deferred server-side pipeline (§2.5).
 
 ```sql
 CREATE TYPE import_status AS ENUM ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED');
@@ -186,10 +204,12 @@ CREATE TABLE schedule_imports (
     semester_id     bigint NOT NULL REFERENCES semesters (id),
     uploaded_by     bigint NOT NULL REFERENCES users (id),  -- who performed the upload
     target_user_id  bigint REFERENCES users (id),           -- whose schedule this import populates (NULL = self)
-    original_filename varchar(255) NOT NULL,
+    source_files    text[] NOT NULL DEFAULT '{}',            -- original PDF names sent by the client (audit only)
     mode            import_mode NOT NULL DEFAULT 'REPLACE', -- 'REPLACE' or 'MERGE'
     status          import_status NOT NULL DEFAULT 'QUEUED',
-    rows_processed  int NOT NULL DEFAULT 0,
+    rows_processed  int NOT NULL DEFAULT 0,                 -- rows received in the payload
+    rows_added      int NOT NULL DEFAULT 0,                 -- rows inserted into schedule_entries
+    rows_replaced   int NOT NULL DEFAULT 0,                 -- previously imported rows removed by REPLACE
     rows_failed     int NOT NULL DEFAULT 0,
     rows_skipped    int NOT NULL DEFAULT 0,                 -- duplicate count skipped during MERGE mode
     error_log       jsonb,                                  -- array of {row, message}
@@ -202,7 +222,9 @@ CREATE TABLE schedule_imports (
 >
 > `uploaded_by` records **who performed the upload** — the self-serving user themselves, or an admin uploading on their behalf. Recommend adding a nullable `target_user_id bigint REFERENCES users(id)`: NULL means "uploaded_by is also the owner" (self-service), non-NULL means admin uploaded for that target. See §8 open question.
 
-### 2.5 `schedule_import_staging` — temporary high-throughput buffer for massive ingestion
+### 2.5 `schedule_import_staging` — **DEFERRED / not planned for the MVP.** Temporary buffer for server-side massive ingestion
+
+> Only needed if an Admin must ingest department-wide PDFs without a browser parse (see `capstone-api-endpoints.md` §4.3). Do **not** create this table in the first migrations; it is kept as a design sketch.
 
 ```sql
 CREATE TYPE staging_row_status AS ENUM ('VALID', 'DUPLICATE', 'CONFLICT', 'INVALID');
@@ -232,7 +254,7 @@ CREATE TABLE schedule_import_staging (
 CREATE INDEX idx_staging_batch_status ON schedule_import_staging (import_batch_id, status);
 ```
 
-> **Ingestion & Commit Pattern:**
+> **Ingestion & Commit Pattern (deferred — not part of the MVP):**
 > 1. Ingestion workers stream PDF pages and bulk-insert raw records into `schedule_import_staging`.
 > 2. An automated staging query flags duplicates and conflicts against existing `schedule_entries`.
 > 3. After client review (`GET /preview`), the commit endpoint executes:
@@ -316,6 +338,8 @@ ALTER TABLE bookings ADD CONSTRAINT excl_bookings_no_double_booking
     ) WHERE (status = 'CONFIRMED');
 ```
 
+> **Only `CONFIRMED` rows are constrained.** Several `PENDING` bookings may target the same slot; the second `confirm` therefore violates `excl_bookings_no_double_booking`. The service must catch that violation, answer `409`, and decline the remaining `PENDING` bookings of the slot in the same transaction (see `POST /bookings/{id}/confirm`).
+
 > **Why denormalize `lecturer_id` and `time_range` onto `bookings`** instead of deriving them via a join to `slots`: PostgreSQL `EXCLUDE` constraints cannot reference columns through a join — the constrained columns must live on the table itself. A `BEFORE INSERT/UPDATE` trigger (or application-layer population) copies `slots.lecturer_id` / `tstzrange(slots.start_at, slots.end_at)` onto the new booking row at creation time. This is the concrete mechanism behind the sequence diagram in §9.1 ("INSERT booking (EXCLUDE constraint guards overlap)").
 
 ```sql
@@ -348,7 +372,7 @@ CREATE TABLE booking_participants (
 
 > Capacity enforcement (`COUNT(participants) <= slots.capacity`) is application-layer or a trigger — not expressible as a plain CHECK across tables.
 >
-> **Open question — add-by-email vs. add-by-`student_id`.** This table only stores `student_id` (an existing `users.id`), but the built group-booking UI (`components/dashboard/ParticipantManager.tsx`) adds participants by typing an email address, implying an invite step that resolves email → `student_id`. Undefined: what happens when the typed email doesn't match an existing student account — silently reject, create a pending invite row, or auto-provision an account? Needs a decision (and possibly a `booking_invites` table) before this maps cleanly onto `booking_participants` as currently defined.
+> **Decided — add by email.** The API takes `participantEmails[]` (what `ParticipantManager` collects) and the backend resolves each to an existing `users.id` before inserting into this table. An unresolvable email fails the request with `422` (no account auto-provisioning, no invite table in the MVP).
 
 ### 3.4 `meeting_records` (FR-10) — attendance & optional notes
 
@@ -370,7 +394,7 @@ CREATE TABLE recurring_bookings (
     student_id      bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     lecturer_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     semester_id     bigint NOT NULL REFERENCES semesters (id),
-    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+    day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- ISO: 1=Monday .. 7=Sunday
     start_time      time NOT NULL,
     end_time        time NOT NULL,
     is_cancelled    boolean NOT NULL DEFAULT false,
@@ -407,6 +431,8 @@ CREATE INDEX idx_waitlist_slot_status ON waitlist_entries (slot_id, status);
 CREATE INDEX idx_waitlist_student ON waitlist_entries (student_id, status);
 ```
 
+> A waitlist entry belongs to one concrete slot (`slot_id`); the UI's "position" and slot label are **derived on read** (rank by `requested_at`/`priority_score` among `WAITING` entries of that slot) — there is no `position` column. A scheduled job moves `OFFERED` entries past `offer_expires_at` to `EXPIRED` and re-runs allocation.
+>
 > **Open question — `priority_score` vs. `allocation_events.computed_score` (§4.3).** These are two different columns and their relationship isn't specified yet. Recommended resolution: `priority_score` is a **cache** — every time an allocation run evaluates this entry (whether it wins or is skipped), the engine writes that run's `computed_score` into both `waitlist_entries.priority_score` (so `GET /waitlist/me` can show current standing without joining `allocation_events`) and a new `allocation_events` row (the permanent, run-scoped log). So `priority_score` always reflects the *most recent* evaluation, while `allocation_events` retains every evaluation over the entry's lifetime. Confirm this before implementing — the alternative (a continuously-updated running score independent of discrete allocation runs) would need a different trigger design entirely.
 
 ### 4.2 `allocation_policies` (FR-13; UC12)
@@ -499,7 +525,7 @@ CREATE INDEX idx_experiments_policy ON experiments (policy_id);
 CREATE TABLE notifications (
     id          bigserial PRIMARY KEY,
     user_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    type        varchar(50) NOT NULL,   -- e.g. 'booking.confirmed', 'waitlist.offered'
+    type        varchar(50) NOT NULL,   -- catalogue: booking.pending | booking.confirmed | booking.declined | booking.cancelled | waitlist.offered | waitlist.expired | reminder.upcoming (see API doc §8)
     payload     jsonb NOT NULL DEFAULT '{}',
     read_at     timestamptz,
     created_at  timestamptz NOT NULL DEFAULT now()
@@ -515,11 +541,12 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | Table | Source (FR / UC / ERD) | Notes |
 |---|---|---|
 | `users` | FR-1 | Root identity table; role enum drives RBAC |
+| `lecturer_profiles` | FR-6 | slug / photo / blurb for the lecturer directory (1-to-1 with a LECTURER user) |
 | `semesters` | FR-2 | Single active semester enforced by partial unique index |
 | `availability_rules` | FR-3, UC6 | Generates `slots` |
 | `availability_exceptions` | FR-4, UC7 | `BLOCK`/`ADD`, applied at slot-generation time |
 | `schedule_entries` | FR-5, UC10 | Generic busy blocks — students & lecturers alike |
-| `schedule_imports` | FR-5, UC10 | CSV import audit trail |
+| `schedule_imports` | FR-5, UC10 | Timetable batch import audit trail (client-parsed JSON) |
 | `slots` | §10.1 design note | Materialized, not computed-on-fly |
 | `bookings` | FR-7–10, §9.3 | `EXCLUDE` constraint = the correctness centerpiece (NFR-2) |
 | `booking_participants` | FR-15, UC5 | Group bookings |
@@ -552,5 +579,7 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 4. **Migration ordering** — `schedule_entries.import_batch_id` references `schedule_imports`, which is defined later in this document for readability; the actual Flyway migration must create `schedule_imports` first or add the FK via a later `ALTER TABLE`.
 5. **Retention** — `allocation_events` and `notifications` grow unboundedly; decide a partitioning/archival strategy before the pilot's 4-week window if experiment volume is high (§11.4 synthetic stress runs could generate a lot of rows fast).
 6. **Override authorization scope — currently decided by omission, not on purpose.** Mirrors the open question in the API doc: should `overridden_by` be restricted to department-scoped admins at the query/service layer, or does the schema need an explicit `department` scoping column on `allocation_events` to enforce it at the data layer too? **Flag:** the built admin allocation UI (`app/(dashboard)/dashboard/admin/allocation/page.tsx`) already grants any authenticated Admin unrestricted override with no department check — so the permissive answer has been picked by default in the frontend, without anyone deciding it as a real requirement. Confirm this is actually the intended answer before the backend locks it in, rather than inheriting it accidentally from the FE mock.
-7. **Import ownership vs uploader** — resolved: `schedule_imports.target_user_id` is now defined (§2.4) — NULL means self-service, non-NULL means an admin uploaded on that user's behalf. Still open: whether a fresh self-service import **replaces** the user's prior entries for that semester or **appends** (recommend replace-per-semester to avoid stale duplicates).
-8. **AAO export file format — three-way disagreement across docs, needs one answer.** `capstone-officehours-plan.md` §5.3 lists CSV as sufficient scope; this doc and the API doc describe the import generically as "an AAO export" without naming a format; the actually-shipped parser (`lib/timetable/parse-pdf.ts`, wired into both the self-service and admin schedule pages) only accepts PDF. Confirm whether AAO can export CSV/XLSX too (in which case a second parser path is missing) or whether PDF is the only real AAO export format the school produces (in which case the plan doc's CSV mention is simply stale and should be corrected to PDF).
+7. **Import ownership vs uploader** — resolved: `schedule_imports.target_user_id` (§2.4) is NULL for self-service and set when an Admin imports for a user. A fresh import defaults to `REPLACE` for that user and semester (keeps `MANUAL` blocks), which avoids stale duplicates; `MERGE` is opt-in.
+8. **AAO export file format** — resolved: **PDF only**, parsed in the browser (`lib/timetable/parse-pdf.ts`); the backend receives validated JSON rows (`capstone-api-endpoints.md` §4). The "CSV" wording in older drafts of the plan was stale.
+
+9. **Day-of-week convention** — resolved: ISO `1`–`7` (Mon–Sun) in every table (`availability_rules`, `recurring_bookings`, `schedule_entries`), in the API and in the FE.

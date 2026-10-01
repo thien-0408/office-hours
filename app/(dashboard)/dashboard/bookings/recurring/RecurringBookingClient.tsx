@@ -30,7 +30,8 @@ function nextOccurrences(dayOfWeek: number, count: number): Date[] {
   const dates: Date[] = [];
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
-  while (cursor.getDay() !== dayOfWeek) {
+  // dayOfWeek is ISO (1 = Mon .. 7 = Sun); Date#getDay() is 0 = Sun .. 6 = Sat.
+  while (cursor.getDay() !== dayOfWeek % 7) {
     cursor.setDate(cursor.getDate() + 1);
   }
   for (let i = 0; i < count; i++) {

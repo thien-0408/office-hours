@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/dashboard/Card";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
-import type { ParsedTimetableRow, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
+import type { ParsedTimetableRow, ScheduleImportHistoryEntry, ScheduleImportMode } from "@/lib/office-hours/types";
 import { DAY_NAME_TO_INDEX, parseTimetablePdf, type TimetableMetadata } from "@/lib/timetable/parse-pdf";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,7 +22,7 @@ import { FilterTabs } from "./FilterTabs";
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
 type ParseStatus = "idle" | "parsing" | "done" | "error";
-type ImportMode = "REPLACE" | "MERGE";
+type ImportMode = ScheduleImportMode;
 
 interface ParsedFileSummary {
   fileName: string;

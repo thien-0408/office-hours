@@ -71,7 +71,7 @@ Current office-hours coordination at most universities is manual and inefficient
 - **Accounts & roles:** Student, Lecturer, Admin. JWT auth.
 - **Semester management:** Admin defines active semester with date bounds.
 - **Availability management:** Lecturer defines recurring weekly availability + one-off exceptions (block a date, add an extra slot).
-- **Schedule import & Timetable Matrix (self-service):** Students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable exports → parsed into structured course sessions used for conflict detection and visual timetable viewing.
+- **Schedule import & Timetable Matrix (self-service):** Students and lecturers each import their **own** official AAO (Academic Affairs Office) timetable (PDF). The **browser parses the PDF** and sends one JSON array of rows to the backend, which validates and stores it — no server-side PDF pipeline. The rows become structured course sessions used for conflict detection and visual timetable viewing.
   - **07:30 AM Shift Standard:** Structured around the Vietnamese university shift model: Ca Sáng (`07:30–12:30`), Ca Chiều (`12:30–16:30`), and Ca Tối (`16:30–20:30`).
   - **Full 7-Day & Specific Date Support:** Spans Monday (Thứ 2) to Sunday (Chủ Nhật) for weekend lab sessions/studios, with automated PDF column-header date extraction (e.g. `Thứ 2 (13/07)`).
   - **Multi-File Batch Ingestion:** Batch upload multiple PDFs (lectures + labs) with `Replace Old` or `Merge & Deduplicate` modes.
@@ -98,7 +98,7 @@ Current office-hours coordination at most universities is manual and inefficient
 - ❌ Payments / tutoring marketplace (this is not Calendly-for-tutors).
 - ❌ Physical room-booking / resource scheduling (different problem).
 - ❌ Native mobile apps — responsive PWA only.
-- ❌ Deep SIS integration — a one-off AAO timetable export import is sufficient for the capstone; live SIS sync is future work. (Format note: this line originally said "CSV" but the shipped parser is PDF-only, `lib/timetable/parse-pdf.ts` — see capstone-db-schema.md §8 open question 8 for the unresolved CSV-vs-PDF discrepancy across docs.)
+- ❌ Deep SIS integration — a one-off AAO timetable export import is sufficient for the capstone; live SIS sync is future work. (Format note: the AAO export is **PDF-only**; it is parsed client-side by `lib/timetable/parse-pdf.ts`. Earlier drafts said "CSV" — that was stale and is resolved.)
 - ❌ Multi-university tenancy — single-institution deployment only.
 
 > **Scope-creep guard:** The most likely creep is toward LMS features ("add meeting notes" → "add tasks" → "add grades"). Meeting notes are acceptable *only* as an optional text field on a completed booking; anything beyond that is out of scope.
@@ -193,7 +193,7 @@ graph LR
 | FR-2 | Admin creates and activates a semester with date bounds | Must |
 | FR-3 | Lecturer defines recurring weekly availability rules | Must |
 | FR-4 | Lecturer adds one-off exceptions (block/add) | Must |
-| FR-5 | Students/lecturers import their **own** official AAO timetable export → busy blocks; parser rejects non-AAO files | Must |
+| FR-5 | Students/lecturers import their **own** official AAO timetable export → the browser parses the PDF and posts one JSON array of rows → busy blocks; the backend validates the payload schema and limits | Must |
 | FR-5a | Admin can manually add/edit/delete any user's busy blocks (support fallback) and view aggregated schedule data across users | Must |
 | FR-6 | System computes bookable slots = availability − conflicts | Must |
 | FR-7 | Student requests a booking; DB enforces no double-booking | Must |
@@ -216,7 +216,7 @@ graph LR
 - **NFR-1 Performance:** Bookable-slot query for a lecturer/week returns in < 300 ms at pilot scale; benchmarked up to 10k lecturers / 100k students (synthetic) for the research chapter.
 - **NFR-2 Correctness:** Double-booking must be impossible even under concurrent requests — enforced at the DB layer (exclusion constraint), not only in application code.
 - **NFR-3 Reproducibility:** Allocation decisions are deterministic given inputs + policy + seed, and fully logged.
-- **NFR-4 Security:** JWT auth; role-based authorization on every endpoint; passwords hashed (bcrypt/argon2); AAO import validated (MIME + schema).
+- **NFR-4 Security:** JWT auth; role-based authorization on every endpoint; passwords hashed (bcrypt/argon2); import payload schema-validated server-side (types, ranges, size caps) and always scoped to the caller's own timetable.
 - **NFR-5 Usability:** Mobile-first PWA; a student can book in ≤ 3 taps from the lecturer's page.
 - **NFR-6 Observability:** Structured logs; basic metrics (booking counts, allocation runs, notification delivery).
 - **NFR-7 Deployability:** `docker compose up` brings up the full stack for dev; single-VM deploy for the pilot.
@@ -343,7 +343,7 @@ erDiagram
         bigint id PK
         bigint lecturer_id FK
         bigint semester_id FK
-        smallint day_of_week "0-6"
+        smallint day_of_week "1=Mon .. 7=Sun"
         time start_time
         time end_time
         int slot_minutes
@@ -446,7 +446,7 @@ erDiagram
 
 - **Double-booking prevention.** On `BOOKINGS`, use a PostgreSQL exclusion constraint over `(lecturer_id WITH =, time_range WITH &&)` for confirmed bookings (`EXCLUDE USING gist`). This makes overlapping confirmed bookings *impossible* at the storage layer, even under concurrency — a clean point to raise in your defense.
 - **SLOTS: materialized vs computed.** Two options: (a) generate concrete `SLOTS` rows from rules (simpler to reason about, easier to attach waitlists and allocation events — **recommended**), or (b) compute slots on the fly (less storage, harder to reference). The ERD assumes (a) because the research needs concrete, referenceable slot objects.
-- **SCHEDULE_ENTRIES is generic and shift-aware.** Both student classes and lecturer teaching are stored here as busy blocks. Intervals align with the university 07:30 AM standard (Ca Sáng: `07:30–12:30`, Ca Chiều: `12:30–16:30`, Ca Tối: `16:30–20:30`) across 7 days (Thứ 2 to Chủ Nhật). This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export (with support for multi-file batch uploads and `REPLACE` vs `MERGE_DEDUPLICATE` modes), self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
+- **SCHEDULE_ENTRIES is generic and shift-aware.** Both student classes and lecturer teaching are stored here as busy blocks. Intervals align with the university 07:30 AM standard (Ca Sáng: `07:30–12:30`, Ca Chiều: `12:30–16:30`, Ca Tối: `16:30–20:30`) across 7 days (Thứ 2 to Chủ Nhật). This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export (with support for multi-file batch uploads and `REPLACE` vs `MERGE` modes), self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
 - **ALLOCATION_EVENTS is the reproducibility backbone.** Every decision records the policy, the computed score, and the random seed → experiments are replayable, which is exactly what a committee wants to see.
 - **Large-Scale Timetable Ingestion Architecture.** Ingestion supports massive multi-page PDF files via an asynchronous producer-consumer pipeline: streaming PDF workers write to a staging table (`SCHEDULE_IMPORT_STAGING`), provide live progress via Server-Sent Events (SSE), enable paginated dry-run inspection, and perform atomic high-throughput commits via batch SQL `ON CONFLICT DO NOTHING`. For single-user self-service (1-2 pages), a client-side Web Worker fast-path offloads 100% of parse CPU from backend servers.
 
@@ -549,7 +549,7 @@ gantt
 
     section Core MVP
     Auth + roles + semesters     :b1, after a3, 1w
-    Availability + CSV import     :b2, after b1, 2w
+    Availability + timetable import     :b2, after b1, 2w
     Conflict-aware booking        :b3, after b2, 2w
     Notifications (SSE + email)   :b4, after b3, 1w
 

@@ -43,7 +43,6 @@ function WaitlistEntryCard({
 }) {
   const { locale, t } = useI18n();
   const [remainingSeconds, setRemainingSeconds] = useState(() => secondsUntil(entry.offeredExpiresAt));
-  const slotLength = entry.desiredSlotLabel.split(",").pop()?.trim() || entry.desiredSlotLabel;
 
   useEffect(() => {
     if (entry.status !== "OFFERED" || !entry.offeredExpiresAt) return;
@@ -83,7 +82,7 @@ function WaitlistEntryCard({
           <div id={`waitlist-entry-${entry.id}`}>
             <div className="my-4 flex flex-wrap gap-x-[18px] gap-y-2 border-y border-[var(--paper-100)] py-3 text-[11px] text-[var(--ink-700)]">
               <span>{formatDate(entry.offeredStartAt, locale, { weekday: "short", month: "long", day: "numeric" })}</span>
-              <span>{formatTime(entry.offeredStartAt, locale)} · {slotLength}</span>
+              <span>{formatTime(entry.offeredStartAt, locale)}</span>
               <span>{entry.department || t("waitlist.requestedSlot")}</span>
             </div>
           </div>

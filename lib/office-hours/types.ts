@@ -52,6 +52,11 @@ export interface BookingParticipant {
 
 export interface Booking {
   id: number;
+  // Ids are part of the API contract (docs/capstone-api-endpoints.md §5): booking detail,
+  // reschedule (newSlotId) and "open this lecturer's slot picker" all need them.
+  slotId: number;
+  lecturerId: number;
+  studentId: number;
   lecturerName: string;
   studentName: string;
   department: string | null;
@@ -72,11 +77,15 @@ export interface BookingTimelineEvent {
   status?: BookingStatus;
 }
 
+// Mirrors the SSE/notification event catalogue in docs/capstone-api-endpoints.md §8:
+// booking.pending/confirmed/declined/cancelled, waitlist.offered/expired, reminder.
 export type NotificationType =
+  | "BOOKING_PENDING"
   | "BOOKING_CONFIRMED"
   | "BOOKING_DECLINED"
   | "BOOKING_CANCELLED"
   | "WAITLIST_OFFERED"
+  | "WAITLIST_EXPIRED"
   | "REMINDER";
 
 export interface Notification {
@@ -120,7 +129,7 @@ export interface RecurringSeries {
   id: number;
   lecturerName: string;
   department: string | null;
-  dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
+  dayOfWeek: number; // ISO: 1 = Monday .. 7 = Sunday (same convention everywhere — docs/capstone-api-endpoints.md §0)
   startTime: string; // "14:00"
   endTime: string; // "14:30"
   semester: string;
@@ -130,11 +139,14 @@ export interface RecurringSeries {
 
 export type WaitlistStatus = "WAITING" | "OFFERED" | "FULFILLED" | "EXPIRED" | "CANCELLED";
 
+// A waitlist entry always belongs to one concrete slot (waitlist_entries.slot_id) — allocation
+// runs per slot — so the label is derived from that slot, e.g. "Tue 10:00-10:30".
 export interface WaitlistEntry {
   id: number;
+  slotId: number;
   lecturerName: string;
   department: string | null;
-  desiredSlotLabel: string; // e.g. "Tue afternoons, 30 min"
+  desiredSlotLabel: string; // label of the slot, built server-side from slotId
   position: number;
   status: WaitlistStatus;
   offeredStartAt?: string; // ISO-8601, set only when status === "OFFERED"
@@ -245,6 +257,17 @@ export interface ParsedTimetableRow {
   group: string;
   room: string;
   lecturerName: string;
+}
+
+// Body of POST /users/me/schedule-entries/batch (docs/capstone-api-endpoints.md §4). The browser
+// parses the AAO PDF(s) and sends every row in ONE array; the backend only validates and stores.
+export type ScheduleImportMode = "REPLACE" | "MERGE";
+
+export interface ScheduleBatchPayload {
+  semesterId: number;
+  mode: ScheduleImportMode;
+  sourceFiles: string[]; // original file names, audit only
+  rows: ParsedTimetableRow[];
 }
 
 export interface ScheduleImportHistoryEntry {

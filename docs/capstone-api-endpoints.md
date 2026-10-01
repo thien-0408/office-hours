@@ -19,6 +19,8 @@
 - **Errors:** RFC 7807-style problem JSON — `{ status, error, message, path, timestamp, details? }`.
 - **Idempotency:** mutating POSTs that create bookings/allocations accept an optional `Idempotency-Key` header to guard against double-submit on flaky networks.
 - **Concurrency:** booking creation relies on a DB exclusion constraint (§10.1); a 409 response means "lost the race," not a client bug — the FE should re-fetch slots.
+- **Day of week:** every `dayOfWeek` in this API, the DB and the FE is **ISO — `1` = Monday … `7` = Sunday**. (An earlier draft used `0` = Sunday for availability/recurring; that was dropped to match `schedule_entries` and the FE.)
+- **Time zone:** timestamps are UTC; availability-rule `time` values are the institution's local time (`Asia/Ho_Chi_Minh`, UTC+7, no DST) and are converted when slots are generated.
 - **RBAC:** every endpoint enforces role at minimum; row-level checks (e.g., a student can only cancel their own booking) are noted per-endpoint. Maps to NFR-4.
 
 ---
@@ -72,60 +74,92 @@ Maps to `SEMESTERS` entity.
 | POST | `/lecturers/{lecturerId}/availability-exceptions` | Lecturer (self) / Admin | `{ date, type: BLOCK|ADD, startTime, endTime, reason }`. (Field is `date`, not `exceptionDate` — matches the FE's `AvailabilityException` type; the DB column itself is `exception_date` per `capstone-db-schema.md` §2.2, so the API layer is expected to rename on the way out.) |
 | DELETE | `/availability-exceptions/{id}` | Lecturer (owner) / Admin | Remove an exception. |
 
+`dayOfWeek` is ISO `1`–`7` (Mon–Sun), not `0`–`6`. When generating slots: apply the rule, subtract `BLOCK` exceptions, add `ADD` exceptions, then subtract the lecturer's own `schedule_entries` (teaching). Editing/deleting a rule must never touch slots that already have a booking.
+
 Maps to `AVAILABILITY_RULES`, `AVAILABILITY_EXCEPTIONS`.
 
 ---
 
 ## 4. Schedule Import — Conflict Source (FR-5, FR-5a; UC10)
 
-Self-service by default: students and lecturers each upload their **own** official AAO (Academic Affairs Office) timetable export. Trust doesn't depend on who uploads — every import path validates that the file is a genuine AAO export (format/signature + MIME + schema per NFR-4) and rejects anything else, so a student's own upload is exactly as trustworthy as an admin's. Admin's role is a support fallback (upload on a user's behalf) and oversight (aggregated view), not the sole ingestion path.
+**Decision: the browser parses the PDF; the backend only receives and stores JSON.** Students and lecturers each import their **own** official AAO (Academic Affairs Office) timetable. The Next.js client reads the PDF(s) in a Web Worker (`pdfjs-dist`, `lib/timetable/parse-pdf.ts`), gathers **every parsed row from every file into one array**, and sends that array in a single request. The backend therefore has no PDF/OCR pipeline, no upload storage and no async job — it validates the payload, applies the import mode and writes `schedule_entries`.
 
-**Timetable Standard & Ingestion Features:**
-- **07:30 AM Shift Standard:** Divided into Ca Sáng (`07:30–12:30`), Ca Chiều (`12:30–16:30`), and Ca Tối (`16:30–20:30`).
-- **7-Day Support:** Day indices 1 (Thứ 2) to 7 (Chủ Nhật), accommodating weekend labs and seminars.
-- **Specific Date Scanner:** Extracts column header dates (e.g. `Thứ 2 (13/07)`) into `dateLabel`.
-- **Multi-File & Ingestion Modes:** Supports batch uploads (e.g., lecture PDF + lab PDF) with `mode: REPLACE` (replaces old imported blocks while keeping manual ones) or `mode: MERGE` (deduplicates identical sessions).
+**Trust model.** The backend can no longer verify that a file is a genuine AAO export, and it does not need to: a user can only write to **their own** timetable (or, for an Admin, a named target user's), so the worst case is a user mis-describing their own busy time. What the backend **must** do instead is treat the payload as untrusted input:
 
-| Method | Path | Role | Description |
-|---|---|---|---|
-| POST | `/users/me/schedule-imports` | Student / Lecturer | `multipart/form-data`: 1 or more AAO timetable PDFs (`files[]`), `semesterId`, `mode: REPLACE\|MERGE`. Parser validates genuine AAO export; extracts course codes, groups, rooms, instructors, shift, and date labels. Async job; returns `{ importId, status: QUEUED, addedCount, skippedCount }`. |
-| GET | `/users/me/schedule-imports/{importId}` | Student / Lecturer (owner) | Poll own import status: `{ status: QUEUED\|PROCESSING\|COMPLETED\|FAILED, rowsProcessed, rowsFailed, rowsSkipped, errors[] }`. |
-| GET | `/users/me/schedule-imports` | Student / Lecturer | Own import history. **Not yet backed by any FE mock** — the current stand-in, `getMockMyScheduleImportHistory()` (`lib/office-hours/mock-data.ts`), always returns `[]`, and the only related type, `ScheduleImportHistoryEntry`, models a different, simpler shape (`fileName`, `importedAt`, `rowCount`, `status: SUCCESS\|FAILED`) than this section's async-job fields (`importId`, `rowsProcessed`/`rowsFailed`/`rowsSkipped`, `errors[]`). Flag for Dev 3/4: either the FE import-history UI needs to grow to match this doc's richer job shape, or this doc should shrink to match the simpler shape actually rendered today — currently neither side has converged. |
-| GET | `/users/me/schedule-entries` | Student / Lecturer | List own busy blocks (classes/teaching) for the active semester with full metadata (`title`, `subjectCode`, `subjectName`, `group`, `room`, `locationType: LAB\|ROOM\|ONLINE\|OTHER`, `lecturerName`, `dayOfWeek: 1-7`, `date`, `startTime`, `endTime`, `colorHue`, `notes`, `source: IMPORTED\|MANUAL`). Field names/values here match the FE's `ScheduleBlock` type (`lib/office-hours/types.ts`) rather than the DB column names in `capstone-db-schema.md` §2.3 (`group_code`→`group`, `date_label`→`date`, `AAO_IMPORT`→`IMPORTED`) — the API layer is expected to do that renaming; treat the FE names as this endpoint's actual response contract. |
-| DELETE | `/schedule-entries/{id}` | Owner / Admin | Remove a busy block — the owning user or admin. |
-| POST | `/schedule-imports` | Admin | Admin uploads AAO exports **on behalf of** a user who can't self-serve. Body adds `targetUserId`, `mode`. |
-| GET | `/schedule-imports` | Admin | Aggregated import history across all users (oversight). |
-| GET | `/users/{userId}/schedule-entries` | Owner / Admin | List a specific user's busy blocks (classes/teaching) for the active semester — admin support/oversight view. |
-| POST | `/users/{userId}/schedule-entries` | Admin | Manually add one entry (fallback for a user who can't self-serve). `{ semesterId, title, dayOfWeek, startTime, endTime, room, locationType?, lecturerName? }`. |
+- validate every row against the JSON schema below (types, enums, `dayOfWeek` 1–7, `HH:mm` times, `startTime < endTime`, string length caps);
+- cap request size (suggested: ≤ 2 000 rows and ≤ 1 MB per request) and reject with `413`/`422` beyond that;
+- derive the owner from the token (`/users/me/...`) or from the path for Admin — **never** from a `userId` in the body;
+- apply `mode` and de-duplication server-side (never trust client-side dedup);
+- reject the whole batch on the first invalid row **or** return per-row errors — pick one and keep it (suggested: all-or-nothing, with `errors[] = { rowIndex, field, message }`).
 
-### 4.1 Large-Scale & Massive Timetable Ingestion Architecture
+**Timetable standard (unchanged):**
+- **07:30 AM shift standard:** Ca Sáng `07:30–12:30`, Ca Chiều `12:30–16:30`, Ca Tối `16:30–20:30`.
+- **7-day support:** `dayOfWeek` 1 (Thứ 2) … 7 (Chủ Nhật), for weekend labs/seminars.
+- **Specific date label:** the column-header date (e.g. `Thứ 2 (13/07)`) is kept as the informational `date` string; entries import as a recurring weekly pattern.
+- **Multi-file + modes:** the client merges several PDFs (lecture + lab) into the one `rows[]` array. `mode: REPLACE` replaces the user's previously imported blocks for the semester and keeps `MANUAL` ones; `mode: MERGE` appends and skips exact duplicates. Default for a fresh import is `REPLACE` (avoids stale duplicates).
 
-When ingesting university-wide or department-level AAO timetable PDFs (e.g. 50–200 pages with 10,000+ to 100,000+ course sessions), the API implements a **staged, asynchronous producer-consumer pipeline** to avoid HTTP timeouts, OOM errors, and database lock contention:
-
-```
-[Client Upload] ──> [202 Accepted + Job ID] ──> [Worker Pool (Streaming PDF Parse)]
-                                                              │
-                                                              ▼
-[Atomic Commit] <── [Paginated Staging Preview] <── [Staging DB + Deduplication Index]
-```
-
-#### Ingestion Lifecycle Endpoints
+### 4.1 Endpoints
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| POST | `/schedule-imports/jobs` | Admin / Faculty Lead | **Initiate Bulk Ingestion.** Accepts massive PDF files (`files[]`) or a pre-signed storage URL. Returns `202 Accepted` with `{ importJobId, status: "QUEUED", totalFiles }`. Spawns streaming worker job. |
-| GET | `/schedule-imports/jobs/{id}/progress` | Owner / Admin | **Live Progress Stream (SSE).** Server-Sent Events stream: `{ phase: "PARSING"\|"DEDUPLICATING"\|"READY_FOR_REVIEW", percentComplete, pagesProcessed, totalPages, extractedRows, duplicateCount, errorCount }`. |
-| GET | `/schedule-imports/jobs/{id}/preview` | Owner / Admin | **Paginated Staging Inspection.** `?page=0&size=50&filterStatus=VALID,CONFLICT,DUPLICATE`. Returns parsed entries from staging table with conflict flags, shift tags, and duplicate references before writing to master tables. |
-| POST | `/schedule-imports/jobs/{id}/commit` | Owner / Admin | **Atomic Staged Commit.** `{ action: "COMMIT"\|"ROLLBACK", resolutionStrategy: "SKIP_DUPLICATES"\|"OVERWRITE", excludedTempIds[] }`. Uses PostgreSQL `COPY` or `JdbcTemplate.batchUpdate()` with batch size 1000 for high-throughput bulk insertion. |
-| POST | `/users/me/schedule-entries/batch` | Student / Lecturer | **Client Fast-Path (Self-Service).** For single student/lecturer schedules (1-2 pages), the frontend parses the PDF in browser via Web Worker (`pdfjs-dist`) and sends pre-structured JSON directly, offloading 100% of parse CPU from the backend. |
+| POST | `/users/me/schedule-entries/batch` | Student / Lecturer | **The import endpoint.** Body: `{ semesterId, mode: "REPLACE"\|"MERGE", sourceFiles: string[], rows: ParsedTimetableRow[] }` (schema in §4.2). Returns `201 { importId, mode, addedCount, skippedCount, replacedCount }`. Writes one `schedule_imports` audit row (counts + `sourceFiles`) and the `schedule_entries` rows in a single transaction. |
+| POST | `/users/{userId}/schedule-entries/batch` | Admin | Same body, on behalf of a user who cannot self-serve (FR-5a). The target is the path `userId`. |
+| GET | `/users/me/schedule-entries` | Student / Lecturer | List own busy blocks (classes/teaching) for the active semester → `ScheduleBlock[]`. Field names/values match the FE's `ScheduleBlock` (`lib/office-hours/types.ts`) rather than DB column names (`group_code`→`group`, `date_label`→`date`, `AAO_IMPORT`→`IMPORTED`); the API layer renames. |
+| GET | `/users/{userId}/schedule-entries` | Owner / Admin | A specific user's busy blocks (admin support/oversight). |
+| POST | `/users/{userId}/schedule-entries` | Admin | Manually add **one** entry (fallback). `{ semesterId, title, dayOfWeek, startTime, endTime, room, locationType?, lecturerName? }`. |
+| POST | `/users/me/schedule-entries` | Student / Lecturer | Manually add one block of your own (backs the "Add schedule event" modal; stored with `source: MANUAL`). Same body as above minus `semesterId` default (active semester). |
+| DELETE | `/schedule-entries/{id}` | Owner / Admin | Remove one busy block. |
+| GET | `/users/me/schedule-imports` | Student / Lecturer | Own import history: `{ id, importedAt, mode, sourceFiles[], addedCount, skippedCount, status: SUCCESS\|FAILED }[]` — matches the FE's `ScheduleImportHistoryEntry` once it adds `mode`/`counts` (FE currently renders only `fileName`, `importedAt`, `rowCount`, `status`; `rowCount` = `addedCount`). |
+| GET | `/schedule-imports` | Admin | Aggregated import history across users (oversight). |
 
-Maps to `SCHEDULE_ENTRIES`, `SCHEDULE_IMPORTS`, and `SCHEDULE_IMPORT_STAGING`. Feeds conflict detection in §5.
+### 4.2 Batch payload schema (backend-defined; the FE type is `ScheduleBatchPayload` in `lib/office-hours/types.ts`)
+
+```json
+{
+  "semesterId": 12,
+  "mode": "REPLACE",
+  "sourceFiles": ["TimeTable-lecture.pdf", "TimeTable-lab.pdf"],
+  "rows": [
+    {
+      "day": "Thứ 2",
+      "date": "13/07",
+      "startTime": "07:30",
+      "endTime": "11:30",
+      "subjectCode": "CSE 422",
+      "subjectName": "Kỹ năng lập trình chuyên nghiệp",
+      "group": "E",
+      "room": "LAB403.B08",
+      "lecturerName": "Rohit Kumar Kasera"
+    }
+  ]
+}
+```
+
+| Field | Type / rule |
+|---|---|
+| `semesterId` | required, must be an existing semester (default: active) |
+| `mode` | `REPLACE` \| `MERGE` |
+| `sourceFiles` | optional, ≤ 20 names, each ≤ 255 chars (audit only) |
+| `rows[].day` | `"Thứ 2"`…`"Thứ 7"`, `"Chủ Nhật"` — server maps to `dayOfWeek` 1…7 (a numeric `dayOfWeek` 1–7 is also accepted) |
+| `rows[].date` | optional `dd/MM` or `dd/MM/yyyy`, ≤ 20 chars |
+| `rows[].startTime`, `endTime` | `HH:mm` 24 h, `startTime < endTime` |
+| `rows[].subjectCode`, `subjectName`, `group`, `room`, `lecturerName` | strings with the length caps of the `schedule_entries` columns; `locationType` is derived server-side from `room`/title (`LAB`/`ROOM`/`ONLINE`/`OTHER`) unless provided |
+
+`MERGE` de-duplicates on `(user_id, semester_id, day_of_week, start_time, end_time, subject_code)` (index `idx_schedule_entries_dedup`).
+
+### 4.3 Deferred / not planned: server-side PDF ingestion
+
+The earlier design — multipart upload of PDFs, an async parse job, a staging table, SSE progress, paginated preview and an atomic commit (`/users/me/schedule-imports`, `/schedule-imports/jobs*`, `schedule_import_staging`) — is **not part of the MVP**. It only becomes relevant if a department-wide, hundreds-of-pages export must be ingested by an Admin without a browser parse. Do not implement it unless that requirement appears; the DB sketch is kept in `capstone-db-schema.md` §2.5 for reference.
+
+Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in §5.
 
 ---
 
 ## 5. Slots & Conflict-Aware Booking (FR-6, FR-7; UC1, UC2; workflow §9.1)
 
 ### 5.0 Lecturer Directory & Proactive Suggestions (FR-6 support; Pages.txt #10)
+
+> `Lecturer.slug`, `photoUrl` and `blurb` are not columns of `users`; they come from the `lecturer_profiles` table (1-to-1 with a LECTURER user — `capstone-db-schema.md` §1.3). `slug` is derived from the name and unique.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
@@ -138,16 +172,18 @@ Maps to `SCHEDULE_ENTRIES`, `SCHEDULE_IMPORTS`, and `SCHEDULE_IMPORT_STAGING`. F
 | GET | `/lecturers/{lecturerId}/slots` | Authenticated | **Core query.** `?week=YYYY-Www` or `?from=&to=`. Returns bookable slots = availability − lecturer conflicts − existing bookings, further filtered against **the requesting student's** own `SCHEDULE_ENTRIES` (populated by the student's own AAO import per §4) so only conflict-free-for-this-student slots appear. Redis-cached with short TTL (§9.1). Target < 300 ms (NFR-1). |
 | GET | `/slots/{id}` | Authenticated | Slot detail incl. `status: OPEN\|FULL\|CLOSED`, capacity, current waitlist count. |
 | GET | `/slots` | Admin | Cross-lecturer slot search/filter (for analytics/ops). |
-| POST | `/bookings` | Student | `{ slotId, topic, participantIds? }`. Server re-validates conflicts server-side (never trust cached FE view). DB `EXCLUDE` constraint guards overlap under concurrency. Returns `201` with `status: PENDING`, or `409` (slot taken — race) with `{ waitlistAvailable: true }`, or `422` (conflict detected). |
+| POST | `/bookings` | Student | `{ slotId, topic?, participantEmails? }` (group members by email; see §5.1). Server re-validates conflicts server-side (never trust cached FE view). DB `EXCLUDE` constraint guards overlap under concurrency. Returns `201` with `status: PENDING`, or `409` (slot taken — race) with `{ waitlistAvailable: true }`, or `422` (conflict detected). |
 | GET | `/bookings` | Authenticated | List own bookings (student) or bookings-to-review (lecturer), filterable by `status`. Admin can filter by any user. |
 | GET | `/bookings/{id}` | Owner (student/lecturer) / Admin | Booking detail. |
-| POST | `/bookings/{id}/confirm` | Lecturer (owner of slot) | UC8. → `status: CONFIRMED`; notifies student. |
+| POST | `/bookings/{id}/confirm` | Lecturer (owner of slot) | UC8. → `status: CONFIRMED`; notifies student. The double-booking `EXCLUDE` constraint only covers `CONFIRMED` rows, so several `PENDING` bookings may exist for one slot; confirming a second one raises an exclusion violation → respond **`409`** (`problem.error = "SLOT_ALREADY_CONFIRMED"`) and, in the same transaction, auto-`DECLINE` (with notification) the other `PENDING` bookings of that slot after the first confirm. |
 | POST | `/bookings/{id}/decline` | Lecturer (owner of slot) | `{ reason? }`. → `status: DECLINED`; notifies student; may trigger waitlist allocation (§7) if others are queued. |
 | POST | `/bookings/{id}/cancel` | Student or Lecturer (participant) | FR-9. Enforces configurable notice-period rule (reject if inside window, unless Admin override). → `status: CANCELLED`; triggers waitlist allocation if slot had a queue. |
-| POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }`. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule. |
+| POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }` — the FE reschedule dialog lists the lecturer's open, conflict-free slots (`GET /lecturers/{id}/slots`) and sends the chosen slot id; free-form date/time is not accepted. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule. |
 | POST | `/bookings/{id}/complete` | Lecturer | Marks a past `CONFIRMED` booking `COMPLETED` (or auto-job does this after `end_at`). |
 | POST | `/bookings/{id}/no-show` | Lecturer | FR-10. → `status: NO_SHOW`. |
 | PATCH | `/bookings/{id}/meeting-record` | Lecturer | `{ attended, notes? }`. Optional text field only — explicitly **not** an LMS field (§5.3 scope guard). |
+
+**Booking response (DTO).** Besides display names, every booking carries the ids the UI needs: `{ id, slotId, lecturerId, studentId, lecturerName, studentName, department, topic, startAt, endAt, status, participants? }` (FE type `Booking`, `lib/office-hours/types.ts`).
 
 Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 
@@ -155,8 +191,8 @@ Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| POST | `/bookings/group` | Student | `{ slotId, topic, participantStudentIds[] }`. Requires slot `capacity > 1`. Creates one `BOOKINGS` row + `BOOKING_PARTICIPANTS` rows. |
-| POST | `/bookings/{id}/participants` | Student (existing participant) | Add a participant to an existing group booking (capacity permitting). |
+| POST | `/bookings/group` | Student | `{ slotId, topic, participantEmails[] }` — the FE adds participants by email (`ParticipantManager`); the backend resolves each email to an existing student. An email with no student account → `422` listing the unresolved emails (no account is auto-created, no pending invite in the MVP). Requires slot `capacity > 1`. Creates one `BOOKINGS` row + `BOOKING_PARTICIPANTS` rows. |
+| POST | `/bookings/{id}/participants` | Student (existing participant) | `{ email }` — add a participant to an existing group booking (capacity permitting; same email-resolution rule as above). |
 | DELETE | `/bookings/{id}/participants/{studentId}` | Student (self) / Admin | Leave/remove from a group booking. |
 
 ### 5.2 Recurring Bookings (FR-16, Stretch)
@@ -181,6 +217,8 @@ Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 | DELETE | `/waitlist/{id}` | Student (owner) | Leave the waitlist. → `status: CANCELLED`. |
 | POST | `/waitlist/{id}/accept` | Student (owner, while `OFFERED`) | Accept an offered slot before expiry → creates `CONFIRMED` booking, `status: FULFILLED` (workflow §9.2). |
 | POST | `/waitlist/{id}/decline` | Student (owner, while `OFFERED`) | Explicitly decline an offer → re-run allocation for next candidate. |
+
+A waitlist entry always belongs to **one concrete slot** (`waitlist_entries.slot_id`), because allocation runs per slot. `GET /waitlist/me` returns `{ id, slotId, lecturerName, department, desiredSlotLabel, position, status, offeredStartAt?, offeredExpiresAt? }` where `desiredSlotLabel` is built server-side from the slot (e.g. `"Tue 10:00-10:30"`) and `position` is computed on read (rank among `WAITING` entries of that slot by `requested_at`, or by `priority_score` when a policy has scored them). A scheduled job moves `OFFERED` entries past `offer_expires_at` to `EXPIRED` and re-runs allocation.
 
 Maps to `WAITLIST_ENTRIES`.
 
@@ -219,7 +257,21 @@ Maps to `ALLOCATION_POLICIES`, `ALLOCATION_EVENTS`. This cluster is the **resear
 | GET | `/notifications` | Authenticated | List own notifications, `?unreadOnly=true`. |
 | POST | `/notifications/{id}/read` | Authenticated (owner) | Mark one as read. |
 | POST | `/notifications/read-all` | Authenticated | Mark all read. |
-| GET | `/notifications/stream` | Authenticated | **SSE** endpoint (`text/event-stream`) — push booking lifecycle & allocation-offer events in real time. Events: `booking.pending`, `booking.confirmed`, `booking.declined`, `booking.cancelled`, `waitlist.offered`, `waitlist.expired`. (The FE's `NotificationType` enum — `BOOKING_CONFIRMED\|BOOKING_DECLINED\|BOOKING_CANCELLED\|WAITLIST_OFFERED\|REMINDER` — only covers a subset: no `booking.pending`/`waitlist.expired` equivalent exists yet, and `REMINDER` isn't in this doc's event list at all. Reconcile before the backend locks the event catalogue — likely `booking.pending` and `waitlist.expired` notifications, and a `reminder.*` event, are all still missing from one side or the other.) |
+| GET | `/notifications/stream` | Authenticated | **SSE** (`text/event-stream`) — pushes the events in the catalogue below in real time. Browsers' `EventSource` cannot send an `Authorization` header, so the Next.js BFF proxies the stream (reads the httpOnly cookie, forwards with a bearer token); a polling fallback `GET /notifications?since=` is acceptable. |
+
+**Event catalogue (single source of truth — FE enum in parentheses):**
+
+| Event (`notifications.type`) | FE `NotificationType` | Recipient |
+|---|---|---|
+| `booking.pending` | `BOOKING_PENDING` | Lecturer |
+| `booking.confirmed` | `BOOKING_CONFIRMED` | Student |
+| `booking.declined` | `BOOKING_DECLINED` | Student |
+| `booking.cancelled` | `BOOKING_CANCELLED` | The other party |
+| `waitlist.offered` | `WAITLIST_OFFERED` | Winning student |
+| `waitlist.expired` | `WAITLIST_EXPIRED` | Student whose offer lapsed |
+| `reminder.upcoming` | `REMINDER` | Both parties (e.g. 24 h before) |
+
+The API returns `{ id, type, title, body, createdAt, read, bookingId? }`; `title`/`body` are rendered in the user's locale (en/vi) or the client maps `type`+`payload` to its own i18n strings. Per-user prefs (`NotificationPrefs`: `bookingConfirmed`, `bookingDeclined`, `waitlistOffer`, `reminders`) are stored on the user and edited through `PATCH /users/me`.
 
 Backing delivery (not directly called by FE, triggered internally on lifecycle events per §9.1/§9.2):
 - Email via SMTP for the same event set — no separate REST surface, fired server-side alongside the SSE push and `NOTIFICATIONS` row insert.
@@ -254,8 +306,8 @@ Maps to `NOTIFICATIONS`.
 | FR-1 (auth/roles) | §1 |
 | FR-2 (semesters) | §2 |
 | FR-3, FR-4 (availability) | §3 |
-| FR-5 (self-service AAO import) | §4 `POST /users/me/schedule-imports` |
-| FR-5a (admin schedule support/oversight) | §4 `POST /schedule-imports`, `POST /users/{userId}/schedule-entries` |
+| FR-5 (self-service AAO import, parsed in the browser) | §4 `POST /users/me/schedule-entries/batch` |
+| FR-5a (admin schedule support/oversight) | §4 `POST /users/{userId}/schedule-entries/batch`, `GET /schedule-imports`, `POST /users/{userId}/schedule-entries` |
 | FR-6 (lecturer discovery) | `GET /lecturers`, `GET /lecturers/{id}` (§5.0) |
 | FR-6 (bookable slots) | `GET /lecturers/{id}/slots` |
 | FR-7 (conflict-safe booking) | `POST /bookings` |
@@ -279,5 +331,5 @@ Maps to `NOTIFICATIONS`.
 1. **Slot listing scope** — should `GET /lecturers/{id}/slots` require auth (to compute per-student conflicts) or offer an unauthenticated "raw availability" mode? Currently modeled as requiring auth for the conflict-aware view, with §10 offering an unauthenticated aggregate alternative.
 2. **Allocation trigger visibility** — is `POST /slots/{id}/run-allocation` ever called by anything other than the system job? If not, it may not need to exist as a REST endpoint at all outside of the demo/admin use case — worth cutting if unused, per the "no speculative endpoints" principle.
 3. **Reschedule vs. cancel+create** — decide whether reschedule is truly atomic (one endpoint) or a documented client-side pattern (two calls) — affects whether the exclusion constraint needs to span both operations in one transaction.
-4. **SSE vs. polling fallback** — confirm PWA offline/backgrounded behavior doesn't require a polling `GET /notifications?since=` fallback in addition to `/notifications/stream`.
+4. **SSE vs. polling fallback** — decided: the BFF proxies the stream (cookie → bearer); keep a polling `GET /notifications?since=` fallback available. Confirm PWA offline/backgrounded behaviour needs nothing more.
 5. **Override authorization scope** — should `POST /slots/{id}/override` be limited to department-scoped admins, or does any Admin have global override rights? Also decide whether the affected lecturer/bumped student get a distinct notification copy ("an administrator reassigned this slot") vs. the standard offer/confirmation text, since silently reusing normal booking-confirmed language could be misleading about how the decision was made.

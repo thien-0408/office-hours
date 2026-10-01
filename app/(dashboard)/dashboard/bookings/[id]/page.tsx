@@ -219,8 +219,8 @@ export default function BookingDetailPage() {
         open={rescheduling}
         booking={booking}
         onClose={() => setRescheduling(false)}
-        onConfirm={({ startAt, endAt, topic }) => {
-          setBooking((b) => (b ? { ...b, startAt, endAt, topic: topic || null, status: "PENDING" } : b));
+        onConfirm={({ newSlotId, startAt, endAt }) => {
+          setBooking((b) => (b ? { ...b, slotId: newSlotId, startAt, endAt, status: "PENDING" } : b));
           toast.success("New request sent");
         }}
       />
