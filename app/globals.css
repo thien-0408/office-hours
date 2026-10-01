@@ -225,10 +225,15 @@
   --focus-ring: var(--brand-400);
 }
 
-/* Landing/auth face: Satoshi has no Vietnamese glyphs, so those characters fall back
-   per-glyph to the app's primary font (Plus Jakarta Sans). */
+/* Landing/auth face: Satoshi for English. Satoshi has no Vietnamese glyphs, so when the
+   document language is Vietnamese (<html lang="vi">, set from the locale cookie) the whole
+   surface switches to the app's primary font instead of mixing faces per glyph. */
 .font-landing {
   font-family: var(--font-satoshi), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+:lang(vi) .font-landing,
+.font-landing:lang(vi) {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
