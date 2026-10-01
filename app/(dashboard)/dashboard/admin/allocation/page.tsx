@@ -12,6 +12,8 @@ import { getMockAllocationEvents, getMockAllocationPolicies } from "@/lib/office
 import type { AllocationDecision, AllocationEvent, AllocationPolicy, AllocationPolicyName } from "@/lib/office-hours/types";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 type Tab = "POLICIES" | "EVENTS";
 
@@ -55,7 +57,8 @@ function PolicyCard({ policy, onActivate, onDelete }: { policy: AllocationPolicy
         ) : (
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
             {weights.map(([key, value]) => (
-              <span key={key} className="text-[13px] text-[var(--ink-600)] tabular-nums">
+              <span key={key}
+              className="text-[13px] text-[var(--ink-600)] tabular-nums">
                 {WEIGHT_FIELDS[policy.name].find((f) => f.key === key)?.label ?? key}: <strong className="text-[var(--ink-900)]">{value}</strong>
               </span>
             ))}
@@ -111,19 +114,20 @@ function PoliciesTab({ policies, setPolicies }: { policies: AllocationPolicy[]; 
     <div className="flex flex-col gap-6">
       <Card>
         <SectionHeader title="Register a policy" />
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit}
+        className="flex flex-col gap-4">
           <FormField label="Policy type">
-            <select
+            <NativeSelect
               value={name}
               onChange={(e) => handleNameChange(e.target.value as AllocationPolicyName)}
-              className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+              className="w-full"
             >
               {(Object.keys(POLICY_LABELS) as AllocationPolicyName[]).map((n) => (
                 <option key={n} value={n}>
                   {POLICY_LABELS[n]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormField>
 
           {fields.length > 0 && (
@@ -144,12 +148,11 @@ function PoliciesTab({ policies, setPolicies }: { policies: AllocationPolicy[]; 
             </div>
           )}
 
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+          <Button
+            type="submit" className="w-fit"
           >
             Register policy
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -216,7 +219,8 @@ function OverrideForm({ onSubmit, onCancel }: { onSubmit: (slotLabel: string, st
   return (
     <Card>
       <SectionHeader title="New manual override" />
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit}
+      className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4">
           <FormField label="Slot">
             <TextInput value={slotLabel} onChange={(e) => setSlotLabel(e.target.value)} placeholder="e.g. Dr. Amara Chen — Tue 10:00" className="w-64" />
@@ -235,10 +239,11 @@ function OverrideForm({ onSubmit, onCancel }: { onSubmit: (slotLabel: string, st
           />
         </FormField>
         <div className="flex items-center gap-3">
-          <button type="submit" className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit">
+          <Button type="submit" className="w-fit">
             Save override
-          </button>
-          <button type="button" onClick={onCancel} className="text-sm font-semibold text-[var(--ink-600)] hover:text-[var(--ink-900)]">
+          </Button>
+          <button type="button" onClick={onCancel}
+          className="text-sm font-semibold text-[var(--ink-600)] hover:text-[var(--ink-900)]">
             Cancel
           </button>
         </div>
@@ -262,10 +267,10 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-end gap-3">
         <FormField label="Policy">
-          <select
+          <NativeSelect
             value={policyFilter}
             onChange={(e) => setPolicyFilter(e.target.value as AllocationPolicyName | "ALL")}
-            className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+            className="w-auto"
           >
             <option value="ALL">All policies</option>
             {policies.map((p) => (
@@ -273,7 +278,7 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
                 {POLICY_LABELS[p.name]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </FormField>
         <FilterTabs
           options={[
@@ -285,14 +290,14 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
           value={decisionFilter}
           onChange={setDecisionFilter}
         />
-        <button
+        <Button
           type="button"
           onClick={() => setShowOverrideForm((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors sm:ml-auto"
+          className="sm:ml-auto"
         >
           <UserCog className="w-4 h-4" strokeWidth={2} />
           New override
-        </button>
+        </Button>
       </div>
 
       {showOverrideForm && (
@@ -338,7 +343,8 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
             </thead>
             <tbody>
               {filtered.map((event) => (
-                <tr key={event.id} className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors align-top">
+                <tr key={event.id}
+                className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors align-top">
                   <td className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{event.slotLabel}</td>
                   <td className="px-5 py-3.5 text-[var(--ink-700)] whitespace-nowrap">{event.studentName}</td>
                   <td className="px-5 py-3.5">

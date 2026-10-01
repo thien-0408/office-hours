@@ -11,6 +11,8 @@ import { getMockAdminUsers, getMockSemesters } from "@/lib/office-hours/mock-dat
 import type { AdminUserRow, Semester } from "@/lib/office-hours/types";
 import type { UserRole } from "@/lib/auth/types";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 type Tab = "USERS" | "SEMESTERS";
 type RoleFilter = UserRole | "ALL";
@@ -65,15 +67,15 @@ function UserEditRow({
       <td className="px-5 py-3.5" colSpan={5}>
         <div className="flex flex-wrap items-end gap-3">
           <FormField label="Role">
-            <select
+            <NativeSelect
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+              className="w-auto"
             >
               <option value="STUDENT">Student</option>
               <option value="LECTURER">Lecturer</option>
               <option value="ADMIN">Admin</option>
-            </select>
+            </NativeSelect>
           </FormField>
           <FormField label="Department">
             <TextInput
@@ -84,13 +86,12 @@ function UserEditRow({
             />
           </FormField>
           <div className="flex items-center gap-2 pb-0.5">
-            <button
+            <Button
               type="button"
               onClick={() => onSave(role, department)}
-              className="px-3.5 py-2 rounded-xl bg-[var(--brand-500)] text-white text-[13px] font-bold hover:bg-[var(--brand-600)] transition-colors"
             >
               Save
-            </button>
+            </Button>
             <button
               type="button"
               onClick={onCancel}
@@ -174,7 +175,8 @@ function UsersTab({ users, setUsers }: { users: AdminUserRow[]; setUsers: React.
                     }}
                   />
                 ) : (
-                  <tr key={u.id} className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
+                  <tr key={u.id}
+                  className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
                     <td className="px-5 py-3.5">
                       <p className="font-semibold text-[var(--ink-900)]">{u.fullName}</p>
                       <p className="text-[12px] text-[var(--ink-500)]">{u.email}</p>
@@ -297,7 +299,8 @@ function SemestersTab({ semesters, setSemesters }: { semesters: Semester[]; setS
     <div className="flex flex-col gap-6">
       <Card>
         <SectionHeader title="Add a semester" />
-        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-4">
+        <form onSubmit={handleSubmit}
+        className="flex flex-wrap items-end gap-4">
           <FormField label="Name">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Spring 2027" className="w-48" />
           </FormField>
@@ -307,12 +310,11 @@ function SemestersTab({ semesters, setSemesters }: { semesters: Semester[]; setS
           <FormField label="End date">
             <TextInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </FormField>
-          <button
+          <Button
             type="submit"
-            className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
           >
             Add semester
-          </button>
+          </Button>
         </form>
       </Card>
 

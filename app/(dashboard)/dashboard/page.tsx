@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CalendarDays, Clock, Scale, Search, TrendingUp, Users } from "lucide-react";
+import { Scale } from "lucide-react";
+import { CalendarDots, CheckCircle, ClockCountdown, HourglassMedium, TrendUp, UsersThree, WarningCircle } from "@phosphor-icons/react";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   getMockAdminOverview,
   getMockAdvisorLoad,
   getMockLecturerBookings,
   getMockLecturerSlotsToday,
-  getMockOfficeHours,
+  getMockWaitlistEntries,
   getMockStudentBookings,
   getMockWeeklyActivity,
 } from "@/lib/office-hours/mock-data";
@@ -19,8 +20,10 @@ import { BookingsTable } from "@/components/dashboard/BookingsTable";
 import { DashboardColumns } from "@/components/dashboard/DashboardColumns";
 import { FeaturedActionCard } from "@/components/dashboard/FeaturedActionCard";
 import { MiniCalendar } from "@/components/dashboard/MiniCalendar";
+import { NextUpCard } from "@/components/dashboard/NextUpCard";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
+import { RescheduleModal } from "@/components/dashboard/RescheduleModal";
 import { SlotsTodayList } from "@/components/dashboard/SlotsTodayList";
 import { StaggerGroup, StaggerItem } from "@/components/dashboard/StaggerGroup";
 import { StatTile } from "@/components/dashboard/StatTile";
@@ -106,11 +109,26 @@ export default function DashboardPage() {
 function StudentDashboard({ user }: { user: AuthUser }) {
   const { t } = useI18n();
   const [bookings, setBookings] = useState<Booking[]>(() => getMockStudentBookings());
+  const [filterDay, setFilterDay] = useState<Date | null>(null);
+  const [rescheduling, setRescheduling] = useState<Booking | null>(null);
 
-  const upcoming = bookings.filter((b) => b.status === "PENDING" || b.status === "CONFIRMED");
+  const upcoming = bookings
+    .filter((b) => b.status === "PENDING" || b.status === "CONFIRMED")
+    .sort((a, b) => a.startAt.localeCompare(b.startAt));
+  const [nextUp, ...later] = upcoming;
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
-  const slotsThisWeek = getMockOfficeHours({ page: 0, size: 500 }).totalElements;
+  const completedCount = bookings.filter((b) => b.status === "COMPLETED").length;
+  const waitlistCount = getMockWaitlistEntries().filter((w) => w.status === "WAITING" || w.status === "OFFERED").length;
   const weeklyActivity = getMockWeeklyActivity();
+
+  function handleReschedule(input: { startAt: string; endAt: string; topic: string }) {
+    if (!rescheduling) return;
+    const id = rescheduling.id;
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, startAt: input.startAt, endAt: input.endAt, topic: input.topic || b.topic } : b)),
+    );
+    setRescheduling(null);
+  }
 
   return (
     <DashboardColumns
@@ -120,11 +138,19 @@ function StudentDashboard({ user }: { user: AuthUser }) {
             <ProfileCard user={user} />
           </StaggerItem>
           <StaggerItem>
-            <MiniCalendar />
+            <MiniCalendar
+              markedDates={upcoming.map((b) => new Date(b.startAt))}
+              selected={filterDay}
+              onSelect={setFilterDay}
+            />
           </StaggerItem>
           <StaggerItem>
-            <SectionHeader title={t("dashboard.upcoming")} />
-            <UpcomingList bookings={upcoming.slice(0, 3)} />
+            <SectionHeader title={filterDay ? t("dashboard.upcoming") : t("dashboard.moreComingUp")} />
+            <UpcomingList
+              bookings={filterDay ? upcoming : later}
+              filterDay={filterDay}
+              onClearFilter={() => setFilterDay(null)}
+            />
           </StaggerItem>
           <StaggerItem>
             <SectionHeader title={t("dashboard.toDo")} />
@@ -134,21 +160,15 @@ function StudentDashboard({ user }: { user: AuthUser }) {
       }
     >
       <StaggerGroup className="flex flex-col gap-5">
-        <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={upcoming.length} label={t("dashboard.upcomingBookings")} />
-          <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={pendingCount} label={t("dashboard.pendingConfirmation")} />
-          <StatTile icon={Users} tone={ACCENT_TOKENS.mint} value={slotsThisWeek} label={t("dashboard.openSlotsWeek")} />
+        <StaggerItem>
+          <NextUpCard booking={nextUp ?? null} onReschedule={setRescheduling} />
         </StaggerItem>
 
-        <StaggerItem>
-          <FeaturedActionCard
-            icon={Search}
-            title={t("dashboard.browseFaculty")}
-            description={t("dashboard.browseFacultyDescription")}
-            href="/dashboard/lecturers"
-            actionLabel={t("dashboard.exploreDirectory")}
-            variant="compact"
-          />
+        <StaggerItem className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile icon={CalendarDots} tone={ACCENT_TOKENS.rose} value={upcoming.length} label={t("dashboard.upcomingBookings")} />
+          <StatTile icon={ClockCountdown} tone={HUE_TOKENS.warning} value={pendingCount} label={t("dashboard.pendingConfirmation")} />
+          <StatTile icon={HourglassMedium} tone={HUE_TOKENS.info} value={waitlistCount} label={t("dashboard.waitlistStat")} />
+          <StatTile icon={CheckCircle} tone={HUE_TOKENS.brand} value={completedCount} label={t("dashboard.completedStat")} />
         </StaggerItem>
 
         <StaggerItem>
@@ -167,6 +187,13 @@ function StudentDashboard({ user }: { user: AuthUser }) {
           <BookingsTable bookings={bookings} perspective="student" />
         </StaggerItem>
       </StaggerGroup>
+
+      <RescheduleModal
+        open={rescheduling !== null}
+        booking={rescheduling}
+        onClose={() => setRescheduling(null)}
+        onConfirm={handleReschedule}
+      />
     </DashboardColumns>
   );
 }
@@ -209,14 +236,14 @@ function LecturerDashboard({ user }: { user: AuthUser }) {
     >
       <StaggerGroup className="flex flex-col gap-5">
         <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={toReview.length} label="Bookings to review" />
-          <StatTile icon={CalendarDays} tone={HUE_TOKENS.success} value={confirmedToday} label="Confirmed today" />
-          <StatTile icon={AlertTriangle} tone={HUE_TOKENS.danger} value={`${noShowRate}%`} label="No-show rate" />
+          <StatTile icon={ClockCountdown} tone={HUE_TOKENS.warning} value={toReview.length} label="Bookings to review" />
+          <StatTile icon={CalendarDots} tone={HUE_TOKENS.success} value={confirmedToday} label="Confirmed today" />
+          <StatTile icon={WarningCircle} tone={HUE_TOKENS.danger} value={`${noShowRate}%`} label="No-show rate" />
         </StaggerItem>
 
         <StaggerItem>
           <FeaturedActionCard
-            icon={Clock}
+            icon={ClockCountdown}
             title="Bookings to review"
             description={`${toReview.length} student${toReview.length === 1 ? "" : "s"} waiting on a confirm or decline.`}
             href="/dashboard/bookings"
@@ -263,9 +290,9 @@ function AdminDashboard({ user }: { user: AuthUser }) {
     >
       <StaggerGroup className="flex flex-col gap-5">
         <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile icon={Users} tone={ACCENT_TOKENS.coral} value={stats.activeUsers} label="Active users" />
-          <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={stats.bookingsThisWeek} label="Bookings this week" />
-          <StatTile icon={TrendingUp} tone={ACCENT_TOKENS.mint} value={`${stats.utilizationPct}%`} label="Slot utilization" />
+          <StatTile icon={UsersThree} tone={ACCENT_TOKENS.coral} value={stats.activeUsers} label="Active users" />
+          <StatTile icon={CalendarDots} tone={ACCENT_TOKENS.rose} value={stats.bookingsThisWeek} label="Bookings this week" />
+          <StatTile icon={TrendUp} tone={ACCENT_TOKENS.mint} value={`${stats.utilizationPct}%`} label="Slot utilization" />
         </StaggerItem>
 
         <StaggerItem>

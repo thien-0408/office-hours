@@ -16,6 +16,8 @@ import {
 } from "@/lib/office-hours/mock-data";
 import type { AdminScheduleEntry, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 type OwnerRole = "LECTURER" | "STUDENT";
 
@@ -68,17 +70,17 @@ function OwnerPicker({
           />
         </div>
         <FormField label={ownerRole === "LECTURER" ? "Lecturer" : "Student"}>
-          <select
+          <NativeSelect
             value={ownerName}
             onChange={(e) => setOwnerName(e.target.value)}
-            className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] sm:w-64"
+            className="sm:w-64"
           >
             {people.map((p) => (
               <option key={p.id} value={p.fullName}>
                 {p.fullName}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </FormField>
       </div>
     </Card>
@@ -141,7 +143,8 @@ function ManualEntryTab({
     <div className="flex flex-col gap-6">
       <Card>
         <SectionHeader title="Add a schedule block" />
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit}
+        className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-4">
             <FormField label="Title">
               <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Department committee" className="w-56" />
@@ -162,12 +165,11 @@ function ManualEntryTab({
             </FormField>
           </div>
 
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+          <Button
+            type="submit" className="w-fit"
           >
             Add entry
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -180,7 +182,8 @@ function ManualEntryTab({
         ) : (
           <div className="flex flex-col gap-3">
             {sorted.map((entry) => (
-              <Card key={entry.id} className="flex items-start justify-between gap-3">
+              <Card key={entry.id}
+              className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-semibold text-[var(--ink-900)]">{entry.title}</p>
@@ -272,7 +275,8 @@ function SlotSearchTab() {
             </thead>
             <tbody>
               {filtered.slice(0, 100).map((slot) => (
-                <tr key={slot.id} className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
+                <tr key={slot.id}
+                className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
                   <td className="px-5 py-3.5 font-semibold text-[var(--ink-900)]">{slot.lecturerName}</td>
                   <td className="px-5 py-3.5 text-[var(--ink-600)]">{slot.department ?? "—"}</td>
                   <td className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">{dateTimeFormatter.format(new Date(slot.startAt))}</td>

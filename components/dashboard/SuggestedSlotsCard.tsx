@@ -14,6 +14,7 @@ import { Card } from "@/components/dashboard/Card";
 import { BookSlotModal } from "@/components/dashboard/BookSlotModal";
 import type { BookableSlot } from "@/lib/office-hours/types";
 import type { SuggestedSlot } from "@/lib/office-hours/mock-data";
+import { Button } from "@/components/ui/button";
 
 type FilterCategory = "ALL" | "CS" | "MATH" | "SOON";
 
@@ -175,14 +176,14 @@ export function SuggestedSlotsCard({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={() => setBookingSlot(slot)}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[var(--brand-500)] text-white text-xs font-bold hover:bg-[var(--brand-600)] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                  className="flex-1 flex"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
                   Quick Book
-                </button>
+                </Button>
                 <Link
                   href={`/dashboard/lecturers/${slot.lecturerId}/slots`}
                   className="px-3 py-2 rounded-xl border border-[var(--paper-200)] text-[var(--ink-700)] text-xs font-semibold hover:bg-[var(--paper-100)] transition-colors text-center"

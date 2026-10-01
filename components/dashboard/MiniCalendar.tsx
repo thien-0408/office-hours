@@ -19,11 +19,25 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.toDateString() === b.toDateString();
 }
 
-export function MiniCalendar() {
+// Optional `markedDates` draws a dot under days that have a booking. Passing
+// `selected` + `onSelect` makes the widget controlled (null = nothing selected,
+// so the dashboard can use a click as a day filter); omit both for the
+// original self-contained behavior used by the lecturer/admin rails.
+export function MiniCalendar({
+  markedDates = [],
+  selected: controlledSelected,
+  onSelect,
+}: {
+  markedDates?: Date[];
+  selected?: Date | null;
+  onSelect?: (day: Date | null) => void;
+}) {
   const { locale, t } = useI18n();
   const today = new Date();
   const [anchor, setAnchor] = useState(today);
-  const [selected, setSelected] = useState(today);
+  const [localSelected, setLocalSelected] = useState<Date | null>(today);
+  const controlled = onSelect !== undefined;
+  const selected = controlled ? (controlledSelected ?? null) : localSelected;
 
   const days = [-2, -1, 0, 1, 2].map((offset) => addDays(anchor, offset));
 
@@ -51,13 +65,18 @@ export function MiniCalendar() {
 
       <div className="grid grid-cols-5 gap-1.5 text-center">
         {days.map((day) => {
-          const selectedDay = isSameDay(day, selected);
+          const selectedDay = selected !== null && isSameDay(day, selected);
+          const hasBooking = markedDates.some((d) => isSameDay(d, day));
           const isToday = isSameDay(day, today);
           return (
             <button
               key={day.toISOString()}
               type="button"
-              onClick={() => setSelected(day)}
+              onClick={() => {
+                if (!controlled) setLocalSelected(day);
+                else onSelect(selected !== null && isSameDay(day, selected) ? null : day);
+              }}
+              aria-pressed={selectedDay}
               className={`flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
                 selectedDay
                   ? "bg-[var(--rose-500)] text-white"
@@ -68,6 +87,10 @@ export function MiniCalendar() {
             >
               <span className="text-[10px] uppercase opacity-80">{formatDate(day, locale, { weekday: "short" })}</span>
               <span className="tabular-nums">{day.getDate()}</span>
+              <span
+                className={`h-1 w-1 rounded-full ${hasBooking ? (selectedDay ? "bg-white" : "bg-[var(--rose-500)]") : "bg-transparent"}`}
+                aria-hidden
+              />
             </button>
           );
         })}

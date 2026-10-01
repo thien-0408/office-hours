@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { MEMOJI_INDICES } from "@/lib/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
-// Same glassmorphism modal shell as ConfirmModal (docs/DESIGN.md reserves
-// glass for "top nav, modals, dropdowns") — just swaps the confirm/cancel
-// body for a scrollable memoji grid.
+// Same glassmorphism shell as ConfirmModal (docs/DESIGN.md reserves glass for
+// "top nav, modals, dropdowns") — swaps the confirm/cancel body for a
+// scrollable memoji grid.
 export function AvatarPickerModal({
   open,
   currentIndex,
@@ -20,83 +20,47 @@ export function AvatarPickerModal({
   onSelect: (index: number) => void;
   onClose: () => void;
 }) {
-  const prefersReducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    if (!open) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div
-            key="backdrop"
-            className="absolute inset-0 bg-[var(--brand-950)]/60 backdrop-blur-md"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName="bg-[var(--brand-950)]/60 supports-backdrop-filter:backdrop-blur-md"
+        className="block max-w-[420px] rounded-[28px] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-6 py-7 shadow-2xl ring-0 backdrop-blur-2xl sm:max-w-[420px]"
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <DialogTitle className="text-lg font-bold text-white">Choose your avatar</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            aria-hidden="true"
-          />
-          <motion.div
-            key="card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="avatar-picker-title"
-            className="relative w-full max-w-[420px] rounded-[28px] px-6 py-7 shadow-2xl"
-            style={{
-              background: "var(--glass-bg)",
-              borderWidth: 1,
-              borderColor: "var(--glass-border)",
-              backdropFilter: "blur(24px)",
-            }}
-            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 }}
-            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            aria-label="Close"
+            className="rounded-full text-white/70 hover:bg-white/10 hover:text-white"
           >
-            <div className="flex items-center justify-between mb-5">
-              <h2 id="avatar-picker-title" className="text-lg font-bold text-white">
-                Choose your avatar
-              </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="flex items-center justify-center w-8 h-8 rounded-full text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                <X className="w-4 h-4" strokeWidth={2} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-6 gap-2.5 max-h-[320px] overflow-y-auto pr-1 -mr-1">
-              {MEMOJI_INDICES.map((index) => {
-                const selected = index === currentIndex;
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => onSelect(index)}
-                    aria-label={`Use memoji ${index}`}
-                    aria-pressed={selected}
-                    className={`relative rounded-full overflow-hidden transition-transform hover:scale-105 ${
-                      selected ? "ring-2 ring-white ring-offset-2 ring-offset-transparent" : "ring-1 ring-white/15"
-                    }`}
-                  >
-                    <Image src={`/memoji/${index}.png`} alt="" width={56} height={56} className="w-full h-full object-cover" />
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
+            <X className="h-4 w-4" strokeWidth={2} />
+          </Button>
         </div>
-      )}
-    </AnimatePresence>
+
+        <div className="-mr-1 grid max-h-[320px] grid-cols-6 gap-2.5 overflow-y-auto pr-1">
+          {MEMOJI_INDICES.map((index) => {
+            const selected = index === currentIndex;
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onSelect(index)}
+                aria-label={`Use memoji ${index}`}
+                aria-pressed={selected}
+                className={`relative overflow-hidden rounded-full transition-transform hover:scale-105 ${
+                  selected ? "ring-2 ring-white ring-offset-2 ring-offset-transparent" : "ring-1 ring-white/15"
+                }`}
+              >
+                <Image src={`/memoji/${index}.png`} alt="" width={56} height={56}
+                className="h-full w-full object-cover" />
+              </button>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

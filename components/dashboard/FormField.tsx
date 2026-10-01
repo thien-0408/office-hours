@@ -1,3 +1,7 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// Thin wrappers over components/ui — kept so existing call sites don't change.
 export function FormField({
   label,
   children,
@@ -6,19 +10,13 @@ export function FormField({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <Label className="flex flex-col items-stretch gap-1.5">
       <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">{label}</span>
       {children}
-    </label>
+    </Label>
   );
 }
 
-export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const { className = "", ...rest } = props;
-  return (
-    <input
-      className={`w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none transition-shadow focus:ring-2 focus:ring-[var(--brand-300)] disabled:bg-[var(--paper-50)] disabled:text-[var(--ink-500)] ${className}`}
-      {...rest}
-    />
-  );
+export function TextInput(props: React.ComponentProps<typeof Input>) {
+  return <Input {...props} />;
 }

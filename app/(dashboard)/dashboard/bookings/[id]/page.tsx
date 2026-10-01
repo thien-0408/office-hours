@@ -15,6 +15,7 @@ import { useToast } from "@/components/ToastProvider";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getMockBookingById, getMockBookingTimeline } from "@/lib/office-hours/mock-data";
 import type { Booking } from "@/lib/office-hours/types";
+import { Button } from "@/components/ui/button";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" });
 const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
@@ -125,28 +126,26 @@ export default function BookingDetailPage() {
                 >
                   Cancel booking
                 </button>
-                <button
+                <Button variant="outline"
                   type="button"
                   onClick={() => setRescheduling(true)}
-                  className="px-4 py-2 rounded-xl border border-[var(--paper-200)] text-[var(--ink-700)] text-sm font-bold hover:bg-[var(--paper-50)] transition-colors"
                 >
                   Reschedule
-                </button>
+                </Button>
               </>
             )}
 
             {user.role === "LECTURER" && booking.status === "PENDING" && (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     applyStatus("CONFIRMED");
                     toast.success("Booking confirmed");
                   }}
-                  className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
                 >
                   Confirm
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={() => setPendingAction("DECLINE")}
@@ -159,16 +158,15 @@ export default function BookingDetailPage() {
 
             {user.role === "LECTURER" && booking.status === "CONFIRMED" && isPast && (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     applyStatus("COMPLETED");
                     toast.success("Marked completed");
                   }}
-                  className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
                 >
                   Mark completed
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={() => setPendingAction("NO_SHOW")}
@@ -205,16 +203,15 @@ export default function BookingDetailPage() {
             className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] resize-none"
           />
           <div className="flex items-center gap-3 mt-3">
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setRecordSaved(true);
                 toast.success("Meeting record saved");
               }}
-              className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
             >
               Save record
-            </button>
+            </Button>
             {recordSaved && <span className="text-[13px] text-[var(--success-700)] font-semibold">Saved</span>}
           </div>
         </Card>

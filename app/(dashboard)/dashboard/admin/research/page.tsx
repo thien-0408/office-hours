@@ -34,6 +34,8 @@ import type {
 } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 type Tab = "DEMAND" | "EXPERIMENTS";
 
@@ -77,41 +79,45 @@ function DemandRunForm({ onSubmit }: { onSubmit: (run: Omit<SyntheticDemandRun, 
   return (
     <Card>
       <SectionHeader title="Generate a synthetic demand stream" />
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit}
+      className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4">
           <FormField label="Seed">
-            <TextInput type="number" value={seed} onChange={(e) => setSeed(e.target.value)} className="w-28" />
+            <TextInput type="number" value={seed} onChange={(e) => setSeed(e.target.value)}
+            className="w-28" />
           </FormField>
           <FormField label="Popularity skew">
-            <TextInput type="number" step="0.1" min="0" value={popularitySkew} onChange={(e) => setPopularitySkew(e.target.value)} className="w-28" />
+            <TextInput type="number" step="0.1" min="0" value={popularitySkew} onChange={(e) => setPopularitySkew(e.target.value)}
+            className="w-28" />
           </FormField>
           <FormField label="Arrival pattern">
-            <select
+            <NativeSelect
               value={arrivalPattern}
               onChange={(e) => setArrivalPattern(e.target.value as ArrivalPattern)}
-              className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+              className="w-auto"
             >
               {(Object.keys(ARRIVAL_PATTERN_LABELS) as ArrivalPattern[]).map((p) => (
                 <option key={p} value={p}>
                   {ARRIVAL_PATTERN_LABELS[p]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormField>
           <FormField label="Students">
-            <TextInput type="number" min="1" value={numStudents} onChange={(e) => setNumStudents(e.target.value)} className="w-28" />
+            <TextInput type="number" min="1" value={numStudents} onChange={(e) => setNumStudents(e.target.value)}
+            className="w-28" />
           </FormField>
           <FormField label="Lecturers">
-            <TextInput type="number" min="1" value={numLecturers} onChange={(e) => setNumLecturers(e.target.value)} className="w-28" />
+            <TextInput type="number" min="1" value={numLecturers} onChange={(e) => setNumLecturers(e.target.value)}
+            className="w-28" />
           </FormField>
         </div>
-        <button
-          type="submit"
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+        <Button
+          type="submit" className="w-fit"
         >
           <Beaker className="w-4 h-4" strokeWidth={2} />
           Generate demand stream
-        </button>
+        </Button>
       </form>
     </Card>
   );
@@ -228,29 +234,32 @@ function ExperimentForm({
   return (
     <Card>
       <SectionHeader title="Run an experiment" />
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit}
+      className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4">
           <FormField label="Demand run">
-            <select
+            <NativeSelect
               value={demandRunId ?? ""}
               onChange={(e) => setDemandRunId(Number(e.target.value))}
-              className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+              className="w-auto"
             >
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
                   Run #{r.id} — seed {r.seed}, {ARRIVAL_PATTERN_LABELS[r.arrivalPattern]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormField>
           <FormField label="Seed">
-            <TextInput type="number" value={seed} onChange={(e) => setSeed(e.target.value)} className="w-28" />
+            <TextInput type="number" value={seed} onChange={(e) => setSeed(e.target.value)}
+            className="w-28" />
           </FormField>
         </div>
         <FormField label="Policies to compare">
           <div className="flex flex-wrap gap-3">
             {ALL_POLICIES.map((name) => (
-              <label key={name} className="inline-flex items-center gap-2 text-sm text-[var(--ink-700)] cursor-pointer">
+              <label key={name}
+              className="inline-flex items-center gap-2 text-sm text-[var(--ink-700)] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={policyNames.includes(name)}
@@ -262,14 +271,14 @@ function ExperimentForm({
             ))}
           </div>
         </FormField>
-        <button
+        <Button
           type="submit"
           disabled={policyNames.length === 0}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-fit disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FlaskConical className="w-4 h-4" strokeWidth={2} />
           Run experiment
-        </button>
+        </Button>
       </form>
     </Card>
   );
@@ -295,7 +304,8 @@ function ResultsTable({ experiment }: { experiment: Experiment }) {
         </thead>
         <tbody>
           {experiment.results.map((r) => (
-            <tr key={r.policyName} className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
+            <tr key={r.policyName}
+            className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
               <td className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{POLICY_LABELS[r.policyName]}</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniSlotsPerStudent.toFixed(2)}</td>
               <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniLecturerAccess.toFixed(2)}</td>
@@ -373,7 +383,8 @@ function FrontierScatter({ experiment, activePolicyName }: { experiment: Experim
           </thead>
           <tbody>
             {experiment.results.map((r) => (
-              <tr key={r.policyName} className="border-b border-[var(--paper-100)] last:border-0">
+              <tr key={r.policyName}
+              className="border-b border-[var(--paper-100)] last:border-0">
                 <td className="py-2 text-[var(--ink-800)]">{POLICY_LABELS[r.policyName]}</td>
                 <td className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.slotUtilizationPct}%</td>
                 <td className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.giniSlotsPerStudent.toFixed(2)}</td>
@@ -512,22 +523,22 @@ function ExperimentsTab({
           <div className="flex items-center justify-between">
             <SectionHeader title={`Results — experiment #${selected.id}`} />
             <div className="flex items-center gap-2 -mt-3">
-              <button
+              <Button variant="outline"
                 type="button"
                 onClick={() => exportExperiment(selected, "json")}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--paper-200)] bg-white text-[12.5px] font-semibold text-[var(--ink-700)] hover:bg-[var(--paper-50)] transition-colors"
+                className="text-[12.5px]"
               >
                 <Download className="w-3.5 h-3.5" strokeWidth={2} />
                 Export JSON
-              </button>
-              <button
+              </Button>
+              <Button variant="outline"
                 type="button"
                 onClick={() => exportExperiment(selected, "csv")}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--paper-200)] bg-white text-[12.5px] font-semibold text-[var(--ink-700)] hover:bg-[var(--paper-50)] transition-colors"
+                className="text-[12.5px]"
               >
                 <Download className="w-3.5 h-3.5" strokeWidth={2} />
                 Export CSV
-              </button>
+              </Button>
             </div>
           </div>
 

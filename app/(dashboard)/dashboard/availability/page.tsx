@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, CalendarPlus, Pencil, ShieldAlert, Trash2, Users2 } from "lucide-react";
+import { Pencil, ShieldAlert, Trash2 } from "lucide-react";
+import { CalendarPlus, CalendarX, UsersThree } from "@phosphor-icons/react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { Card } from "@/components/dashboard/Card";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
@@ -17,6 +18,8 @@ import type { AvailabilityException, AvailabilityRule, ExceptionType } from "@/l
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 // Mon-Fri only — matches RecurringBookingClient's DAY_OPTIONS convention
 // (office hours don't run on weekends in this dataset).
@@ -171,7 +174,8 @@ function RulesTab({
     <div className="flex flex-col gap-6">
       <Card>
         <SectionHeader title={editingId !== null ? "Edit rule" : "Add a rule"} />
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit}
+        className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">Day of week</span>
             <FilterTabs options={DAY_OPTIONS} value={form.dayOfWeek} onChange={(v) => setForm((f) => ({ ...f, dayOfWeek: v }))} />
@@ -185,17 +189,17 @@ function RulesTab({
               <TextInput type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} />
             </FormField>
             <FormField label="Slot length">
-              <select
+              <NativeSelect
                 value={form.slotLengthMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, slotLengthMinutes: Number(e.target.value) }))}
-                className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+                className="w-full"
               >
                 {SLOT_LENGTH_OPTIONS.map((m) => (
                   <option key={m} value={m}>
                     {m} min
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </FormField>
           </div>
 
@@ -217,12 +221,11 @@ function RulesTab({
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+            <Button
+              type="submit" className="w-fit"
             >
               {editingId !== null ? "Save changes" : "Add rule"}
-            </button>
+            </Button>
             {editingId !== null && (
               <button
                 type="button"
@@ -352,7 +355,8 @@ function ExceptionsTab({
     <div className="flex flex-col gap-6">
       <Card>
         <SectionHeader title="Add an exception" />
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit}
+        className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">Type</span>
             <FilterTabs
@@ -386,12 +390,11 @@ function ExceptionsTab({
             />
           </FormField>
 
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+          <Button
+            type="submit" className="w-fit"
           >
             Add exception
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -454,7 +457,8 @@ function WaitlistTab() {
           <SectionHeader title={group.slotLabel} />
           <div className="flex flex-col divide-y divide-[var(--paper-200)]">
             {group.queue.map((entry) => (
-              <div key={entry.studentName} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+              <div key={entry.studentName}
+              className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-50)] text-[var(--brand-700)] text-[11px] font-bold shrink-0 tabular-nums">
                     #{entry.position}
@@ -491,8 +495,8 @@ export default function AvailabilityPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <StatTile icon={CalendarPlus} tone={ACCENT_TOKENS.mint} value={rules.filter((r) => r.active).length} label={t("availability.activeRules")} />
-        <StatTile icon={CalendarOff} tone={HUE_TOKENS.danger} value={exceptions.filter((x) => x.type === "BLOCK").length} label={t("availability.blockedWindows")} />
-        <StatTile icon={Users2} tone={HUE_TOKENS.info} value={waitlistCount} label={t("availability.studentsWaiting")} />
+        <StatTile icon={CalendarX} tone={HUE_TOKENS.danger} value={exceptions.filter((x) => x.type === "BLOCK").length} label={t("availability.blockedWindows")} />
+        <StatTile icon={UsersThree} tone={HUE_TOKENS.info} value={waitlistCount} label={t("availability.studentsWaiting")} />
       </div>
 
       <FilterTabs

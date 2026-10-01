@@ -17,6 +17,7 @@ import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { useToast } from "@/components/ToastProvider";
 import { useI18n } from "@/i18n/provider";
 import type { MessageKey } from "@/i18n";
+import { Button } from "@/components/ui/button";
 
 type StatusFilter = "ALL" | BookingStatus;
 
@@ -122,13 +123,12 @@ export default function BookingsPage() {
             {t("bookings.selected", { count: selectedIds.size })}
           </span>
           <div className="flex items-center gap-2 ml-auto">
-            <button
+            <Button
               type="button"
               onClick={() => bulkSetStatus("CONFIRMED")}
-              className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-500)] text-white text-[13px] font-bold hover:bg-[var(--brand-600)] transition-colors"
             >
               {t("bookings.confirmSelected")}
-            </button>
+            </Button>
             <button
               type="button"
               onClick={() => setBulkDeclineOpen(true)}

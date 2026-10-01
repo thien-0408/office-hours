@@ -15,6 +15,7 @@ import { Card } from "@/components/dashboard/Card";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import type { ParsedTimetableRow, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
 import { DAY_NAME_TO_INDEX, parseTimetablePdf, type TimetableMetadata } from "@/lib/timetable/parse-pdf";
+import { Button } from "@/components/ui/button";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
@@ -269,14 +270,14 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
                 </button>
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={handleImport}
                 disabled={imported}
-                className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-xs font-bold hover:bg-[var(--brand-600)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {imported ? "Imported to Timetable" : `Confirm Import (${allRows.length} rows)`}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -301,7 +302,8 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
               </thead>
               <tbody>
                 {allRows.map((row, i) => (
-                  <tr key={i} className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)]">
+                  <tr key={i}
+                  className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)]">
                     <td className="py-2 pr-4 font-semibold text-[var(--brand-700)] whitespace-nowrap">
                       {row.day}
                       {row.date && <span className="text-[var(--ink-500)] font-normal"> ({row.date})</span>}
@@ -357,7 +359,8 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
               </thead>
               <tbody>
                 {history.map((h) => (
-                  <tr key={h.id} className="border-b border-[var(--paper-100)] last:border-0">
+                  <tr key={h.id}
+                  className="border-b border-[var(--paper-100)] last:border-0">
                     <td className="px-5 py-3 font-medium text-[var(--ink-900)] flex items-center gap-2">
                       <FileText className="w-3.5 h-3.5 text-[var(--brand-500)]" />
                       {h.fileName}

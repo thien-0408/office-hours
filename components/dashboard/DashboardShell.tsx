@@ -3,8 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   Bell,
   BookOpen,
@@ -29,6 +28,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/components/ToastProvider";
 import { LogoWithText } from "@/components/LogoWithText";
 import { initials } from "@/lib/avatar";
@@ -226,11 +232,6 @@ function SidebarContent({
             <span className="mt-1 block text-[11px] text-[var(--ink-600)]">{quickAccess.detail}</span>
           </Link>
         )}
-        {!collapsed && (
-          <div className="flex justify-end px-1">
-            <LocaleSwitcher />
-          </div>
-        )}
         <Link
           href="/dashboard/profile"
           onClick={onNavigate}
@@ -268,16 +269,12 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
   const { logout } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
-  const prefersReducedMotion = useReducedMotion();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navItems = getNavItems(user.role, t);
   const avatarSrc = useUserAvatarSrc(user.id);
-  const mobileMenuRef = useRef<HTMLButtonElement>(null);
-  const mobileDrawerRef = useRef<HTMLElement>(null);
 
   // Route changed (link click, back/forward) — close the drawer. Derived
   // during render (React's documented pattern for reacting to prop changes),
@@ -288,48 +285,16 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
     setMobileNavOpen(false);
   }
 
+  // Close the drawer if the viewport grows past the mobile breakpoint. Focus
+  // trap, Esc, scroll-lock and focus-return are handled by the Sheet primitive.
   useEffect(() => {
     if (!mobileNavOpen) return;
-
-    const drawer = mobileDrawerRef.current;
-    const menuButton = mobileMenuRef.current;
     const desktopQuery = window.matchMedia("(min-width: 768px)");
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    drawer?.querySelector<HTMLElement>('button[aria-label="Close navigation"]')?.focus();
-
     function handleViewportChange() {
       if (desktopQuery.matches) setMobileNavOpen(false);
     }
-
-    function handleDrawerKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMobileNavOpen(false);
-        return;
-      }
-      if (event.key !== "Tab" || !drawer) return;
-
-      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", handleDrawerKeyDown);
     desktopQuery.addEventListener("change", handleViewportChange);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleDrawerKeyDown);
-      desktopQuery.removeEventListener("change", handleViewportChange);
-      menuButton?.focus();
-    };
+    return () => desktopQuery.removeEventListener("change", handleViewportChange);
   }, [mobileNavOpen]);
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -369,13 +334,11 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
         <header className="sticky top-0 z-21 flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--paper-200)] bg-white/70 backdrop-blur-xl">
           <div className="flex items-center gap-2 md:hidden">
             <button
-              ref={mobileMenuRef}
               type="button"
               onClick={() => setMobileNavOpen(true)}
               className="flex items-center justify-center w-9 h-9 rounded-full text-[var(--ink-600)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
               aria-label={t("nav.openMenu")}
               aria-expanded={mobileNavOpen}
-              aria-controls={mobileNavOpen ? "mobile-navigation" : undefined}
             >
               <Menu className="w-5 h-5" strokeWidth={1.8} />
             </button>
@@ -383,7 +346,8 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
               <LogoWithText className="h-6 w-auto" />
             </Link>
           </div>
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-sm">
+          <form onSubmit={handleSearchSubmit}
+          className="hidden md:flex flex-1 max-w-sm">
             <div className="relative w-full">
               <Search
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-400)]"
@@ -410,93 +374,55 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white ring-1 ring-[var(--coral-600)]" />
             </Link>
 
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full hover:bg-[var(--brand-50)] transition-colors"
-              >
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex cursor-pointer items-center gap-2 rounded-full py-1 pl-1 pr-2.5 outline-none transition-colors hover:bg-[var(--brand-50)] focus-visible:ring-2 focus-visible:ring-[var(--brand-300)]">
                 <Image
                   src={avatarSrc}
                   alt={initials(user.fullName)}
                   width={32}
                   height={32}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--brand-50)] bg-[var(--brand-50)] shrink-0"
+                  className="h-8 w-8 shrink-0 rounded-full bg-[var(--brand-50)] object-cover ring-2 ring-[var(--brand-50)]"
                 />
-                <span className="hidden sm:block text-sm font-semibold text-[var(--ink-900)]">
-                  {user.fullName}
-                </span>
-                <ChevronDown className="w-4 h-4 text-[var(--ink-500)]" strokeWidth={1.8} />
-              </button>
-
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[var(--paper-200)] bg-white/85 backdrop-blur-xl shadow-lg py-1.5 z-10">
-                  <Link
-                    href="/dashboard/profile"
-                    className="block px-3.5 py-2 text-sm text-[var(--ink-900)] no-underline hover:bg-[var(--brand-50)]"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {t("nav.myProfile")}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setLogoutConfirmOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2 px-3.5 py-2 text-sm text-[var(--danger-700)] hover:bg-[var(--danger-100)] text-left"
-                  >
-                    <LogOut className="w-4 h-4" strokeWidth={1.8} />
-                    {t("nav.logOut")}
-                  </button>
-                </div>
-              )}
-            </div>
+                <span className="hidden text-sm font-semibold text-[var(--ink-900)] sm:block">{user.fullName}</span>
+                <ChevronDown className="h-4 w-4 text-[var(--ink-500)]" strokeWidth={1.8} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem render={<Link href="/dashboard/profile" />}>{t("nav.myProfile")}</DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setLogoutConfirmOpen(true)}
+                >
+                  <LogOut className="h-4 w-4" strokeWidth={1.8} />
+                  {t("nav.logOut")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
         <main className="flex-1 px-6 py-8 max-w-[1400px] w-full mx-auto">{children}</main>
       </div>
 
-      <AnimatePresence>
-        {mobileNavOpen && (
-          <>
-            <motion.div
-              key="backdrop"
-              className="fixed inset-0 z-30 bg-black/40 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileNavOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.aside
-              key="drawer"
-              ref={mobileDrawerRef}
-              id="mobile-navigation"
-              className="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[87vw] flex-col overflow-y-auto rounded-r-[18px] border-r border-[var(--paper-200)] bg-[var(--paper-0)] p-3 pt-5 shadow-2xl md:hidden"
-              initial={prefersReducedMotion ? { opacity: 0 } : { x: "-100%" }}
-              animate={prefersReducedMotion ? { opacity: 1 } : { x: 0 }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { x: "-100%" }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Navigation"
-            >
-              <SidebarContent
-                user={user}
-                items={navItems}
-                pathname={pathname}
-                avatarSrc={avatarSrc}
-                onNavigate={() => setMobileNavOpen(false)}
-                onClose={() => setMobileNavOpen(false)}
-                t={t}
-                navAriaLabel={t("nav.mobileNavigation")}
-              />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          id="mobile-navigation"
+          className="w-72 max-w-[87vw] gap-0 overflow-y-auto rounded-r-[18px] border-r border-[var(--paper-200)] bg-[var(--paper-0)] p-3 pt-5 data-[side=left]:w-72 md:hidden"
+        >
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SidebarContent
+            user={user}
+            items={navItems}
+            pathname={pathname}
+            avatarSrc={avatarSrc}
+            onNavigate={() => setMobileNavOpen(false)}
+            onClose={() => setMobileNavOpen(false)}
+            t={t}
+            navAriaLabel={t("nav.mobileNavigation")}
+          />
+        </SheetContent>
+      </Sheet>
 
       <ConfirmModal
         open={logoutConfirmOpen}

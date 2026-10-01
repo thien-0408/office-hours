@@ -11,6 +11,8 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getMockLecturerById, getMockLecturers, getMockRecurringSeries } from "@/lib/office-hours/mock-data";
 import type { RecurringSeries } from "@/lib/office-hours/types";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 const DAY_OPTIONS = [
   { value: "1", label: "Mon" },
@@ -62,7 +64,8 @@ function SeriesCard({ series, onCancel }: { series: RecurringSeries; onCancel: (
 
       <div className="flex flex-wrap gap-1.5">
         {series.occurrences.map((occ) => (
-          <span key={occ.id} className="inline-flex items-center gap-1.5 text-[12px] text-[var(--ink-600)] tabular-nums">
+          <span key={occ.id}
+          className="inline-flex items-center gap-1.5 text-[12px] text-[var(--ink-600)] tabular-nums">
             <StatusBadge status={occ.status} />
           </span>
         ))}
@@ -134,19 +137,20 @@ export default function RecurringBookingClient() {
           Preview only — not wired to a real recurrence engine yet.
         </p>
 
-        <form onSubmit={handleCreate} className="flex flex-col gap-4">
+        <form onSubmit={handleCreate}
+        className="flex flex-col gap-4">
           <FormField label="Lecturer">
-            <select
+            <NativeSelect
               value={lecturerId}
               onChange={(e) => setLecturerId(Number(e.target.value))}
-              className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+              className="w-full"
             >
               {lecturers.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name} — {l.department}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </FormField>
 
           <div className="flex flex-col gap-1.5">
@@ -159,14 +163,14 @@ export default function RecurringBookingClient() {
               <TextInput type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </FormField>
             <FormField label="Semester">
-              <select
+              <NativeSelect
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
-                className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+                className="w-full"
               >
                 <option>Fall 2026</option>
                 <option>Spring 2027</option>
-              </select>
+              </NativeSelect>
             </FormField>
           </div>
 
@@ -185,12 +189,11 @@ export default function RecurringBookingClient() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              className="px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+            <Button
+              type="submit" className="w-fit"
             >
               Create series
-            </button>
+            </Button>
             {created && <span className="text-[13px] text-[var(--success-700)] font-semibold">Series created</span>}
           </div>
         </form>

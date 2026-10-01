@@ -11,6 +11,7 @@ import { getMockWaitlistEntries } from "@/lib/office-hours/mock-data";
 import type { WaitlistEntry } from "@/lib/office-hours/types";
 import { formatDate, formatTime } from "@/i18n/formatters";
 import { useI18n } from "@/i18n/provider";
+import { Button } from "@/components/ui/button";
 
 type Filter = "ALL" | "WAITING" | "OFFERED";
 
@@ -88,13 +89,13 @@ function WaitlistEntryCard({
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
             onClick={onAccept}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-[var(--brand-500)] bg-[var(--brand-500)] px-3.5 py-2 text-xs font-extrabold text-white shadow-[0_5px_14px_rgba(52,101,224,0.17)] transition-colors hover:bg-[var(--brand-600)]"
+            className="min-h-[38px] border border-[var(--brand-500)] font-extrabold shadow-[0_5px_14px_rgba(52,101,224,0.17)]"
           >
             {t("waitlist.acceptOffer")}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={onDecline}
@@ -134,7 +135,8 @@ function WaitlistEntryCard({
         </div>
       </button>
       {expanded && (
-        <div id={`waitlist-entry-${entry.id}`} className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--paper-100)] pt-3 text-[11px] text-[var(--ink-600)]">
+        <div id={`waitlist-entry-${entry.id}`}
+        className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--paper-100)] pt-3 text-[11px] text-[var(--ink-600)]">
           <span>{t("waitlist.requestedSlot")}: {entry.desiredSlotLabel}</span>
           {entry.status === "WAITING" && <span>{t("waitlist.position")} #{entry.position}</span>}
         </div>

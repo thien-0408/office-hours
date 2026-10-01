@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { Booking } from "@/lib/office-hours/types";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { FormField, TextInput } from "./FormField";
 
 function toDateInputValue(iso: string) {
@@ -28,7 +29,6 @@ export function RescheduleModal({
   onClose: () => void;
   onConfirm: (input: { startAt: string; endAt: string; topic: string }) => void;
 }) {
-  const prefersReducedMotion = useReducedMotion();
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -73,76 +73,53 @@ export function RescheduleModal({
   }
 
   return (
-    <AnimatePresence>
-      {open && booking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div
-            className="absolute inset-0 bg-[var(--ink-900)]/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleClose}
-            aria-hidden="true"
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            className="relative w-full max-w-md rounded-2xl bg-white border border-[var(--paper-200)] shadow-2xl p-6"
-            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 10 }}
-            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 10 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-[var(--ink-900)]">Reschedule booking</h2>
-                <p className="text-[13px] text-[var(--ink-500)] mt-0.5">
-                  Sends a new request to {booking.lecturerName}; they&apos;ll need to confirm again.
-                </p>
-              </div>
+    <Dialog open={open && booking !== null} onOpenChange={(next) => !next && handleClose()}>
+      <DialogContent showCloseButton={false}
+      className="sm:max-w-md">
+        {booking && (
+          <form onSubmit={handleSubmit}
+          className="flex flex-col gap-4">
+            <div>
+              <DialogTitle className="text-lg font-bold text-[var(--ink-900)]">Reschedule booking</DialogTitle>
+              <DialogDescription className="mt-0.5 text-[13px] text-[var(--ink-500)]">
+                Sends a new request to {booking.lecturerName}; they&apos;ll need to confirm again.
+              </DialogDescription>
+            </div>
 
-              <FormField label="Date">
-                <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <FormField label="Date">
+              <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            </FormField>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Start time">
+                <TextInput type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
               </FormField>
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Start time">
-                  <TextInput type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
-                </FormField>
-                <FormField label="End time">
-                  <TextInput type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
-                </FormField>
-              </div>
-
-              <FormField label="Topic (optional)">
-                <TextInput
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="What do you want to discuss?"
-                />
+              <FormField label="End time">
+                <TextInput type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
               </FormField>
+            </div>
 
-              {error && <p className="text-[13px] text-[var(--danger-700)] font-semibold">{error}</p>}
+            <FormField label="Topic (optional)">
+              <TextInput
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="What do you want to discuss?"
+              />
+            </FormField>
 
-              <div className="flex items-center gap-2.5 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors"
-                >
-                  Send new request
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl border border-[var(--paper-200)] text-sm font-bold text-[var(--ink-700)] hover:bg-[var(--paper-50)] transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            {error && <p className="text-[13px] font-semibold text-[var(--danger-700)]">{error}</p>}
+
+            <div className="flex items-center gap-2.5 pt-1">
+              <Button type="submit" size="lg" className="flex-1">
+                Send new request
+              </Button>
+              <Button type="button" size="lg" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

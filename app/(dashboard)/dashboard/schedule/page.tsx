@@ -981,6 +981,8 @@ import type {
   ScheduleImportHistoryEntry,
 } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Button } from "@/components/ui/button";
 
 type PageTab = "VIEW" | "IMPORT";
 type ViewMode = "GRID" | "AGENDA";
@@ -1126,23 +1128,23 @@ export default function SchedulePage() {
 
         {tab === "VIEW" && (
           <div className="flex items-center gap-2">
-            <button
+            <Button variant="outline"
               type="button"
               onClick={() => window.print()}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--paper-200)] bg-white px-3 text-xs font-semibold text-[var(--ink-700)] transition-colors hover:bg-[var(--paper-50)]"
+              className="h-9"
               title="Print or export timetable"
             >
               <Printer className="h-3.5 w-3.5" />
               {t("schedule.print")}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => handleOpenAddModal()}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-500)] px-3.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[var(--brand-600)]"
+              className="h-9"
             >
               <Plus className="h-4 w-4" />
               {t("schedule.addEvent")}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -1382,7 +1384,8 @@ export default function SchedulePage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateManualBlock} className="flex flex-col gap-4">
+            <form onSubmit={handleCreateManualBlock}
+            className="flex flex-col gap-4">
               <FormField label="Event Title / Subject">
                 <TextInput
                   value={newTitle}
@@ -1394,46 +1397,46 @@ export default function SchedulePage() {
 
               <div className="flex flex-col gap-1.5">
                 <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">Day of Week</span>
-                <select
+                <NativeSelect
                   value={newDayOfWeek}
                   onChange={(e) => setNewDayOfWeek(Number(e.target.value))}
-                  className="rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)]"
+                  className="w-auto"
                 >
                   {Object.entries(DAY_METADATA).map(([num, meta]) => (
                     <option key={num} value={num}>
                       {meta.en} ({meta.vn})
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Start Time">
-                  <select
+                  <NativeSelect
                     value={newStartTime}
                     onChange={(e) => setNewStartTime(e.target.value)}
-                    className="rounded-xl border border-[var(--paper-200)] bg-white px-3 py-2 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] tabular-nums"
+                    className="w-auto"
                   >
                     {TIME_SLOTS_FULL.slice(0, -1).map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </FormField>
 
                 <FormField label="End Time">
-                  <select
+                  <NativeSelect
                     value={newEndTime}
                     onChange={(e) => setNewEndTime(e.target.value)}
-                    className="rounded-xl border border-[var(--paper-200)] bg-white px-3 py-2 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] tabular-nums"
+                    className="w-auto"
                   >
                     {TIME_SLOTS_FULL.slice(1).map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </FormField>
               </div>
 
@@ -1461,12 +1464,11 @@ export default function SchedulePage() {
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
-                  className="rounded-lg bg-[var(--brand-500)] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[var(--brand-600)]"
                 >
                   Add Block
-                </button>
+                </Button>
               </div>
             </form>
           </div>

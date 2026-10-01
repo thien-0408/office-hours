@@ -14,6 +14,7 @@ import { initials } from "@/lib/avatar";
 import { setAvatarOverride, useAvatarIndex } from "@/lib/use-avatar";
 import { getMockNotificationPrefs } from "@/lib/office-hours/mock-data";
 import { useI18n } from "@/i18n/provider";
+import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -102,13 +103,13 @@ export default function ProfilePage() {
           {/* No backend yet — "Save" only updates local state. Real wiring
               point: PATCH /users/me, then refreshUser() on auth-context. */}
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
               onClick={() => setSavedIdentity(true)}
-              className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
+              className="w-fit"
             >
               {t("profile.saveChanges")}
-            </button>
+            </Button>
             {savedIdentity && <span className="text-[13px] text-[var(--success-700)] font-semibold">{t("profile.saved")}</span>}
           </div>
         </div>
@@ -171,14 +172,14 @@ export default function ProfilePage() {
             <p className="text-[12.5px] text-[var(--danger-700)]">{t("profile.passwordMismatch")}</p>
           )}
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
               disabled={!passwordValid}
               onClick={() => setPasswordConfirmOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-500)]"
+              className="w-fit disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-500)]"
             >
               {t("profile.changePassword")}
-            </button>
+            </Button>
             {passwordChanged && <span className="text-[13px] text-[var(--success-700)] font-semibold">{t("profile.passwordChanged")}</span>}
           </div>
         </div>
