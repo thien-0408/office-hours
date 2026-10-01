@@ -37,6 +37,23 @@ import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
+// Print only the timetable card: clone it into a #print-root that globals.css shows alone under @media print,
+// so the sidebar, header, stat tiles and filters never reach the PDF.
+function printTimetable() {
+  const source = document.querySelector("[data-print-area]");
+  if (!source) return;
+  const root = document.createElement("div");
+  root.id = "print-root";
+  root.appendChild(source.cloneNode(true));
+  document.body.appendChild(root);
+  const cleanup = () => {
+    root.remove();
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+}
+
 type PageTab = "VIEW" | "IMPORT";
 type ViewMode = "GRID" | "AGENDA";
 
@@ -183,7 +200,7 @@ export default function SchedulePage() {
           <div className="flex items-center gap-2">
             <Button variant="outline"
               type="button"
-              onClick={() => window.print()}
+              onClick={printTimetable}
               className="h-9"
               title="Print or export timetable"
             >
@@ -334,7 +351,7 @@ export default function SchedulePage() {
               </Button>
             </Card>
           ) : (
-            <section className="overflow-hidden rounded-2xl border border-[var(--paper-200)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            <section data-print-area className="overflow-hidden rounded-2xl border border-[var(--paper-200)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
               <div className="flex flex-col gap-1 border-b border-[var(--paper-200)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-sm font-semibold tracking-[-0.01em] text-[var(--ink-900)]">

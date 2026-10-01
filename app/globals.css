@@ -264,3 +264,37 @@ body {
     cursor: pointer;
   }
 }
+/* Timetable print: only #print-root (a clone of the timetable card, see schedule/page.tsx) is printed. */
+#print-root {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+  #print-root {
+    display: block;
+  }
+  #print-root,
+  #print-root * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  #print-root [data-print-area] {
+    border: 0;
+    box-shadow: none;
+  }
+  #print-root .overflow-x-auto {
+    overflow: visible;
+  }
+  #print-root .min-w-\[980px\] {
+    min-width: 0;
+  }
+  #print-root .sticky {
+    position: static;
+  }
+}

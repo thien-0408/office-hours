@@ -678,6 +678,10 @@ export function TimetableGrid({
                                     {block.subjectName || block.title}
                                   </p>
 
+                                  {block.lecturerName && block.lecturerName !== "Chưa rõ" && (
+                                    <p className="mt-0.5 truncate text-[9px] font-medium text-[var(--ink-600)]">{block.lecturerName}</p>
+                                  )}
+
                                   <div className="mt-auto min-w-0 truncate pt-1 text-[8.5px] font-medium tabular-nums text-[var(--ink-600)]">
                                     {block.startTime}–{block.endTime}
                                     {!isCompact && block.room ? ` · ${block.room}` : ""}
@@ -698,7 +702,7 @@ export function TimetableGrid({
       </div>
 
       {onAddManualBlock && (
-        <p className="px-1 text-[10.5px] text-[var(--ink-400)]">
+        <p className="px-1 text-[10.5px] text-[var(--ink-400)] print:hidden">
           Drag vertically inside a day to select a time range. A short click creates one 30-minute slot.
         </p>
       )}
