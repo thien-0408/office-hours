@@ -403,7 +403,7 @@ export function TimetableGrid({
 
   // Keep the same compact 30-minute rhythm as the landing timetable preview.
   // Pointer selection still snaps to these exact boundaries.
-  const slotRowHeight = 24;
+  const slotRowHeight = 36;
   const rowCount = Math.max(0, displaySlots.length - 1);
   const totalGridHeight = rowCount * slotRowHeight;
   const shiftBands = useMemo(() => (
@@ -623,8 +623,8 @@ export function TimetableGrid({
                         const widthPct = 100 / block.totalCols;
                         const leftPct = block.colIndex * widthPct;
                         const styleTokens = getBlockColorStyles(block);
-                        const isCompact = blockHeight < 72;
-                        const isVeryCompact = blockHeight < 48;
+                        const isCompact = blockHeight < 84;
+                        const isVeryCompact = blockHeight < 44;
 
                         return (
                           <div
@@ -648,34 +648,41 @@ export function TimetableGrid({
                               className="flex h-full w-full cursor-pointer flex-col p-1.5 text-left"
                               title={`${block.subjectName || block.title} · ${block.startTime}–${block.endTime}`}
                             >
-                              <div className="flex min-w-0 items-center justify-between gap-1">
-                                {block.subjectCode && block.subjectCode !== "N/A" ? (
-                                  <span className={`max-w-[72%] truncate rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.04em] ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
-                                    {block.subjectCode}
+                              {isVeryCompact ? (
+                                // 30-min blocks: badge, title and time share one line so nothing is clipped
+                                <div className="flex h-full min-w-0 items-center gap-1.5">
+                                  <span className={`shrink-0 rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.04em] ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
+                                    {block.subjectCode && block.subjectCode !== "N/A" ? block.subjectCode : "Manual"}
                                   </span>
-                                ) : (
-                                  <span className={`truncate rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.04em] ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
-                                    Manual
+                                  <span className="min-w-0 flex-1 truncate text-[10px] font-semibold text-[var(--ink-900)]">
+                                    {block.subjectName || block.title}
                                   </span>
-                                )}
-                                {block.group && block.group !== "N/A" && (
-                                  <span className="truncate text-[8.5px] font-semibold text-[var(--ink-500)]">{block.group}</span>
-                                )}
-                              </div>
-
-                              <p
-                                className={`font-semibold leading-[1.35] tracking-[-0.01em] text-[var(--ink-900)] ${
-                                  isVeryCompact ? "mt-1 line-clamp-1 text-[9.5px]" : isCompact ? "mt-1 line-clamp-2 text-[10px]" : "mt-1.5 line-clamp-3 text-[11px]"
-                                }`}
-                              >
-                                {block.subjectName || block.title}
-                              </p>
-
-                              {!isVeryCompact && (
-                                <div className="mt-auto min-w-0 truncate pt-1 text-[8.5px] font-medium tabular-nums text-[var(--ink-600)]">
-                                  {block.startTime}–{block.endTime}
-                                  {!isCompact && block.room ? ` · ${block.room}` : ""}
+                                  <span className="shrink-0 text-[8.5px] font-medium tabular-nums text-[var(--ink-600)]">{block.startTime}</span>
                                 </div>
+                              ) : (
+                                <>
+                                  <div className="flex min-w-0 items-center justify-between gap-1">
+                                    <span className={`max-w-[72%] truncate rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.04em] ${styleTokens.badgeBg} ${styleTokens.badgeText}`}>
+                                      {block.subjectCode && block.subjectCode !== "N/A" ? block.subjectCode : "Manual"}
+                                    </span>
+                                    {block.group && block.group !== "N/A" && (
+                                      <span className="truncate text-[8.5px] font-semibold text-[var(--ink-500)]">{block.group}</span>
+                                    )}
+                                  </div>
+
+                                  <p
+                                    className={`mt-1 font-semibold leading-[1.35] tracking-[-0.01em] text-[var(--ink-900)] ${
+                                      isCompact ? "line-clamp-2 text-[10px]" : "line-clamp-3 text-[11px]"
+                                    }`}
+                                  >
+                                    {block.subjectName || block.title}
+                                  </p>
+
+                                  <div className="mt-auto min-w-0 truncate pt-1 text-[8.5px] font-medium tabular-nums text-[var(--ink-600)]">
+                                    {block.startTime}–{block.endTime}
+                                    {!isCompact && block.room ? ` · ${block.room}` : ""}
+                                  </div>
+                                </>
                               )}
                             </Button>
                           </div>
