@@ -11,13 +11,36 @@ export function FeaturedActionCard({
   description,
   href,
   actionLabel,
+  variant = "featured",
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
   href: string;
   actionLabel: string;
+  variant?: "featured" | "compact";
 }) {
+  if (variant === "compact") {
+    return (
+      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--brand-200)] bg-[var(--brand-50)] px-5 py-4 sm:min-h-[104px] sm:flex-row sm:items-center sm:gap-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[var(--brand-700)]">
+          <Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-bold text-[var(--ink-900)]">{title}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[var(--ink-600)]">{description}</p>
+        </div>
+        <Link
+          href={href}
+          className="inline-flex min-h-9 w-full shrink-0 items-center justify-center gap-1.5 self-start rounded-lg bg-[var(--brand-500)] px-3.5 text-[11px] font-bold text-white no-underline transition-colors hover:bg-[var(--brand-600)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-500)] sm:w-auto sm:self-auto"
+        >
+          {actionLabel}
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[var(--coral-100)] bg-gradient-to-br from-[var(--coral-100)] to-[var(--rose-100)] text-[var(--ink-900)] p-6">
       <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full bg-white/40" aria-hidden="true" />

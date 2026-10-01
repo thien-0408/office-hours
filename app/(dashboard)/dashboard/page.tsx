@@ -10,9 +10,7 @@ import {
   getMockLecturerSlotsToday,
   getMockOfficeHours,
   getMockStudentBookings,
-  getMockSuggestedLecturerSlots,
   getMockWeeklyActivity,
-  type SuggestedSlot,
 } from "@/lib/office-hours/mock-data";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
@@ -26,48 +24,48 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { SlotsTodayList } from "@/components/dashboard/SlotsTodayList";
 import { StaggerGroup, StaggerItem } from "@/components/dashboard/StaggerGroup";
 import { StatTile } from "@/components/dashboard/StatTile";
-import { SuggestedSlotsCard } from "@/components/dashboard/SuggestedSlotsCard";
 import { TaskList, type Task } from "@/components/dashboard/TaskList";
 import { UpcomingList } from "@/components/dashboard/UpcomingList";
-import { useToast } from "@/components/ToastProvider";
 import type { AuthUser } from "@/lib/auth/types";
 import type { Booking } from "@/lib/office-hours/types";
+import { useI18n } from "@/i18n/provider";
 
-function greeting(): string {
+function greeting(t: (key: import("@/i18n").MessageKey) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Morning";
-  if (hour < 18) return "Afternoon";
-  return "Evening";
+  if (hour < 12) return t("dashboard.morning");
+  if (hour < 18) return t("dashboard.afternoon");
+  return t("dashboard.evening");
 }
 
 function isToday(iso: string): boolean {
   return new Date(iso).toDateString() === new Date().toDateString();
 }
 
-function subtitleFor(role: AuthUser["role"]): string {
+function subtitleFor(role: AuthUser["role"], t: (key: import("@/i18n").MessageKey) => string): string {
   switch (role) {
     case "STUDENT":
-      return "Here's what's coming up with your advisors.";
+      return t("dashboard.studentSubtitle");
     case "LECTURER":
-      return "Here's your office-hours queue for the week.";
+      return t("dashboard.lecturerSubtitle");
     case "ADMIN":
-      return "Platform overview for the pilot semester.";
+      return t("dashboard.adminSubtitle");
   }
 }
 
-function roleLabelFor(role: AuthUser["role"]): string {
+function roleLabelFor(role: AuthUser["role"], t: (key: import("@/i18n").MessageKey) => string): string {
   switch (role) {
     case "STUDENT":
-      return "Student workspace";
+      return t("dashboard.studentWorkspace");
     case "LECTURER":
-      return "Lecturer workspace";
+      return t("dashboard.lecturerWorkspace");
     case "ADMIN":
-      return "Admin workspace";
+      return t("dashboard.adminWorkspace");
   }
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   if (!user) return null; // (dashboard)/layout.tsx redirects before this ever renders unauthenticated
 
   const firstName = user.fullName.split(" ")[0];
@@ -78,23 +76,23 @@ export default function DashboardPage() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-400)]">
-              Overview
+              {t("dashboard.overview")}
             </span>
             <span className="h-1 w-1 rounded-full bg-[var(--paper-300)]" />
             <span className="text-[11px] font-medium text-[var(--ink-500)]">
-              {roleLabelFor(user.role)}
+              {roleLabelFor(user.role, t)}
             </span>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink-900)] sm:text-[28px]">
-            {greeting()}, {firstName}
+            {greeting(t)}, {firstName}
           </h1>
-          <p className="mt-1.5 text-sm leading-6 text-[var(--ink-500)]">{subtitleFor(user.role)}</p>
+          <p className="mt-1.5 text-sm leading-6 text-[var(--ink-500)]">{subtitleFor(user.role, t)}</p>
         </div>
 
         <div className="hidden items-center gap-2 text-[11px] font-medium text-[var(--ink-400)] sm:flex">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--mint-500)]" />
-          Workspace up to date
+          {t("dashboard.upToDate")}
         </div>
       </header>
 
@@ -106,37 +104,13 @@ export default function DashboardPage() {
 }
 
 function StudentDashboard({ user }: { user: AuthUser }) {
-  const toast = useToast();
+  const { t } = useI18n();
   const [bookings, setBookings] = useState<Booking[]>(() => getMockStudentBookings());
-  const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>(() => getMockSuggestedLecturerSlots());
 
   const upcoming = bookings.filter((b) => b.status === "PENDING" || b.status === "CONFIRMED");
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
   const slotsThisWeek = getMockOfficeHours({ page: 0, size: 500 }).totalElements;
   const weeklyActivity = getMockWeeklyActivity();
-  const todayKey = new Date().toDateString();
-
-  function handleBookSuccess(slot: SuggestedSlot, topic: string) {
-    const nextId = bookings.length === 0 ? 1 : Math.max(...bookings.map((b) => b.id)) + 1;
-    const newBooking: Booking = {
-      id: nextId,
-      lecturerName: slot.lecturerName,
-      studentName: user.fullName,
-      department: slot.department,
-      topic: topic.trim() || "Office Hours Consultation",
-      startAt: slot.startAt,
-      endAt: slot.endAt,
-      status: "PENDING",
-    };
-
-    setBookings((prev) => [newBooking, ...prev]);
-    // Remove booked slot from suggestions
-    setSuggestedSlots((prev) => prev.filter((s) => s.id !== slot.id));
-
-    toast.success(`Booking request sent to ${slot.lecturerName}`, {
-      description: "Slot is held for you pending confirmation.",
-    });
-  }
 
   return (
     <DashboardColumns
@@ -149,52 +123,47 @@ function StudentDashboard({ user }: { user: AuthUser }) {
             <MiniCalendar />
           </StaggerItem>
           <StaggerItem>
-            <SectionHeader title="Upcoming" />
+            <SectionHeader title={t("dashboard.upcoming")} />
             <UpcomingList bookings={upcoming.slice(0, 3)} />
           </StaggerItem>
           <StaggerItem>
-            <SectionHeader title="To do" />
+            <SectionHeader title={t("dashboard.toDo")} />
             <TaskList />
           </StaggerItem>
         </StaggerGroup>
       }
     >
       <StaggerGroup className="flex flex-col gap-5">
-        {/* Suggested / Available Lecturer Slots */}
-        <StaggerItem>
-          <SuggestedSlotsCard
-            slots={suggestedSlots}
-            onBookSuccess={handleBookSuccess}
-          />
-        </StaggerItem>
-
         <StaggerItem className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={upcoming.length} label="Upcoming bookings" />
-          <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={pendingCount} label="Pending confirmation" />
-          <StatTile icon={Users} tone={ACCENT_TOKENS.mint} value={slotsThisWeek} label="Open slots this week" />
+          <StatTile icon={CalendarDays} tone={ACCENT_TOKENS.rose} value={upcoming.length} label={t("dashboard.upcomingBookings")} />
+          <StatTile icon={Clock} tone={HUE_TOKENS.warning} value={pendingCount} label={t("dashboard.pendingConfirmation")} />
+          <StatTile icon={Users} tone={ACCENT_TOKENS.mint} value={slotsThisWeek} label={t("dashboard.openSlotsWeek")} />
         </StaggerItem>
 
         <StaggerItem>
           <FeaturedActionCard
             icon={Search}
-            title="Browse All Faculty"
-            description="Explore office hours across all departments and discover weekly availability."
+            title={t("dashboard.browseFaculty")}
+            description={t("dashboard.browseFacultyDescription")}
             href="/dashboard/lecturers"
-            actionLabel="Explore faculty directory"
+            actionLabel={t("dashboard.exploreDirectory")}
+            variant="compact"
           />
         </StaggerItem>
 
         <StaggerItem>
           <ActivityChart
-            title="Booking activity this week"
+            title={t("dashboard.bookingActivity")}
             data={weeklyActivity}
-            highlightKey={todayKey}
             accent="rose"
+            variant="weeklyOverview"
+            valueLabel={t("chart.bookings")}
+            formatValue={(value) => `${value} ${t(value === 1 ? "chart.booking" : "chart.bookings")}`}
           />
         </StaggerItem>
 
         <StaggerItem>
-          <SectionHeader title="Your bookings" href="/dashboard/bookings" />
+          <SectionHeader title={t("dashboard.yourBookings")} href="/dashboard/bookings" />
           <BookingsTable bookings={bookings} perspective="student" />
         </StaggerItem>
       </StaggerGroup>
