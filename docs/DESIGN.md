@@ -143,6 +143,8 @@ the network tab for the actual `q=` the browser received before assuming the sou
 
 **App shell strategy:** one shared responsive shell, nav swaps by role (Student / Lecturer / Admin) — not separate portals.
 
+**Sidebar treatment (approved Refined light direction):** a white inset panel on the app canvas with a subtle border and shadow, rounded navigation rows, a slim brand-blue active indicator, and a pale brand tint. Keep the role-specific navigation and a single shared desktop/mobile content component. The lower area holds a role-appropriate quick-access link and the signed-in profile; the collapsed desktop rail retains accessible link labels. Use the existing `--paper-*`, `--ink-*`, and `--brand-*` tokens, and keep status hues reserved for status meaning.
+
 **Device target:** desktop-first, responsive down. Slot picker / calendar views are optimized for desktop first.
 
 ---
@@ -290,7 +292,15 @@ Badge pattern: `background: var(--{hue}-100); color: var(--{hue}-700);` with a s
 
 ---
 
-## 5. Open items
+## 5. Locale and content rules
+
+The product supports English (`en-US`) and Vietnamese (`vi-VN`) through the shared `i18n/` dictionaries. `NEXT_LOCALE` is the persisted cookie; changing the locale updates the document language and reloads the current route so server and client copy stay in sync.
+
+Use the shared `LocaleSwitcher` in public, auth, and app-shell navigation. Use `i18n/formatters.ts` for dates, times, relative times, and numbers; do not create route-specific `en-US` formatters. Keep labels short enough for Vietnamese expansion, and let buttons wrap rather than truncate.
+
+---
+
+## 6. Open items
 
 1. ~~Geist vs. system-font stack~~ — resolved, see §2.
 2. Confirm brand blue saturation/hue reads right once placed next to real content (not just the swatch preview) — revisit after the first 2-3 pages ship.
