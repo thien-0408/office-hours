@@ -1,84 +1,152 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, ListPlus, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { ChevronDown, ShieldAlert } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { useToast } from "@/components/ToastProvider";
 import { Card } from "@/components/dashboard/Card";
-import { FilterTabs } from "@/components/dashboard/FilterTabs";
-import { StatTile } from "@/components/dashboard/StatTile";
 import { WaitlistStatusBadge } from "@/components/dashboard/WaitlistStatusBadge";
 import { getMockWaitlistEntries } from "@/lib/office-hours/mock-data";
 import type { WaitlistEntry } from "@/lib/office-hours/types";
-import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
-import { HUE_TOKENS } from "@/lib/ui/status-hues";
+import { formatDate, formatTime } from "@/i18n/formatters";
+import { useI18n } from "@/i18n/provider";
 
 type Filter = "ALL" | "WAITING" | "OFFERED";
 
-const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+function secondsUntil(iso?: string): number {
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
+}
 
-function expiresInLabel(iso: string): string {
-  const diffMin = Math.round((new Date(iso).getTime() - new Date().getTime()) / 60000);
-  if (diffMin <= 0) return "expired";
-  if (diffMin < 60) return `${diffMin}m left`;
-  return `${Math.round(diffMin / 60)}h left`;
+function formatCountdown(totalSeconds: number): string {
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}:${minutes.toString().padStart(2, "0")}`;
 }
 
 function WaitlistEntryCard({
   entry,
   onAccept,
   onDecline,
+  expanded,
+  onToggle,
 }: {
   entry: WaitlistEntry;
   onAccept: () => void;
   onDecline: () => void;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
+  const { locale, t } = useI18n();
+  const [remainingSeconds, setRemainingSeconds] = useState(() => secondsUntil(entry.offeredExpiresAt));
+  const slotLength = entry.desiredSlotLabel.split(",").pop()?.trim() || entry.desiredSlotLabel;
+
+  useEffect(() => {
+    if (entry.status !== "OFFERED" || !entry.offeredExpiresAt) return;
+    const timer = window.setInterval(() => setRemainingSeconds(secondsUntil(entry.offeredExpiresAt)), 1000);
+    return () => window.clearInterval(timer);
+  }, [entry.offeredExpiresAt, entry.status]);
+
+  if (entry.status === "OFFERED" && entry.offeredStartAt && entry.offeredExpiresAt) {
+    return (
+      <Card className="rounded-[15px] border-[var(--info-500)] p-[18px] shadow-[0_8px_24px_rgba(124,92,255,0.1)]">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={`waitlist-entry-${entry.id}`}
+          className="flex w-full items-start justify-between gap-3.5 text-left"
+        >
+          <div className="min-w-0">
+            <WaitlistStatusBadge status={entry.status} labelOverride={t("waitlist.offerWaiting")} />
+            <h3 className="mt-[11px] text-sm font-semibold tracking-[-0.02em] text-[var(--ink-900)]">{entry.lecturerName}</h3>
+            <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+              {entry.department || t("waitlist.requestedSlot")} · {entry.desiredSlotLabel}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-start gap-3">
+            <div className="grid justify-items-end gap-1.5 text-[11px] font-bold text-[var(--warning-700)]">
+              <span>{t("waitlist.expiresIn")}</span>
+              <strong className="text-lg tracking-[-0.04em] text-[var(--ink-900)] tabular-nums">
+                {remainingSeconds > 0 ? formatCountdown(remainingSeconds) : t("waitlist.status.expired")}
+              </strong>
+            </div>
+            <ChevronDown className={`mt-0.5 h-4 w-4 text-[var(--ink-400)] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+          </div>
+        </button>
+
+        {expanded && (
+          <div id={`waitlist-entry-${entry.id}`}>
+            <div className="my-4 flex flex-wrap gap-x-[18px] gap-y-2 border-y border-[var(--paper-100)] py-3 text-[11px] text-[var(--ink-700)]">
+              <span>{formatDate(entry.offeredStartAt, locale, { weekday: "short", month: "long", day: "numeric" })}</span>
+              <span>{formatTime(entry.offeredStartAt, locale)} · {slotLength}</span>
+              <span>{entry.department || t("waitlist.requestedSlot")}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onAccept}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-[var(--brand-500)] bg-[var(--brand-500)] px-3.5 py-2 text-xs font-extrabold text-white shadow-[0_5px_14px_rgba(52,101,224,0.17)] transition-colors hover:bg-[var(--brand-600)]"
+          >
+            {t("waitlist.acceptOffer")}
+          </button>
+          <button
+            type="button"
+            onClick={onDecline}
+            className="inline-flex min-h-[38px] items-center justify-center rounded-[10px] border border-[var(--paper-200)] bg-white px-3.5 py-2 text-xs font-extrabold text-[var(--ink-700)] transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
+          >
+            {t("waitlist.decline")}
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="flex flex-col gap-2.5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold text-[var(--ink-900)]">{entry.lecturerName}</p>
-          <p className="text-[12.5px] text-[var(--ink-500)]">
-            {entry.department} · {entry.desiredSlotLabel}
+    <Card className="flex items-center justify-between gap-4 rounded-[15px] p-[15px_17px]">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={`waitlist-entry-${entry.id}`}
+        className="flex w-full items-center justify-between gap-4 text-left"
+      >
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-[-0.02em] text-[var(--ink-900)]">{entry.lecturerName}</h3>
+          <p className="mt-1 text-[11px] text-[var(--ink-500)]">
+            {entry.department || t("waitlist.requestedSlot")} · {entry.desiredSlotLabel}
           </p>
         </div>
-        <WaitlistStatusBadge status={entry.status} />
-      </div>
-
-      {entry.status === "WAITING" && (
-        <p className="text-[13px] text-[var(--ink-600)] tabular-nums">Position #{entry.position} in queue</p>
-      )}
-
-      {entry.status === "OFFERED" && entry.offeredStartAt && entry.offeredExpiresAt && (
-        <>
-          <p className="text-[13px] text-[var(--ink-700)] tabular-nums">
-            Offered: {timeFormatter.format(new Date(entry.offeredStartAt))} ·{" "}
-            <span className="font-semibold text-[var(--warning-700)]">{expiresInLabel(entry.offeredExpiresAt)}</span>
-          </p>
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onAccept}
-              className="px-3.5 py-2 rounded-xl bg-[var(--brand-500)] text-white text-[13px] font-bold hover:bg-[var(--brand-600)] transition-colors"
-            >
-              Accept
-            </button>
-            <button
-              type="button"
-              onClick={onDecline}
-              className="px-3.5 py-2 rounded-xl border border-[var(--danger-100)] text-[var(--danger-700)] text-[13px] font-bold hover:bg-[var(--danger-100)] transition-colors"
-            >
-              Decline
-            </button>
-          </div>
-        </>
+        <div className="flex shrink-0 items-center gap-3">
+          {entry.status === "WAITING" ? (
+            <span className="whitespace-nowrap text-xs font-extrabold text-[var(--brand-700)]">
+              {t("waitlist.position")} #{entry.position}
+            </span>
+          ) : (
+            <WaitlistStatusBadge status={entry.status} />
+          )}
+          <ChevronDown className={`h-4 w-4 text-[var(--ink-400)] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+        </div>
+      </button>
+      {expanded && (
+        <div id={`waitlist-entry-${entry.id}`} className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--paper-100)] pt-3 text-[11px] text-[var(--ink-600)]">
+          <span>{t("waitlist.requestedSlot")}: {entry.desiredSlotLabel}</span>
+          {entry.status === "WAITING" && <span>{t("waitlist.position")} #{entry.position}</span>}
+        </div>
       )}
     </Card>
   );
 }
 
 export default function WaitlistPage() {
+  const { t } = useI18n();
   const [entries, setEntries] = useState<WaitlistEntry[]>(() => getMockWaitlistEntries());
+  const [expandedId, setExpandedId] = useState<number | null>(() => getMockWaitlistEntries().find((entry) => entry.status === "OFFERED")?.id ?? null);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [pendingDeclineId, setPendingDeclineId] = useState<number | null>(null);
   const toast = useToast();
@@ -86,47 +154,88 @@ export default function WaitlistPage() {
   const waitingCount = entries.filter((e) => e.status === "WAITING").length;
   const offeredCount = entries.filter((e) => e.status === "OFFERED").length;
   const filtered = filter === "ALL" ? entries : entries.filter((e) => e.status === filter);
+  const filterOptions: { value: Filter; label: string }[] = [
+    { value: "ALL", label: t("waitlist.all") },
+    { value: "WAITING", label: t("waitlist.waiting") },
+    { value: "OFFERED", label: t("waitlist.offered") },
+  ];
 
   function accept(id: number) {
     setEntries((list) => list.map((e) => (e.id === id ? { ...e, status: "FULFILLED" } : e)));
-    toast.success("Offer accepted");
+    setExpandedId(null);
+    toast.success(t("waitlist.offerAccepted"));
   }
 
   function decline(id: number) {
     setEntries((list) => list.map((e) => (e.id === id ? { ...e, status: "CANCELLED" } : e)));
+    setExpandedId(null);
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-[var(--ink-900)]">My Waitlist</h1>
-
-      <div className="grid grid-cols-2 gap-4">
-        <StatTile icon={ListPlus} tone={ACCENT_TOKENS.mint} value={waitingCount} label="In queue" />
-        <StatTile icon={Clock} tone={HUE_TOKENS.info} value={offeredCount} label="Offers waiting" />
+    <div className="w-full max-w-[1060px]">
+      <div className="mb-6 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[var(--brand-700)]">
+            <span className="h-0.5 w-[18px] rounded-full bg-[var(--brand-500)]" />
+            {t("waitlist.eyebrow")}
+          </p>
+          <h1 className="text-[clamp(27px,3vw,36px)] font-bold leading-[1.08] tracking-[-0.055em] text-[var(--ink-900)]">
+            {t("waitlist.title")}
+          </h1>
+          <p className="mt-2 max-w-[55ch] text-[13px] leading-[1.6] text-[var(--ink-500)]">{t("waitlist.description")}</p>
+        </div>
+        <Link
+          href="/dashboard/lecturers"
+          className="inline-flex min-h-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--paper-200)] bg-white px-3.5 py-2 text-xs font-extrabold text-[var(--ink-700)] transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
+        >
+          {t("waitlist.browseOpenSlots")}
+        </Link>
       </div>
 
-      <FilterTabs
-        options={[
-          { value: "ALL", label: "All" },
-          { value: "WAITING", label: "Waiting" },
-          { value: "OFFERED", label: "Offered" },
-        ]}
-        value={filter}
-        onChange={setFilter}
-      />
+      <div className="mb-5 grid grid-cols-2 gap-2.5">
+        <div className="rounded-[13px] border border-[var(--paper-200)] bg-white px-4 py-3.5 shadow-[0_7px_22px_rgba(11,27,73,0.035)]">
+          <span className="block text-[10px] font-bold text-[var(--ink-500)]">{t("waitlist.inQueue")}</span>
+          <strong className="mt-1 block text-[22px] tracking-[-0.06em] text-[var(--ink-900)] tabular-nums">{waitingCount}</strong>
+        </div>
+        <div className="rounded-[13px] border border-[var(--paper-200)] bg-white px-4 py-3.5 shadow-[0_7px_22px_rgba(11,27,73,0.035)]">
+          <span className="block text-[10px] font-bold text-[var(--ink-500)]">{t("waitlist.offersWaiting")}</span>
+          <strong className="mt-1 block text-[22px] tracking-[-0.06em] text-[var(--info-700)] tabular-nums">{offeredCount}</strong>
+        </div>
+      </div>
+
+      <div className="mb-5 inline-flex flex-wrap items-center gap-1 rounded-full border border-[var(--paper-200)] bg-white p-1">
+        {filterOptions.map((option) => {
+          const active = option.value === filter;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setFilter(option.value)}
+              className={`min-h-[29px] rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                active ? "bg-[var(--brand-500)] text-white" : "text-[var(--ink-600)] hover:bg-[var(--paper-100)]"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
 
       {filtered.length === 0 ? (
-        <Card className="text-center py-10">
-          <p className="text-sm text-[var(--ink-500)]">Nothing here.</p>
+        <Card className="p-[34px] text-center">
+          <p className="text-sm text-[var(--ink-500)]">{t("waitlist.nothing")}</p>
         </Card>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid w-full gap-[11px]">
           {filtered.map((entry) => (
             <WaitlistEntryCard
               key={entry.id}
               entry={entry}
               onAccept={() => accept(entry.id)}
               onDecline={() => setPendingDeclineId(entry.id)}
+              expanded={expandedId === entry.id}
+              onToggle={() => setExpandedId((current) => (current === entry.id ? null : entry.id))}
             />
           ))}
         </div>
@@ -135,15 +244,15 @@ export default function WaitlistPage() {
       <ConfirmModal
         open={pendingDeclineId !== null}
         icon={ShieldAlert}
-        title="Decline this offer?"
-        description="The slot will be offered to the next person in the queue."
-        confirmLabel="Decline offer"
-        cancelLabel="Never mind"
+        title={t("waitlist.declineQuestion")}
+        description={t("waitlist.declineDescription")}
+        confirmLabel={t("waitlist.declineOffer")}
+        cancelLabel={t("bookings.neverMind")}
         onCancel={() => setPendingDeclineId(null)}
         onConfirm={() => {
           if (pendingDeclineId !== null) decline(pendingDeclineId);
           setPendingDeclineId(null);
-          toast.show("neutral", "Offer declined");
+          toast.show("neutral", t("waitlist.offerDeclined"));
         }}
       />
     </div>

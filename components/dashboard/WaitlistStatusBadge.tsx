@@ -1,9 +1,14 @@
+"use client";
+
 import type { WaitlistStatus } from "@/lib/office-hours/types";
 import { HUE_TOKENS, WAITLIST_STATUS_CONFIG } from "@/lib/ui/status-hues";
+import { useI18n } from "@/i18n/provider";
 
-export function WaitlistStatusBadge({ status }: { status: WaitlistStatus }) {
+export function WaitlistStatusBadge({ status, labelOverride }: { status: WaitlistStatus; labelOverride?: string }) {
   const { label, hue } = WAITLIST_STATUS_CONFIG[status];
+  const { t } = useI18n();
   const tokens = HUE_TOKENS[hue];
+  const key = `waitlist.status.${status.toLowerCase()}` as Parameters<typeof t>[0];
 
   return (
     <span
@@ -11,7 +16,7 @@ export function WaitlistStatusBadge({ status }: { status: WaitlistStatus }) {
       style={{ background: tokens.bg, color: tokens.text }}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: tokens.dot }} />
-      {label}
+      {labelOverride ?? t(key) ?? label}
     </span>
   );
 }
