@@ -6,7 +6,9 @@ import { Card } from "@/components/dashboard/Card";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { FormField, TextInput } from "@/components/dashboard/FormField";
 import { LecturerCard } from "@/components/dashboard/LecturerCard";
-import { getMockLecturers } from "@/lib/office-hours/mock-data";
+import { SuggestedSlotsCard } from "@/components/dashboard/SuggestedSlotsCard";
+import { useToast } from "@/components/ToastProvider";
+import { getMockLecturers, getMockSuggestedLecturerSlots, type SuggestedSlot } from "@/lib/office-hours/mock-data";
 
 const ALL_LECTURERS = getMockLecturers();
 const DEPARTMENTS = Array.from(new Set(ALL_LECTURERS.map((l) => l.department))).sort();
@@ -23,6 +25,7 @@ const DAYS: { value: string; label: string }[] = [
 export default function LecturersBrowser() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
+  const toast = useToast();
 
   // Seeded once from the URL's ?q= via the useState initializer — no effect
   // syncing the input to the search param.
@@ -30,6 +33,14 @@ export default function LecturersBrowser() {
   const [department, setDepartment] = useState<string>("ALL");
   const [day, setDay] = useState<string>("ALL");
   const [availability, setAvailability] = useState<string>("ALL");
+  const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>(() => getMockSuggestedLecturerSlots());
+
+  function handleBookSuccess(slot: SuggestedSlot) {
+    setSuggestedSlots((prev) => prev.filter((suggested) => suggested.id !== slot.id));
+    toast.success(`Booking request sent to ${slot.lecturerName}`, {
+      description: "Slot is held for you pending confirmation.",
+    });
+  }
 
   const filtered = getMockLecturers({
     q: query || undefined,
@@ -40,6 +51,14 @@ export default function LecturersBrowser() {
 
   return (
     <div className="flex flex-col gap-6">
+      <SuggestedSlotsCard
+        slots={suggestedSlots}
+        onBookSuccess={handleBookSuccess}
+        showBrowseLink={false}
+      />
+
+      <div className="h-px bg-[var(--paper-200)]" aria-hidden="true" />
+
       <div>
         <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Find a Lecturer</h1>
         <p className="text-sm text-[var(--ink-600)]">Browse availability across every department.</p>

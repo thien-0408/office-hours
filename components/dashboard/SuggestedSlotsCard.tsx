@@ -20,9 +20,11 @@ type FilterCategory = "ALL" | "CS" | "MATH" | "SOON";
 export function SuggestedSlotsCard({
   slots,
   onBookSuccess,
+  showBrowseLink = true,
 }: {
   slots: SuggestedSlot[];
   onBookSuccess?: (slot: SuggestedSlot, topic: string) => void;
+  showBrowseLink?: boolean;
 }) {
   const [filter, setFilter] = useState<FilterCategory>("ALL");
   const [bookingSlot, setBookingSlot] = useState<SuggestedSlot | null>(null);
@@ -77,13 +79,15 @@ export function SuggestedSlotsCard({
           </p>
         </div>
 
-        <Link
-          href="/dashboard/lecturers"
-          className="text-xs font-bold text-[var(--brand-600)] hover:text-[var(--brand-700)] flex items-center gap-1 group self-start sm:self-auto"
-        >
-          Browse all lecturers
-          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        {showBrowseLink && (
+          <Link
+            href="/dashboard/lecturers"
+            className="text-xs font-bold text-[var(--brand-600)] hover:text-[var(--brand-700)] flex items-center gap-1 group self-start sm:self-auto"
+          >
+            Browse all lecturers
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        )}
       </div>
 
       {/* Filter Tabs */}
