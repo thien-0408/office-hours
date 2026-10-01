@@ -463,7 +463,7 @@ function exportExperiment(experiment: Experiment, format: "json" | "csv") {
 
 function ExperimentCard({ experiment, selected, onSelect }: { experiment: Experiment; selected: boolean; onSelect: () => void }) {
   return (
-    <button
+    <Button variant="bare" size="bare"
       type="button"
       onClick={onSelect}
       className={`text-left rounded-2xl border p-4 transition-colors ${
@@ -475,7 +475,7 @@ function ExperimentCard({ experiment, selected, onSelect }: { experiment: Experi
         Demand run #{experiment.demandRunId} · seed {experiment.seed} · {experiment.policyNames.length} polic{experiment.policyNames.length === 1 ? "y" : "ies"}
       </p>
       <p className="text-[12px] text-[var(--ink-500)] mt-1 tabular-nums">{dateTimeFormatter.format(new Date(experiment.runAt))}</p>
-    </button>
+    </Button>
   );
 }
 

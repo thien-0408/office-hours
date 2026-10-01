@@ -123,7 +123,7 @@ export function TimetableAgenda({
                 const isOnline = block.locationType === "ONLINE" || block.room?.toUpperCase().includes("ONLINE");
 
                 return (
-                  <button
+                  <Button variant="bare" size="bare"
                     type="button"
                     key={block.id}
                     onClick={() => onSelectBlock?.(block)}
@@ -209,7 +209,7 @@ export function TimetableAgenda({
                         <p className="mt-2 line-clamp-2 text-[10.5px] leading-4 text-[var(--ink-400)]">{block.notes}</p>
                       )}
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

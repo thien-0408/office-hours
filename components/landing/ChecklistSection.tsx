@@ -3,22 +3,6 @@
 import { NEO_DARK } from "@/components/landing/shared";
 import { useI18n } from "@/i18n/provider";
 
-const CHECKLIST_ROWS = [
-  "Email the lecturer, wait, follow up",
-  "Cross-check three different class schedules",
-  "Hope the slot on the sign-up sheet is still open",
-  "Ask a friend to double-check for conflicts",
-  "Refresh your inbox for a reply",
-  "Guess whether the waitlist is actually in order",
-  "Re-confirm the meeting the night before",
-  "Find out someone else got the same slot",
-];
-
-const STICKIES = [
-  { text: "It said open, but was already taken", row: 2 },
-  { text: "Still waiting to hear back...", row: 6 },
-];
-
 export default function ChecklistSection() {
   const { t } = useI18n();
   const rows = [

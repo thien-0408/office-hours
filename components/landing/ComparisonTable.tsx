@@ -3,21 +3,6 @@
 import { LimeButton, NEO_LIGHT } from "@/components/landing/shared";
 import { useI18n } from "@/i18n/provider";
 
-const ROWS = [
-  { label: "Setup time", officehours: "Live in a day", email: "Ongoing chaos", spreadsheet: "An afternoon, then upkeep", doorSheet: "None — and that's the problem" },
-  { label: "Conflict checking", officehours: "Automatic, every time", email: "Manual, error-prone", spreadsheet: "Manual", doorSheet: "None" },
-  { label: "Cost", officehours: "Free", email: "Free (your time)", spreadsheet: "Free (your time)", doorSheet: "Free (your patience)" },
-  { label: "Fair waitlist", officehours: "Policy-driven, logged", email: "Whoever replies first", spreadsheet: "Whoever edits first", doorSheet: "Whoever gets there first" },
-  { label: "Works from your phone", officehours: "Yes", email: "Sort of", spreadsheet: "Barely", doorSheet: "No" },
-] as const;
-
-const COLUMNS = [
-  { key: "officehours", label: "OfficeHours", highlight: true },
-  { key: "email", label: "Email threads", highlight: false },
-  { key: "spreadsheet", label: "Shared spreadsheet", highlight: false },
-  { key: "doorSheet", label: "Sign-up sheet on the door", highlight: false },
-] as const;
-
 export default function ComparisonTable() {
   const { t } = useI18n();
   const columns = [

@@ -68,7 +68,7 @@ export function MiniCalendar({
           const hasBooking = markedDates.some((d) => isSameDay(d, day));
           const isToday = isSameDay(day, today);
           return (
-            <button
+            <Button variant="bare" size="bare"
               key={day.toISOString()}
               type="button"
               onClick={() => {
@@ -90,7 +90,7 @@ export function MiniCalendar({
                 className={`h-1 w-1 rounded-full ${hasBooking ? (selectedDay ? "bg-white" : "bg-[var(--rose-500)]") : "bg-transparent"}`}
                 aria-hidden
               />
-            </button>
+            </Button>
           );
         })}
       </div>

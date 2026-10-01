@@ -40,12 +40,6 @@ const HOUR_LABELS = Array.from({ length: ROW_COUNT + 1 }, (_, i) => {
   return m === 0 ? `${h.toString().padStart(2, "0")}:00` : "";
 });
 
-const SHIFTS = [
-  { label: "Ca Sáng", from: 7 * 60 + 30, to: 12 * 60 + 30 },
-  { label: "Ca Chiều", from: 12 * 60 + 30, to: 16 * 60 + 30 },
-  { label: "Ca Tối", from: 16 * 60 + 30, to: 18 * 60 + 30 },
-];
-
 const HUE_STYLES: Record<Hue, string> = {
   blue: "bg-blue-100 border-blue-400 text-blue-900",
   orange: "bg-orange-100 border-orange-400 text-orange-900",

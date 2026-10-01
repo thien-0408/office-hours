@@ -643,7 +643,7 @@ export function TimetableGrid({
                               width: `calc(${widthPct}% - 4px)`,
                             }}
                           >
-                            <button
+                            <Button variant="bare" size="bare"
                               type="button"
                               className="flex h-full w-full cursor-pointer flex-col p-1.5 text-left"
                               title={`${block.subjectName || block.title} · ${block.startTime}–${block.endTime}`}
@@ -677,7 +677,7 @@ export function TimetableGrid({
                                   {!isCompact && block.room ? ` · ${block.room}` : ""}
                                 </div>
                               )}
-                            </button>
+                            </Button>
                           </div>
                         );
                       })}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import { Card } from "./Card";
@@ -29,7 +30,7 @@ export function TaskList({ tasks: initialTasks = DEFAULT_TASKS }: { tasks?: Task
   return (
     <Card className="flex flex-col gap-1">
       {tasks.map((task) => (
-        <button
+        <Button variant="bare" size="bare"
           key={task.id}
           type="button"
           onClick={() => toggle(task.id)}
@@ -45,7 +46,7 @@ export function TaskList({ tasks: initialTasks = DEFAULT_TASKS }: { tasks?: Task
           >
             {task.label}
           </span>
-        </button>
+        </Button>
       ))}
     </Card>
   );

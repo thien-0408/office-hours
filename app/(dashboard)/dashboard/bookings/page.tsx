@@ -21,14 +21,6 @@ import { Button } from "@/components/ui/button";
 
 type StatusFilter = "ALL" | BookingStatus;
 
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "ALL", label: "All" },
-  ...(Object.keys(BOOKING_STATUS_CONFIG) as BookingStatus[]).map((status) => ({
-    value: status,
-    label: BOOKING_STATUS_CONFIG[status].label,
-  })),
-];
-
 function dataForRole(role: "STUDENT" | "LECTURER" | "ADMIN", t: (key: MessageKey) => string): {
   bookings: Booking[];
   perspective: "student" | "lecturer" | "admin";

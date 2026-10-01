@@ -44,7 +44,7 @@ export function AvatarPickerModal({
           {MEMOJI_INDICES.map((index) => {
             const selected = index === currentIndex;
             return (
-              <button
+              <Button variant="bare" size="bare"
                 key={index}
                 type="button"
                 onClick={() => onSelect(index)}
@@ -56,7 +56,7 @@ export function AvatarPickerModal({
               >
                 <Image src={`/memoji/${index}.png`} alt="" width={56} height={56}
                 className="h-full w-full object-cover" />
-              </button>
+              </Button>
             );
           })}
         </div>

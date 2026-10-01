@@ -4,33 +4,6 @@ import { useState } from "react";
 import { NEO_LIGHT } from "@/components/landing/shared";
 import { useI18n } from "@/i18n/provider";
 
-const FAQS = [
-  {
-    q: "Who is OfficeHours for?",
-    a: "Any student or lecturer at a participating institution. Students book slots; lecturers set availability and confirm requests; admins manage semesters and department rollout.",
-  },
-  {
-    q: "Is it really free?",
-    a: "Yes — free for students and lecturers. There's no paid tier, no card required, no seat limit.",
-  },
-  {
-    q: "How does conflict checking work?",
-    a: "Every open slot is already matched against your imported class schedule and your lecturer's teaching schedule, so what you see is what's actually free — enforced at the database level, not just in the app.",
-  },
-  {
-    q: "What happens if a slot fills up?",
-    a: "You join a waitlist. Offers go out by a published, logged policy — not by who refreshed fastest — and you can see your position at any time.",
-  },
-  {
-    q: "Can my whole department switch over?",
-    a: "Yes. Admins can bulk-import a department's official schedule export, and every lecturer keeps their own availability rules from day one.",
-  },
-  {
-    q: "Do I need to install anything?",
-    a: "No — it runs in the browser on desktop or mobile. Nothing to download for students or lecturers.",
-  },
-];
-
 export default function FAQAccordion() {
   const [open, setOpen] = useState<number | null>(0);
   const { t } = useI18n();

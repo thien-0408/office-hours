@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import type { BookableSlot } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
 import { formatDate, formatTime } from "@/i18n/formatters";
@@ -41,7 +42,7 @@ export function WeekSlotGrid({
             {daySlots.map((slot) => {
               const disabled = !slot.available || slot.conflict;
               return (
-                <button
+                <Button variant="bare" size="bare"
                   key={slot.id}
                   type="button"
                   disabled={disabled}
@@ -54,7 +55,7 @@ export function WeekSlotGrid({
                   }`}
                 >
                   {formatTime(new Date(slot.startAt), locale)}
-                </button>
+                </Button>
               );
             })}
           </div>

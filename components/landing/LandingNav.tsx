@@ -5,13 +5,6 @@ import { SmoothAnchor } from "@/components/landing/shared";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { useI18n } from "@/i18n/provider";
 
-const LINKS = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#why-us", label: "Why us" },
-  { href: "#faqs", label: "FAQs" },
-];
-
 export default function LandingNav() {
   const { t } = useI18n();
   const links = [

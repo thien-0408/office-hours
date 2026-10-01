@@ -1,8 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "framer-motion";
-import { X, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { TOAST_VARIANT_CONFIG, toastHueTokens, type ToastVariant } from "@/lib/ui/toast-config";
 
 // Non-blocking, auto-dismissing action feedback — the counterpart to
@@ -106,7 +107,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItemData; onDismiss: () =
           </p>
         )}
         {toast.action && (
-          <button
+          <Button variant="bare" size="bare"
             type="button"
             onClick={() => {
               toast.action?.onClick?.();
@@ -116,7 +117,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItemData; onDismiss: () =
             className="text-[12.5px] font-bold text-[var(--brand-300)] hover:text-[var(--brand-200)] mt-1.5"
           >
             {toast.action.label}
-          </button>
+          </Button>
         )}
       </div>
     </motion.div>

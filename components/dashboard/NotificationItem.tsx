@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import type { Notification } from "@/lib/office-hours/types";
 import { NOTIFICATION_TYPE_CONFIG, notificationTone } from "@/lib/ui/notification-config";
 import { relativeTime } from "@/lib/ui/relative-time";
@@ -14,7 +15,7 @@ export function NotificationItem({
   const tone = notificationTone(notification.type);
 
   return (
-    <button
+    <Button variant="bare" size="bare"
       type="button"
       onClick={onClick}
       className={`w-full flex items-start gap-3 px-5 py-4 text-left border-b border-[var(--paper-100)] last:border-0 transition-colors hover:bg-[var(--paper-50)] ${
@@ -32,6 +33,6 @@ export function NotificationItem({
           {relativeTime(notification.createdAt)}
         </span>
       </span>
-    </button>
+    </Button>
   );
 }

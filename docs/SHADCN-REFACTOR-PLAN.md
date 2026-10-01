@@ -20,7 +20,7 @@ treatment in DESIGN.md §1 is not being pursued.
 | 4 Data display | done | `StatusBadge`, `WaitlistStatusBadge`, admin "Active/Inactive" -> `Badge`; all 8 app tables -> `Table*`; shared `SortButton` extracted (was duplicated); `DashboardSkeleton` -> `Skeleton` |
 | 5 Auth | skipped | Out of scope by decision (see above) |
 | 6 Monster files | partial | `schedule/page.tsx` (1.4k lines) and `TimetableGrid.tsx` had their buttons/selects/modals migrated but were **not split** into sub-components; the top ~900 lines of `schedule/page.tsx` are a commented-out legacy implementation that can simply be deleted (be careful: scripted edits must anchor on `\nexport default function SchedulePage`, not the first match) |
-| 7 Cleanup | done | ESLint `no-restricted-syntax` (warn) flags `<button className>` and `<input|textarea|select className>` outside `components/ui`, landing and auth. **18 accepted warnings remain**: bespoke tile/row buttons (slot picker, calendar day, avatar grid, task/notification rows, timetable cells, toast action) plus `TimetableShowcaseDemo`/`WelcomeExperience` (landing-style) |
+| 7 Cleanup | done | ESLint `no-restricted-syntax` (warn) flags `<button className>` and `<input|textarea|select className>` outside `components/ui`, landing and auth. **0 warnings**: bespoke tile/row buttons use `<Button variant="bare" size="bare">` (no chrome; keeps shared focus ring, cursor, disabled state) |
 
 **Button variants** (all in `components/ui/button.tsx`): `default`, `outline`, `secondary`, `ghost`, `destructive`, `link`, `glass`,
 `ghost-danger|success|brand` (tone-on-hover icon/row actions), `outline-danger`, `dark`, `link-brand|danger|muted`.

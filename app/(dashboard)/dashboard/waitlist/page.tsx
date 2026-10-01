@@ -53,7 +53,7 @@ function WaitlistEntryCard({
   if (entry.status === "OFFERED" && entry.offeredStartAt && entry.offeredExpiresAt) {
     return (
       <Card className="rounded-[15px] border-[var(--info-500)] p-[18px] shadow-[0_8px_24px_rgba(124,92,255,0.1)]">
-        <button
+        <Button variant="bare" size="bare"
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
@@ -76,7 +76,7 @@ function WaitlistEntryCard({
             </div>
             <ChevronDown className={`mt-0.5 h-4 w-4 text-[var(--ink-400)] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
           </div>
-        </button>
+        </Button>
 
         {expanded && (
           <div id={`waitlist-entry-${entry.id}`}>
@@ -111,7 +111,7 @@ function WaitlistEntryCard({
 
   return (
     <Card className="flex items-center justify-between gap-4 rounded-[15px] p-[15px_17px]">
-      <button
+      <Button variant="bare" size="bare"
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
@@ -134,7 +134,7 @@ function WaitlistEntryCard({
           )}
           <ChevronDown className={`h-4 w-4 text-[var(--ink-400)] transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
         </div>
-      </button>
+      </Button>
       {expanded && (
         <div id={`waitlist-entry-${entry.id}`}
         className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--paper-100)] pt-3 text-[11px] text-[var(--ink-600)]">

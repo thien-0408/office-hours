@@ -5,15 +5,6 @@ import { useI18n } from "@/i18n/provider";
 
 type Tone = "lime" | "paper" | "dark";
 
-const CELLS: { title: string; tone: Tone }[] = [
-  { title: "One calendar checked against every class schedule", tone: "lime" },
-  { title: "One waitlist, offered by a published policy", tone: "paper" },
-  { title: "One point of contact for every booking", tone: "lime" },
-  { title: "One-click confirm or decline for lecturers", tone: "paper" },
-  { title: "One database guard — never a double-booked slot", tone: "lime" },
-  { title: "brand", tone: "dark" },
-];
-
 const TONE_STYLES: Record<Tone, string> = {
   lime: `bg-[var(--po-accent)] text-[var(--po-text-primary)] ${NEO_LIGHT}`,
   paper: `bg-[var(--po-surface)] text-[var(--po-text-primary)] ${NEO_LIGHT}`,

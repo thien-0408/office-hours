@@ -33,6 +33,9 @@ const buttonVariants = cva(
         "link-brand": "h-auto p-0 text-[var(--brand-500)] hover:underline",
         "link-danger": "h-auto p-0 text-[var(--danger-700)] hover:underline",
         "link-muted": "h-auto p-0 text-[var(--ink-600)] hover:text-[var(--ink-900)]",
+        // No chrome at all: bespoke clickable tiles/rows that still get the shared focus ring,
+        // cursor, disabled state and Base UI button semantics. Pair with size="bare".
+        bare: "active:translate-y-0",
         glass:
           "border-[var(--glass-border)] bg-[var(--glass-bg)] text-white backdrop-blur hover:bg-white/25",
       },
@@ -42,6 +45,7 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-10 gap-2 rounded-xl px-5 text-sm has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4",
+        bare: "h-auto justify-start rounded-none border-0 text-left text-[length:inherit] font-[inherit] whitespace-normal",
         icon: "size-9 rounded-xl",
         "icon-md": "size-8 rounded-full",
         "icon-xs":

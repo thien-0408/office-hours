@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
   Calendar,
@@ -79,7 +80,7 @@ export function TimetableShowcaseDemo() {
 
         {/* Tab Controls */}
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
-          <button
+          <Button variant="bare" size="bare"
             type="button"
             onClick={() => setTab("STUDENT_SCHEDULE")}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -90,8 +91,8 @@ export function TimetableShowcaseDemo() {
           >
             <Calendar className="w-3.5 h-3.5 text-blue-600" />
             1. Your AAO Schedule
-          </button>
-          <button
+          </Button>
+          <Button variant="bare" size="bare"
             type="button"
             onClick={() => setTab("LECTURER_HOURS")}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -102,8 +103,8 @@ export function TimetableShowcaseDemo() {
           >
             <Clock className="w-3.5 h-3.5 text-coral-500" />
             2. Lecturer Hours
-          </button>
-          <button
+          </Button>
+          <Button variant="bare" size="bare"
             type="button"
             onClick={() => setTab("CONFLICT_MATCH")}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -114,7 +115,7 @@ export function TimetableShowcaseDemo() {
           >
             <Sparkles className="w-3.5 h-3.5" />
             3. Conflict Matching ✨
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -51,7 +51,7 @@ export default function ProfilePage() {
         <SectionHeader title={t("profile.identity")} />
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
-            <button
+            <Button variant="bare" size="bare"
               type="button"
               onClick={() => setAvatarPickerOpen(true)}
               className="group relative rounded-full"
@@ -67,7 +67,7 @@ export default function ProfilePage() {
               <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-500)] text-white ring-2 ring-white group-hover:bg-[var(--brand-600)] transition-colors">
                 <Pencil className="w-3 h-3" strokeWidth={2.2} />
               </span>
-            </button>
+            </Button>
             <div>
               <p className="text-sm font-semibold text-[var(--ink-900)]">{t("profile.avatar")}</p>
               <Button variant="link-brand"

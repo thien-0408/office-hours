@@ -8,14 +8,6 @@ interface StepCard {
   body: string;
 }
 
-const CARDS: StepCard[] = [
-  { n: "01", title: "Create your profile", body: "One form. Department, courses, and your usual hours." },
-  { n: "02", title: "Set weekly availability", body: "Recurring hours plus one-off exceptions when plans change." },
-  { n: "03", title: "Students request a slot", body: "They see only what's actually open — already checked for you." },
-  { n: "04", title: "We check for conflicts", body: "Every request is matched against class schedules automatically." },
-  { n: "05", title: "You confirm, it's live", body: "One tap to confirm or decline. The calendar updates instantly." },
-];
-
 const ROTATIONS = ["-rotate-1", "rotate-1", "-rotate-1", "rotate-1", "-rotate-1"];
 
 export default function ProcessTimeline() {

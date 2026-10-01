@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -105,21 +107,21 @@ export default async function PublicOfficeHoursPage({ searchParams }: PageProps)
             <label htmlFor="department" className="text-xs font-semibold text-slate-600">
               {t("public.department")}
             </label>
-            <input
+            <Input
               id="department"
               name="department"
               type="text"
               defaultValue={department}
               placeholder={t("public.departmentPlaceholder")}
-              className="px-3.5 py-2.5 rounded-lg border border-blue-100 bg-white text-sm text-slate-800 placeholder:text-slate-400 min-w-[240px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all"
+              className="min-w-[240px] rounded-lg border-blue-100 text-slate-800 placeholder:text-slate-400 focus-visible:border-blue-400 focus-visible:ring-blue-400"
             />
           </div>
-          <button
+          <Button variant="bare" size="bare"
             type="submit"
             className="bg-blue-600 text-white text-[13px] font-bold px-[18px] py-2.5 rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg transition-all"
           >
             {t("common.filter")}
-          </button>
+          </Button>
           {department && (
             <Link
               href="/public/office-hours"

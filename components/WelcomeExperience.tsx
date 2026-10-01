@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -281,7 +282,7 @@ export default function WelcomeExperience() {
               const label =
                 tab === "STUDENT" ? "Students & Advisees" : tab === "LECTURER" ? "Faculty Advisors" : "Department Chairs";
               return (
-                <button
+                <Button variant="bare" size="bare"
                   key={tab}
                   type="button"
                   onClick={() => setActiveRole(tab)}
@@ -292,7 +293,7 @@ export default function WelcomeExperience() {
                   }`}
                 >
                   {label}
-                </button>
+                </Button>
               );
             })}
           </div>

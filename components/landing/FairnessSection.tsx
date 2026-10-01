@@ -1,17 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { DarkButton, NEO_LIGHT, NEO_DARK } from "@/components/landing/shared";
 import { useI18n } from "@/i18n/provider";
 
 const ROTATIONS = ["-rotate-1", "rotate-1", "rotate-1", "-rotate-1"];
-
-const TILES = [
-  { label: "FCFS", sub: "First-come, first-served" },
-  { label: "Priority", sub: "Weighted by need" },
-  { label: "Round-robin", sub: "Rotates fairly" },
-  { label: "Hybrid", sub: "Best of all three" },
-];
 
 export default function FairnessSection() {
   const { t } = useI18n();

@@ -6,21 +6,6 @@ import { memojiSrc } from "@/lib/avatar";
 import { CheckBadge, PillTag, LimeButton, NEO_LIGHT, NEO_DARK } from "@/components/landing/shared";
 import { useI18n } from "@/i18n/provider";
 
-const PLAN_INCLUDES = [
-  "Unlimited bookings, every semester",
-  "Conflict-checked against your class schedule",
-  "Fair, policy-driven waitlist",
-  "Recurring booking series",
-  "Notifications & reminders",
-  "100% free — no card required",
-];
-
-const SUPPORT_ADDONS = [
-  "Priority email support for lecturers",
-  "Bulk schedule import for your department",
-  "Custom availability rules",
-];
-
 const PREVIEW_LECTURERS = [
   { name: "Dr. Elena Ruiz", dept: "Biology", seed: "prev-1" },
   { name: "Marcus Webb", dept: "Economics", seed: "prev-2" },
