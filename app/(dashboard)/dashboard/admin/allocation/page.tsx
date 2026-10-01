@@ -12,7 +12,7 @@ import { getMockAllocationEvents, getMockAllocationPolicies } from "@/lib/office
 import type { AllocationDecision, AllocationEvent, AllocationPolicy, AllocationPolicyName } from "@/lib/office-hours/types";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,7 +117,7 @@ function PoliciesTab({ policies, setPolicies }: { policies: AllocationPolicy[]; 
         <form onSubmit={handleSubmit}
         className="flex flex-col gap-4">
           <FormField label="Policy type">
-            <NativeSelect
+            <SelectField
               value={name}
               onChange={(e) => handleNameChange(e.target.value as AllocationPolicyName)}
               className="w-full"
@@ -127,7 +127,7 @@ function PoliciesTab({ policies, setPolicies }: { policies: AllocationPolicy[]; 
                   {POLICY_LABELS[n]}
                 </option>
               ))}
-            </NativeSelect>
+            </SelectField>
           </FormField>
 
           {fields.length > 0 && (
@@ -265,7 +265,7 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-end gap-3">
         <FormField label="Policy">
-          <NativeSelect
+          <SelectField
             value={policyFilter}
             onChange={(e) => setPolicyFilter(e.target.value as AllocationPolicyName | "ALL")}
             className="w-auto"
@@ -276,7 +276,7 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
                 {POLICY_LABELS[p.name]}
               </option>
             ))}
-          </NativeSelect>
+          </SelectField>
         </FormField>
         <FilterTabs
           options={[

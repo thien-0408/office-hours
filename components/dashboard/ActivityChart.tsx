@@ -22,7 +22,7 @@ import { Card } from "./Card";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 
 // All chart styles keep one highlighted point and a neutral base so the accent
 // remains meaningful instead of turning a single weekly measure into a rainbow.
@@ -283,13 +283,13 @@ export function ActivityChart({
           <label className="sr-only" htmlFor={`chart-style-${chartId}`}>
             {t("chart.style")}
           </label>
-          <NativeSelect size="sm"
+          <SelectField size="sm"
             id={`chart-style-${chartId}`}
             value={chartStyle}
             onChange={(event) => setChartStyle(event.target.value as ChartStyle)} className="max-w-[210px] text-[11px]"
           >
             {chartOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </NativeSelect>
+          </SelectField>
           <Button variant="link-muted"
             type="button"
             onClick={() => setShowTable((v) => !v)} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-500)]"

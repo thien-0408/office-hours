@@ -980,7 +980,7 @@ import type {
   ScheduleImportHistoryEntry,
 } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -1369,7 +1369,7 @@ export default function SchedulePage() {
 
               <div className="flex flex-col gap-1.5">
                 <span className="text-[12.5px] font-semibold text-[var(--ink-700)]">Day of Week</span>
-                <NativeSelect
+                <SelectField
                   value={newDayOfWeek}
                   onChange={(e) => setNewDayOfWeek(Number(e.target.value))}
                   className="w-auto"
@@ -1379,12 +1379,12 @@ export default function SchedulePage() {
                       {meta.en} ({meta.vn})
                     </option>
                   ))}
-                </NativeSelect>
+                </SelectField>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Start Time">
-                  <NativeSelect
+                  <SelectField
                     value={newStartTime}
                     onChange={(e) => setNewStartTime(e.target.value)}
                     className="w-auto"
@@ -1394,11 +1394,11 @@ export default function SchedulePage() {
                         {t}
                       </option>
                     ))}
-                  </NativeSelect>
+                  </SelectField>
                 </FormField>
 
                 <FormField label="End Time">
-                  <NativeSelect
+                  <SelectField
                     value={newEndTime}
                     onChange={(e) => setNewEndTime(e.target.value)}
                     className="w-auto"
@@ -1408,7 +1408,7 @@ export default function SchedulePage() {
                         {t}
                       </option>
                     ))}
-                  </NativeSelect>
+                  </SelectField>
                 </FormField>
               </div>
 

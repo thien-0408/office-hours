@@ -18,7 +18,7 @@ import type { AvailabilityException, AvailabilityRule, ExceptionType } from "@/l
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 
 // Mon-Fri only — matches RecurringBookingClient's DAY_OPTIONS convention
@@ -187,7 +187,7 @@ function RulesTab({
               <TextInput type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} />
             </FormField>
             <FormField label="Slot length">
-              <NativeSelect
+              <SelectField
                 value={form.slotLengthMinutes}
                 onChange={(e) => setForm((f) => ({ ...f, slotLengthMinutes: Number(e.target.value) }))}
                 className="w-full"
@@ -197,7 +197,7 @@ function RulesTab({
                     {m} min
                   </option>
                 ))}
-              </NativeSelect>
+              </SelectField>
             </FormField>
           </div>
 

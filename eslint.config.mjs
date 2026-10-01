@@ -14,7 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   // docs/SHADCN-REFACTOR-PLAN.md Phase 7: app code should use components/ui
-  // (Button, Input, NativeSelect, Textarea) instead of hand-styled form controls.
+  // (Button, Input, SelectField, Textarea) instead of hand-styled form controls.
   // "warn" because a few bespoke surfaces (slot tiles, row buttons, avatar grid)
   // legitimately stay raw <button>s. Auth and landing run on their own neo-brutalist
   // style (--po-*) and are exempt, as is components/ui itself.
@@ -30,7 +30,7 @@ const eslintConfig = defineConfig([
         },
         {
           selector: "JSXOpeningElement[name.name=/^(input|textarea|select)$/] > JSXAttribute[name.name='className']",
-          message: "Use Input / Textarea / NativeSelect from @/components/ui instead of a hand-styled form control.",
+          message: "Use Input / Textarea / SelectField from @/components/ui instead of a hand-styled form control.",
         },
       ],
     },

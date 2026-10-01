@@ -16,7 +16,7 @@ import {
 } from "@/lib/office-hours/mock-data";
 import type { AdminScheduleEntry, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -71,7 +71,7 @@ function OwnerPicker({
           />
         </div>
         <FormField label={ownerRole === "LECTURER" ? "Lecturer" : "Student"}>
-          <NativeSelect
+          <SelectField
             value={ownerName}
             onChange={(e) => setOwnerName(e.target.value)}
             className="sm:w-64"
@@ -81,7 +81,7 @@ function OwnerPicker({
                 {p.fullName}
               </option>
             ))}
-          </NativeSelect>
+          </SelectField>
         </FormField>
       </div>
     </Card>

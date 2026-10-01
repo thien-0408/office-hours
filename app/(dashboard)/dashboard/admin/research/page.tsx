@@ -34,7 +34,7 @@ import type {
 } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,7 +93,7 @@ function DemandRunForm({ onSubmit }: { onSubmit: (run: Omit<SyntheticDemandRun, 
             className="w-28" />
           </FormField>
           <FormField label="Arrival pattern">
-            <NativeSelect
+            <SelectField
               value={arrivalPattern}
               onChange={(e) => setArrivalPattern(e.target.value as ArrivalPattern)}
               className="w-auto"
@@ -103,7 +103,7 @@ function DemandRunForm({ onSubmit }: { onSubmit: (run: Omit<SyntheticDemandRun, 
                   {ARRIVAL_PATTERN_LABELS[p]}
                 </option>
               ))}
-            </NativeSelect>
+            </SelectField>
           </FormField>
           <FormField label="Students">
             <TextInput type="number" min="1" value={numStudents} onChange={(e) => setNumStudents(e.target.value)}
@@ -239,7 +239,7 @@ function ExperimentForm({
       className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4">
           <FormField label="Demand run">
-            <NativeSelect
+            <SelectField
               value={demandRunId ?? ""}
               onChange={(e) => setDemandRunId(Number(e.target.value))}
               className="w-auto"
@@ -249,7 +249,7 @@ function ExperimentForm({
                   Run #{r.id} — seed {r.seed}, {ARRIVAL_PATTERN_LABELS[r.arrivalPattern]}
                 </option>
               ))}
-            </NativeSelect>
+            </SelectField>
           </FormField>
           <FormField label="Seed">
             <TextInput type="number" value={seed} onChange={(e) => setSeed(e.target.value)}

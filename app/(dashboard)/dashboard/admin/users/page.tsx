@@ -11,7 +11,7 @@ import { getMockAdminUsers, getMockSemesters } from "@/lib/office-hours/mock-dat
 import type { AdminUserRow, Semester } from "@/lib/office-hours/types";
 import type { UserRole } from "@/lib/auth/types";
 import { useI18n } from "@/i18n/provider";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SortButton } from "@/components/dashboard/SortButton";
@@ -51,7 +51,7 @@ function UserEditRow({
       <TableCell className="px-5 py-3.5" colSpan={5}>
         <div className="flex flex-wrap items-end gap-3">
           <FormField label="Role">
-            <NativeSelect
+            <SelectField
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
               className="w-auto"
@@ -59,7 +59,7 @@ function UserEditRow({
               <option value="STUDENT">Student</option>
               <option value="LECTURER">Lecturer</option>
               <option value="ADMIN">Admin</option>
-            </NativeSelect>
+            </SelectField>
           </FormField>
           <FormField label="Department">
             <TextInput

@@ -11,7 +11,7 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getMockLecturerById, getMockLecturers, getMockRecurringSeries } from "@/lib/office-hours/mock-data";
 import type { RecurringSeries } from "@/lib/office-hours/types";
-import { NativeSelect } from "@/components/ui/native-select";
+import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 
 const DAY_OPTIONS = [
@@ -139,7 +139,7 @@ export default function RecurringBookingClient() {
         <form onSubmit={handleCreate}
         className="flex flex-col gap-4">
           <FormField label="Lecturer">
-            <NativeSelect
+            <SelectField
               value={lecturerId}
               onChange={(e) => setLecturerId(Number(e.target.value))}
               className="w-full"
@@ -149,7 +149,7 @@ export default function RecurringBookingClient() {
                   {l.name} — {l.department}
                 </option>
               ))}
-            </NativeSelect>
+            </SelectField>
           </FormField>
 
           <div className="flex flex-col gap-1.5">
@@ -162,14 +162,14 @@ export default function RecurringBookingClient() {
               <TextInput type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </FormField>
             <FormField label="Semester">
-              <NativeSelect
+              <SelectField
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
                 className="w-full"
               >
                 <option>Fall 2026</option>
                 <option>Spring 2027</option>
-              </NativeSelect>
+              </SelectField>
             </FormField>
           </div>
 

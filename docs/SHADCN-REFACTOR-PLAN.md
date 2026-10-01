@@ -13,9 +13,9 @@ treatment in DESIGN.md §1 is not being pursued.
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 Foundations | done | shadcn init + token mapping; `Button` (variants below), `Input`, `Textarea`, `Label`, `Card`, `Badge`, `Skeleton`, `Switch`, `Tabs`, `Dialog`, `AlertDialog`, `Sheet`, `DropdownMenu`, `Tooltip`, `Table`, `NativeSelect`, `Checkbox` |
+| 0 Foundations | done | shadcn init + token mapping; `Button` (variants below), `Input`, `Textarea`, `Label`, `Card`, `Badge`, `Skeleton`, `Switch`, `Tabs`, `Dialog`, `AlertDialog`, `Sheet`, `DropdownMenu`, `Tooltip`, `Table`, `SelectField`, `Checkbox` |
 | 1 Dashboard cards | done | `NextUpCard` on `Button`/`buttonVariants`; `FilterTabs` is a wrapper over `Tabs` with 5 skins (`pill`, `compact`, `chips`, `dark`, `paper`). `dashboard/Card` is intentionally **kept** as a token-styled div (the shadcn `Card` is a flex-col with `gap`/`overflow-hidden` and would break ~40 call sites that pass their own layout); it is now keyboard-operable when `onClick` is passed. Use `components/ui/card` for new composed cards |
-| 2 Forms | done | `FormField`/`TextInput` -> `Label`/`Input`; `ToggleSwitch` -> `Switch`; every hand-styled `<select>` -> `NativeSelect`; 2 `<textarea>` -> `Textarea`; 4 checkboxes -> `Checkbox` |
+| 2 Forms | done | **Selects use `SelectField` (`components/ui/select-field.tsx`), a wrapper over the Base UI `Select` that takes plain `<option>` children and a native-style `onChange`, so the popup is styled (a first pass used a native `<select>`, whose OS popup ignored the theme).** | `FormField`/`TextInput` -> `Label`/`Input`; `ToggleSwitch` -> `Switch`; every hand-styled `<select>` -> `SelectField`; 2 `<textarea>` -> `Textarea`; 4 checkboxes -> `Checkbox` |
 | 3 Overlays | done | `ConfirmModal` -> `AlertDialog` (glass look kept); `AvatarPickerModal`, `BookSlotModal`, `RescheduleModal`, the schedule "Add event" modal and the `TimetableGrid` session-details modal -> `Dialog`; `DashboardShell` mobile drawer -> `Sheet`, user menu and `LocaleSwitcher` -> `DropdownMenu` (outside-click/Esc/focus-return for free) |
 | 4 Data display | done | `StatusBadge`, `WaitlistStatusBadge`, admin "Active/Inactive" -> `Badge`; all 8 app tables -> `Table*`; shared `SortButton` extracted (was duplicated); `DashboardSkeleton` -> `Skeleton` |
 | 5 Auth | skipped | Out of scope by decision (see above) |
@@ -93,7 +93,7 @@ primary-button class string across 20 files, 18 repeats of the bordered white in
 | Destructive/danger buttons (Decline, Cancel booking, delete) | bookings/[id], admin/users, availability, waitlist | `Button variant="destructive"` | Variant currently tinted-style; verify contrast vs `--danger-100/700` |
 | Icon-only buttons (collapse sidebar, calendar chevrons, pencil/trash) | DashboardShell, MiniCalendar, availability | `Button size="icon*"` | Requires `aria-label` — several are missing it |
 | `TextInput` in `FormField.tsx` + raw `<input>` (18×) | FormField, LoginForm, RegisterForm, BookingsTable search, DashboardShell search, research | `Input` + `Label`; keep `FormField` as a thin wrapper | Auth needs glass variant |
-| `<select>` (16×) styled by hand | schedule/page (6), admin/*, availability, recurring, ActivityChart | `Select` (Base UI) or native `NativeSelect` | Use `NativeSelect` where option lists are huge/simple to avoid regressions |
+| `<select>` (16×) styled by hand | schedule/page (6), admin/*, availability, recurring, ActivityChart | `Select` (Base UI) or native `SelectField` | Use `SelectField` where option lists are huge/simple to avoid regressions |
 | `<textarea>` (2×) | allocation, bookings/[id] | `Textarea` | |
 | Hand-rolled modals (`fixed inset-0`, 12× / 9 files) + framer-motion | BookSlotModal, RescheduleModal, AvatarPickerModal, ConfirmModal (glass), DashboardShell (mobile drawer), schedule/page, TimetableGrid, LoginForm, WelcomeExperience | `Dialog` (+ `AlertDialog` for ConfirmModal) ; `Sheet` for mobile drawer | Biggest win: focus-trap, Esc, scroll-lock, aria are currently re-implemented per file. ConfirmModal's glass look → a `glass` content variant |
 | `FilterTabs` segmented control | bookings, notifications | `Tabs` (pill variant) | Keep `FilterTabs` API as a wrapper so call sites don't change |
@@ -133,7 +133,7 @@ Edit `components/ui/button.tsx` once (then call sites stay clean):
 `NextUpCard`, `UpcomingList`, `StatTile`, `MiniCalendar`, `TaskList`, `FilterTabs`, `SectionHeader`.
 
 **Phase 2 — Forms**
-`FormField`/`TextInput` → `Label`+`Input`; `ToggleSwitch` → `Switch`; `<select>` → `Select`/`NativeSelect`.
+`FormField`/`TextInput` → `Label`+`Input`; `ToggleSwitch` → `Switch`; `<select>` → `SelectField`.
 Files: FormField, ToggleSwitch, BookSlotModal, RescheduleModal, availability, profile, recurring, admin/users, admin/allocation, bookings/[id].
 
 **Phase 3 — Overlays (highest payoff)**
@@ -178,7 +178,7 @@ Delete dead one-off components (`FormField.TextInput`, `ToggleSwitch`, etc.), ad
 Root cause: Tailwind 4 preflight sets buttons to `cursor: default`.
 
 **Fixed globally** by the base-layer rule in `app/globals.css` (`button:not(:disabled)`, `[role=button]`, `summary`, `select`);
-`Button`, `Switch`, `NativeSelect` and `DropdownMenuItem` also set it themselves. Brace-aware re-scan after the refactor
+`Button`, `Switch`, `SelectField` and `DropdownMenuItem` also set it themselves. Brace-aware re-scan after the refactor
 (the first scan in this doc over-counted because it stopped at the `>` in `=>`):
 **31 raw `<button>` remain (app + components, excl. auth/landing), 9 carry the class, the rest rely on the global rule.**
 All clickable non-buttons are fixed (`Card` with `onClick` is now `role=button` + keyboard + `cursor-pointer`;
