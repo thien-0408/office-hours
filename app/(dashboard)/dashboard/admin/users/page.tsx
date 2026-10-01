@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpDown, CalendarCheck, ShieldAlert, Trash2, UserX } from "lucide-react";
+import { CalendarCheck, ShieldAlert, Trash2, UserX } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { Card } from "@/components/dashboard/Card";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
@@ -13,6 +13,9 @@ import type { UserRole } from "@/lib/auth/types";
 import { useI18n } from "@/i18n/provider";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortButton } from "@/components/dashboard/SortButton";
+import { Badge } from "@/components/ui/badge";
 
 type Tab = "USERS" | "SEMESTERS";
 type RoleFilter = UserRole | "ALL";
@@ -25,28 +28,9 @@ function formatDate(iso: string): string {
 
 function StatusPill({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-[var(--success-100)] text-[var(--success-700)]">
-      Active
-    </span>
+    <Badge variant="success">Active</Badge>
   ) : (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11.5px] font-semibold bg-[var(--paper-100)] text-[var(--ink-500)]">
-      Inactive
-    </span>
-  );
-}
-
-function SortButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-        active ? "text-[var(--brand-700)]" : "text-[var(--ink-500)] hover:text-[var(--brand-700)]"
-      }`}
-    >
-      {label}
-      <ArrowUpDown className="w-3 h-3" strokeWidth={2} />
-    </button>
+    <Badge variant="neutral">Inactive</Badge>
   );
 }
 
@@ -63,8 +47,8 @@ function UserEditRow({
   const [department, setDepartment] = useState(user.department ?? "");
 
   return (
-    <tr className="border-b border-[var(--paper-100)] bg-[var(--brand-50)]">
-      <td className="px-5 py-3.5" colSpan={5}>
+    <TableRow className="border-b border-[var(--paper-100)] bg-[var(--brand-50)]">
+      <TableCell className="px-5 py-3.5" colSpan={5}>
         <div className="flex flex-wrap items-end gap-3">
           <FormField label="Role">
             <NativeSelect
@@ -92,17 +76,16 @@ function UserEditRow({
             >
               Save
             </Button>
-            <button
+            <Button variant="link-muted"
               type="button"
               onClick={onCancel}
-              className="text-[13px] font-semibold text-[var(--ink-600)] hover:text-[var(--ink-900)]"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -148,19 +131,19 @@ function UsersTab({ users, setUsers }: { users: AdminUserRow[]; setUsers: React.
         </Card>
       ) : (
         <Card className="p-0 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--paper-200)]">
-                <th className="text-left px-5 py-3">
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--paper-200)]">
+                <TableHead className="text-left px-5 py-3">
                   <SortButton label="Name" active onClick={() => setSortAscending((v) => !v)} />
-                </th>
-                <th className="text-left px-5 py-3 hidden sm:table-cell">Role</th>
-                <th className="text-left px-5 py-3 hidden sm:table-cell">Department</th>
-                <th className="text-left px-5 py-3">Status</th>
-                <th className="text-right px-5 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+                <TableHead className="text-left px-5 py-3 hidden sm:table-cell">Role</TableHead>
+                <TableHead className="text-left px-5 py-3 hidden sm:table-cell">Department</TableHead>
+                <TableHead className="text-left px-5 py-3">Status</TableHead>
+                <TableHead className="text-right px-5 py-3">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((u) =>
                 editingId === u.id ? (
                   <UserEditRow
@@ -175,40 +158,38 @@ function UsersTab({ users, setUsers }: { users: AdminUserRow[]; setUsers: React.
                     }}
                   />
                 ) : (
-                  <tr key={u.id}
+                  <TableRow key={u.id}
                   className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
-                    <td className="px-5 py-3.5">
+                    <TableCell className="px-5 py-3.5">
                       <p className="font-semibold text-[var(--ink-900)]">{u.fullName}</p>
                       <p className="text-[12px] text-[var(--ink-500)]">{u.email}</p>
-                    </td>
-                    <td className="px-5 py-3.5 text-[var(--ink-700)] hidden sm:table-cell">{u.role}</td>
-                    <td className="px-5 py-3.5 text-[var(--ink-700)] hidden sm:table-cell">{u.department ?? "—"}</td>
-                    <td className="px-5 py-3.5">
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-[var(--ink-700)] hidden sm:table-cell">{u.role}</TableCell>
+                    <TableCell className="px-5 py-3.5 text-[var(--ink-700)] hidden sm:table-cell">{u.department ?? "—"}</TableCell>
+                    <TableCell className="px-5 py-3.5">
                       <StatusPill active={u.active} />
-                    </td>
-                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                      <button
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-right whitespace-nowrap">
+                      <Button variant="link-brand"
                         type="button"
-                        onClick={() => setEditingId(u.id)}
-                        className="text-[13px] font-semibold text-[var(--brand-500)] hover:underline mr-3"
+                        onClick={() => setEditingId(u.id)} className="mr-3"
                       >
                         Edit
-                      </button>
+                      </Button>
                       {u.active && (
-                        <button
+                        <Button variant="link-danger"
                           type="button"
                           onClick={() => setPendingDeactivateId(u.id)}
-                          className="text-[13px] font-semibold text-[var(--danger-700)] hover:underline"
                         >
                           Deactivate
-                        </button>
+                        </Button>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </Card>
       )}
 
@@ -255,23 +236,21 @@ function SemesterCard({
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {!semester.active && (
-          <button
+          <Button variant="ghost-success" size="icon-md"
             type="button"
             onClick={onActivate}
             title="Activate"
-            className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--success-100)] hover:text-[var(--success-700)] transition-colors"
           >
             <CalendarCheck className="w-3.5 h-3.5" strokeWidth={2} />
-          </button>
+          </Button>
         )}
-        <button
+        <Button variant="ghost-danger" size="icon-md"
           type="button"
           onClick={onDelete}
           title="Delete"
-          className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
+        </Button>
       </div>
     </Card>
   );

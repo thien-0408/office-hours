@@ -99,22 +99,20 @@ function RuleCard({
         </p>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <button
+        <Button variant="ghost-brand" size="icon-md"
           type="button"
           onClick={onEdit}
           aria-label="Edit rule"
-          className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost-danger" size="icon-md"
           type="button"
           onClick={onDelete}
           aria-label="Delete rule"
-          className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
+        </Button>
       </div>
     </Card>
   );
@@ -227,13 +225,12 @@ function RulesTab({
               {editingId !== null ? "Save changes" : "Add rule"}
             </Button>
             {editingId !== null && (
-              <button
+              <Button variant="link-muted"
                 type="button"
                 onClick={resetForm}
-                className="text-sm font-semibold text-[var(--ink-600)] hover:text-[var(--ink-900)]"
               >
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -310,14 +307,13 @@ function ExceptionCard({ exception, onDelete }: { exception: AvailabilityExcepti
         </p>
         {exception.reason && <p className="text-[12.5px] text-[var(--ink-500)] mt-0.5">{exception.reason}</p>}
       </div>
-      <button
+      <Button variant="ghost-danger" size="icon-md"
         type="button"
         onClick={onDelete}
-        aria-label="Delete exception"
-        className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors shrink-0"
+        aria-label="Delete exception" className="shrink-0"
       >
         <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-      </button>
+      </Button>
     </Card>
   );
 }

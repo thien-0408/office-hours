@@ -20,6 +20,9 @@ import { Table2 } from "lucide-react";
 import type { ActivityPoint } from "@/lib/office-hours/mock-data";
 import { Card } from "./Card";
 import { useI18n } from "@/i18n/provider";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { NativeSelect } from "@/components/ui/native-select";
 
 // All chart styles keep one highlighted point and a neutral base so the accent
 // remains meaningful instead of turning a single weekly measure into a rainbow.
@@ -280,22 +283,20 @@ export function ActivityChart({
           <label className="sr-only" htmlFor={`chart-style-${chartId}`}>
             {t("chart.style")}
           </label>
-          <select
+          <NativeSelect size="sm"
             id={`chart-style-${chartId}`}
             value={chartStyle}
-            onChange={(event) => setChartStyle(event.target.value as ChartStyle)}
-            className="h-8 max-w-[210px] rounded-lg border border-[var(--paper-200)] bg-white px-2.5 text-[11px] font-semibold text-[var(--ink-700)] outline-none transition-colors focus:border-[var(--brand-400)] focus:ring-2 focus:ring-[var(--brand-100)]"
+            onChange={(event) => setChartStyle(event.target.value as ChartStyle)} className="max-w-[210px] text-[11px]"
           >
             {chartOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          <button
+          </NativeSelect>
+          <Button variant="link-muted"
             type="button"
-            onClick={() => setShowTable((v) => !v)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md text-[12px] font-semibold text-[var(--ink-500)] transition-colors hover:text-[var(--brand-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-500)]"
+            onClick={() => setShowTable((v) => !v)} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-500)]"
           >
             <Table2 className="h-3.5 w-3.5" strokeWidth={2} />
             {showTable ? t("chart.viewChart") : t("chart.viewTable")}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -307,22 +308,22 @@ export function ActivityChart({
       )}
 
       {showTable ? (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--paper-200)]">
-              <th className="py-2 text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">{t("chart.label")}</th>
-              <th className="py-2 text-right text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">{valueLabel}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="w-full text-sm">
+          <TableHeader>
+            <TableRow className="border-b border-[var(--paper-200)]">
+              <TableHead className="py-2 text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">{t("chart.label")}</TableHead>
+              <TableHead className="py-2 text-right text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">{valueLabel}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {data.map((point) => (
-              <tr key={point.key} className="border-b border-[var(--paper-100)] last:border-0">
-                <td className="py-2 text-[var(--ink-800)]">{point.label}</td>
-                <td className="py-2 text-right font-semibold text-[var(--ink-900)] tabular-nums">{point.value}</td>
-              </tr>
+              <TableRow key={point.key} className="border-b border-[var(--paper-100)] last:border-0">
+                <TableCell className="py-2 text-[var(--ink-800)]">{point.label}</TableCell>
+                <TableCell className="py-2 text-right font-semibold text-[var(--ink-900)] tabular-nums">{point.value}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       ) : (
         <>
           <div className={isWeeklyOverview ? "mt-3 h-[220px] sm:h-[260px]" : "h-[180px]"}>

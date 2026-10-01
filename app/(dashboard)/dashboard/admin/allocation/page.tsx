@@ -14,6 +14,8 @@ import { HUE_TOKENS } from "@/lib/ui/status-hues";
 import { useI18n } from "@/i18n/provider";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 
 type Tab = "POLICIES" | "EVENTS";
 
@@ -67,23 +69,21 @@ function PolicyCard({ policy, onActivate, onDelete }: { policy: AllocationPolicy
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {!policy.active && (
-          <button
+          <Button variant="ghost-success" size="icon-md"
             type="button"
             onClick={onActivate}
             title="Activate"
-            className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--success-100)] hover:text-[var(--success-700)] transition-colors"
           >
             <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
-          </button>
+          </Button>
         )}
-        <button
+        <Button variant="ghost-danger" size="icon-md"
           type="button"
           onClick={onDelete}
           title="Delete"
-          className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
+        </Button>
       </div>
     </Card>
   );
@@ -230,22 +230,20 @@ function OverrideForm({ onSubmit, onCancel }: { onSubmit: (slotLabel: string, st
           </FormField>
         </div>
         <FormField label="Reason">
-          <textarea
+          <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Why is this being assigned manually instead of by the active policy?"
-            rows={2}
-            className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] resize-none"
+            rows={2} className="resize-none"
           />
         </FormField>
         <div className="flex items-center gap-3">
           <Button type="submit" className="w-fit">
             Save override
           </Button>
-          <button type="button" onClick={onCancel}
-          className="text-sm font-semibold text-[var(--ink-600)] hover:text-[var(--ink-900)]">
+          <Button variant="link-muted" type="button" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </Card>
@@ -331,26 +329,26 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
         </Card>
       ) : (
         <Card className="p-0 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-                <th className="px-5 py-3">Slot</th>
-                <th className="px-5 py-3">Student</th>
-                <th className="px-5 py-3">Decision</th>
-                <th className="px-5 py-3">Detail</th>
-                <th className="px-5 py-3">When</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
+                <TableHead className="px-5 py-3">Slot</TableHead>
+                <TableHead className="px-5 py-3">Student</TableHead>
+                <TableHead className="px-5 py-3">Decision</TableHead>
+                <TableHead className="px-5 py-3">Detail</TableHead>
+                <TableHead className="px-5 py-3">When</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((event) => (
-                <tr key={event.id}
+                <TableRow key={event.id}
                 className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors align-top">
-                  <td className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{event.slotLabel}</td>
-                  <td className="px-5 py-3.5 text-[var(--ink-700)] whitespace-nowrap">{event.studentName}</td>
-                  <td className="px-5 py-3.5">
+                  <TableCell className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{event.slotLabel}</TableCell>
+                  <TableCell className="px-5 py-3.5 text-[var(--ink-700)] whitespace-nowrap">{event.studentName}</TableCell>
+                  <TableCell className="px-5 py-3.5">
                     <DecisionPill decision={event.decision} />
-                  </td>
-                  <td className="px-5 py-3.5 text-[var(--ink-600)] max-w-[280px]">
+                  </TableCell>
+                  <TableCell className="px-5 py-3.5 text-[var(--ink-600)] max-w-[280px]">
                     {event.decision === "OVERRIDDEN" ? (
                       <>
                         <p className="text-[12.5px]">
@@ -363,12 +361,12 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
                         {POLICY_LABELS[event.policyName as AllocationPolicyName]} · score {event.computedScore?.toFixed(2)} · seed {event.randomSeed}
                       </p>
                     )}
-                  </td>
-                  <td className="px-5 py-3.5 tabular-nums text-[var(--ink-600)] whitespace-nowrap">{dateTimeFormatter.format(new Date(event.allocatedAt))}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="px-5 py-3.5 tabular-nums text-[var(--ink-600)] whitespace-nowrap">{dateTimeFormatter.format(new Date(event.allocatedAt))}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </Card>
       )}
     </div>

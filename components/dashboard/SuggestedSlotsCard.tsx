@@ -15,6 +15,7 @@ import { BookSlotModal } from "@/components/dashboard/BookSlotModal";
 import type { BookableSlot } from "@/lib/office-hours/types";
 import type { SuggestedSlot } from "@/lib/office-hours/mock-data";
 import { Button } from "@/components/ui/button";
+import { FilterTabs } from "./FilterTabs";
 
 type FilterCategory = "ALL" | "CS" | "MATH" | "SOON";
 
@@ -92,27 +93,17 @@ export function SuggestedSlotsCard({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {[
-          { id: "ALL" as FilterCategory, label: "All Recommendations" },
-          { id: "CS" as FilterCategory, label: "Computer Science" },
-          { id: "MATH" as FilterCategory, label: "Math & Physics" },
-          { id: "SOON" as FilterCategory, label: "Available Soon (Next 48h)" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setFilter(tab.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-              filter === tab.id
-                ? "bg-[var(--brand-500)] text-white shadow-xs"
-                : "bg-[var(--paper-100)] text-[var(--ink-600)] hover:bg-[var(--paper-200)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FilterTabs
+        variant="chips"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: "ALL", label: "All Recommendations" },
+          { value: "CS", label: "Computer Science" },
+          { value: "MATH", label: "Math & Physics" },
+          { value: "SOON", label: "Available Soon (Next 48h)" },
+        ]}
+      />
 
       {/* Slots Cards Grid */}
       {filteredSlots.length === 0 ? (

@@ -36,6 +36,8 @@ import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { useI18n } from "@/i18n/provider";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Tab = "DEMAND" | "EXPERIMENTS";
 
@@ -138,14 +140,13 @@ function DemandRunCard({ run, onDelete }: { run: SyntheticDemandRun; onDelete: (
         </p>
         <p className="text-[12px] text-[var(--ink-500)] mt-1 tabular-nums">Generated {dateTimeFormatter.format(new Date(run.generatedAt))}</p>
       </div>
-      <button
+      <Button variant="ghost-danger" size="icon-md"
         type="button"
         onClick={onDelete}
-        title="Delete"
-        className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors shrink-0"
+        title="Delete" className="shrink-0"
       >
         <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-      </button>
+      </Button>
     </Card>
   );
 }
@@ -260,12 +261,7 @@ function ExperimentForm({
             {ALL_POLICIES.map((name) => (
               <label key={name}
               className="inline-flex items-center gap-2 text-sm text-[var(--ink-700)] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policyNames.includes(name)}
-                  onChange={() => togglePolicy(name)}
-                  className="accent-[var(--brand-500)]"
-                />
+                <Checkbox checked={policyNames.includes(name)} onCheckedChange={() => togglePolicy(name)} />
                 {POLICY_LABELS[name]}
               </label>
             ))}
@@ -287,39 +283,39 @@ function ExperimentForm({
 function ResultsTable({ experiment }: { experiment: Experiment }) {
   return (
     <Card className="p-0 overflow-hidden overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-            <th className="px-5 py-3">Policy</th>
-            <th className="px-5 py-3 text-right">Gini (slots)</th>
-            <th className="px-5 py-3 text-right">Gini (access)</th>
-            <th className="px-5 py-3 text-right">Max-min ratio</th>
-            <th className="px-5 py-3 text-right">% with a slot</th>
-            <th className="px-5 py-3 text-right">Utilization</th>
-            <th className="px-5 py-3 text-right">Time to fill</th>
-            <th className="px-5 py-3 text-right">Rejection rate</th>
-            <th className="px-5 py-3 text-right">Avg wait</th>
-            <th className="px-5 py-3 text-right">Wait variance</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="w-full text-sm">
+        <TableHeader>
+          <TableRow className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
+            <TableHead className="px-5 py-3">Policy</TableHead>
+            <TableHead className="px-5 py-3 text-right">Gini (slots)</TableHead>
+            <TableHead className="px-5 py-3 text-right">Gini (access)</TableHead>
+            <TableHead className="px-5 py-3 text-right">Max-min ratio</TableHead>
+            <TableHead className="px-5 py-3 text-right">% with a slot</TableHead>
+            <TableHead className="px-5 py-3 text-right">Utilization</TableHead>
+            <TableHead className="px-5 py-3 text-right">Time to fill</TableHead>
+            <TableHead className="px-5 py-3 text-right">Rejection rate</TableHead>
+            <TableHead className="px-5 py-3 text-right">Avg wait</TableHead>
+            <TableHead className="px-5 py-3 text-right">Wait variance</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {experiment.results.map((r) => (
-            <tr key={r.policyName}
+            <TableRow key={r.policyName}
             className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
-              <td className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{POLICY_LABELS[r.policyName]}</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniSlotsPerStudent.toFixed(2)}</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniLecturerAccess.toFixed(2)}</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.maxMinRatio.toFixed(2)}</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.pctStudentsWithSlot.toFixed(1)}%</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.slotUtilizationPct}%</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.avgTimeToFillSeconds}s</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.offerRejectionRatePct.toFixed(1)}%</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.avgWaitTimeSeconds}s</td>
-              <td className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.waitTimeVariance}</td>
-            </tr>
+              <TableCell className="px-5 py-3.5 font-medium text-[var(--ink-900)] whitespace-nowrap">{POLICY_LABELS[r.policyName]}</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniSlotsPerStudent.toFixed(2)}</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.giniLecturerAccess.toFixed(2)}</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.maxMinRatio.toFixed(2)}</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.pctStudentsWithSlot.toFixed(1)}%</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.slotUtilizationPct}%</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.avgTimeToFillSeconds}s</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.offerRejectionRatePct.toFixed(1)}%</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.avgWaitTimeSeconds}s</TableCell>
+              <TableCell className="px-5 py-3.5 text-right tabular-nums text-[var(--ink-700)]">{r.waitTimeVariance}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </Card>
   );
 }
@@ -362,36 +358,35 @@ function FrontierScatter({ experiment, activePolicyName }: { experiment: Experim
           <h2 className="text-sm font-bold text-[var(--ink-900)]">Fairness vs. efficiency frontier</h2>
           <p className="text-[12px] text-[var(--ink-500)] mt-0.5">Lower-right = fairer (lower Gini) and more efficient (higher utilization) at once.</p>
         </div>
-        <button
+        <Button variant="link-muted"
           type="button"
-          onClick={() => setShowTable((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--ink-500)] hover:text-[var(--brand-700)] transition-colors shrink-0"
+          onClick={() => setShowTable((v) => !v)} className="shrink-0"
         >
           <Table2 className="w-3.5 h-3.5" strokeWidth={2} />
           {showTable ? "View chart" : "View as table"}
-        </button>
+        </Button>
       </div>
 
       {showTable ? (
-        <table className="w-full text-sm mt-3">
-          <thead>
-            <tr className="border-b border-[var(--paper-200)]">
-              <th className="text-left py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Policy</th>
-              <th className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Utilization %</th>
-              <th className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Gini (slots)</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="w-full text-sm mt-3">
+          <TableHeader>
+            <TableRow className="border-b border-[var(--paper-200)]">
+              <TableHead className="text-left py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Policy</TableHead>
+              <TableHead className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Utilization %</TableHead>
+              <TableHead className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Gini (slots)</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {experiment.results.map((r) => (
-              <tr key={r.policyName}
+              <TableRow key={r.policyName}
               className="border-b border-[var(--paper-100)] last:border-0">
-                <td className="py-2 text-[var(--ink-800)]">{POLICY_LABELS[r.policyName]}</td>
-                <td className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.slotUtilizationPct}%</td>
-                <td className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.giniSlotsPerStudent.toFixed(2)}</td>
-              </tr>
+                <TableCell className="py-2 text-[var(--ink-800)]">{POLICY_LABELS[r.policyName]}</TableCell>
+                <TableCell className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.slotUtilizationPct}%</TableCell>
+                <TableCell className="py-2 text-right tabular-nums text-[var(--ink-900)]">{r.giniSlotsPerStudent.toFixed(2)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       ) : (
         <div className="h-[280px] mt-3">
           <ResponsiveContainer width="100%" height="100%">

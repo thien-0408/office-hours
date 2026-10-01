@@ -11,6 +11,7 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { WeekSlotGrid } from "@/components/dashboard/WeekSlotGrid";
 import { getMockLecturerById, getMockLecturerWeekSlots } from "@/lib/office-hours/mock-data";
 import type { BookableSlot } from "@/lib/office-hours/types";
+import { Button } from "@/components/ui/button";
 
 export default function LecturerSlotsPage() {
   const params = useParams<{ id: string }>();
@@ -58,23 +59,21 @@ export default function LecturerSlotsPage() {
         <div className="flex items-center justify-between mb-4">
           <SectionHeader title={weekOffset === 0 ? "This week" : `${weekOffset} week${weekOffset > 1 ? "s" : ""} out`} />
           <div className="flex items-center gap-1.5">
-            <button
+            <Button variant="ghost-brand" size="icon-md"
               type="button"
               disabled={weekOffset === 0}
               onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
-              className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-600)] hover:bg-[var(--brand-50)] disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               aria-label="Previous week"
             >
               <ChevronLeft className="w-4 h-4" strokeWidth={2} />
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost-brand" size="icon-md"
               type="button"
               onClick={() => setWeekOffset((w) => w + 1)}
-              className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-600)] hover:bg-[var(--brand-50)] transition-colors"
               aria-label="Next week"
             >
               <ChevronRight className="w-4 h-4" strokeWidth={2} />
-            </button>
+            </Button>
           </div>
         </div>
 

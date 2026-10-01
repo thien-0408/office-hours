@@ -18,6 +18,7 @@ import type { AdminScheduleEntry, ScheduleImportHistoryEntry } from "@/lib/offic
 import { useI18n } from "@/i18n/provider";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type OwnerRole = "LECTURER" | "STUDENT";
 
@@ -195,14 +196,13 @@ function ManualEntryTab({
                     {DAY_LABEL_LONG[entry.dayOfWeek]} · {entry.startTime}–{entry.endTime}
                   </p>
                 </div>
-                <button
+                <Button variant="ghost-danger" size="icon-md"
                   type="button"
                   onClick={() => setPendingDeleteId(entry.id)}
-                  aria-label="Delete entry"
-                  className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors shrink-0"
+                  aria-label="Delete entry" className="shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                </button>
+                </Button>
               </Card>
             ))}
           </div>
@@ -265,25 +265,25 @@ function SlotSearchTab() {
         </Card>
       ) : (
         <Card className="p-0 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-                <th className="px-5 py-3">Lecturer</th>
-                <th className="px-5 py-3">Department</th>
-                <th className="px-5 py-3">Date &amp; time</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
+                <TableHead className="px-5 py-3">Lecturer</TableHead>
+                <TableHead className="px-5 py-3">Department</TableHead>
+                <TableHead className="px-5 py-3">Date &amp; time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.slice(0, 100).map((slot) => (
-                <tr key={slot.id}
+                <TableRow key={slot.id}
                 className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors">
-                  <td className="px-5 py-3.5 font-semibold text-[var(--ink-900)]">{slot.lecturerName}</td>
-                  <td className="px-5 py-3.5 text-[var(--ink-600)]">{slot.department ?? "—"}</td>
-                  <td className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">{dateTimeFormatter.format(new Date(slot.startAt))}</td>
-                </tr>
+                  <TableCell className="px-5 py-3.5 font-semibold text-[var(--ink-900)]">{slot.lecturerName}</TableCell>
+                  <TableCell className="px-5 py-3.5 text-[var(--ink-600)]">{slot.department ?? "—"}</TableCell>
+                  <TableCell className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">{dateTimeFormatter.format(new Date(slot.startAt))}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {filtered.length > 100 && (
             <p className="text-[12.5px] text-[var(--ink-500)] text-center py-3 border-t border-[var(--paper-100)]">
               Showing first 100 of {filtered.length} matches — narrow your filters to see more.

@@ -16,6 +16,8 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import type { ParsedTimetableRow, ScheduleImportHistoryEntry } from "@/lib/office-hours/types";
 import { DAY_NAME_TO_INDEX, parseTimetablePdf, type TimetableMetadata } from "@/lib/timetable/parse-pdf";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FilterTabs } from "./FilterTabs";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
@@ -183,7 +185,7 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
             type="file"
             accept=".pdf"
             multiple
-            className="hidden"
+            hidden
             onChange={handleFilesChange}
           />
         </label>
@@ -241,34 +243,25 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
 
             <div className="flex flex-wrap items-center gap-2">
               {/* Import Mode Selector */}
-              <div className="flex bg-[var(--paper-100)] rounded-xl p-1 border border-[var(--paper-200)] text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setImportMode("REPLACE")}
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-bold ${
-                    importMode === "REPLACE"
-                      ? "bg-white text-[var(--ink-900)] shadow-xs"
-                      : "text-[var(--ink-600)] hover:text-[var(--ink-900)]"
-                  }`}
-                  title="Overwrites old imported sessions with the new PDF, keeping manual notes"
-                >
-                  <Layers className="w-3.5 h-3.5 text-[var(--brand-500)]" />
-                  Replace Old
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImportMode("MERGE")}
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-bold ${
-                    importMode === "MERGE"
-                      ? "bg-white text-[var(--ink-900)] shadow-xs"
-                      : "text-[var(--ink-600)] hover:text-[var(--ink-900)]"
-                  }`}
-                  title="Appends new classes and automatically filters out exact duplicates"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--coral-500)]" />
-                  Merge & Deduplicate
-                </button>
-              </div>
+              <FilterTabs
+                variant="paper"
+                value={importMode}
+                onChange={setImportMode}
+                options={[
+                  {
+                    value: "REPLACE",
+                    label: "Replace Old",
+                    icon: <Layers className="w-3.5 h-3.5 text-[var(--brand-500)]" />,
+                    title: "Overwrites old imported sessions with the new PDF, keeping manual notes",
+                  },
+                  {
+                    value: "MERGE",
+                    label: "Merge & Deduplicate",
+                    icon: <Sparkles className="w-3.5 h-3.5 text-[var(--coral-500)]" />,
+                    title: "Appends new classes and automatically filters out exact duplicates",
+                  },
+                ]}
+              />
 
               <Button
                 type="button"
@@ -289,39 +282,39 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-                  <th className="py-2 pr-4">Day</th>
-                  <th className="py-2 pr-4">Time</th>
-                  <th className="py-2 pr-4">Subject</th>
-                  <th className="py-2 pr-4">Group</th>
-                  <th className="py-2 pr-4">Room</th>
-                  <th className="py-2 pr-4">Lecturer</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
+                  <TableHead className="py-2 pr-4">Day</TableHead>
+                  <TableHead className="py-2 pr-4">Time</TableHead>
+                  <TableHead className="py-2 pr-4">Subject</TableHead>
+                  <TableHead className="py-2 pr-4">Group</TableHead>
+                  <TableHead className="py-2 pr-4">Room</TableHead>
+                  <TableHead className="py-2 pr-4">Lecturer</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {allRows.map((row, i) => (
-                  <tr key={i}
+                  <TableRow key={i}
                   className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)]">
-                    <td className="py-2 pr-4 font-semibold text-[var(--brand-700)] whitespace-nowrap">
+                    <TableCell className="py-2 pr-4 font-semibold text-[var(--brand-700)] whitespace-nowrap">
                       {row.day}
                       {row.date && <span className="text-[var(--ink-500)] font-normal"> ({row.date})</span>}
-                    </td>
-                    <td className="py-2 pr-4 tabular-nums whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="py-2 pr-4 tabular-nums whitespace-nowrap">
                       {row.startTime || "?"}–{row.endTime || "?"}
-                    </td>
-                    <td className="py-2 pr-4">
+                    </TableCell>
+                    <TableCell className="py-2 pr-4">
                       <p className="font-semibold text-[var(--ink-900)]">{row.subjectCode}</p>
                       <p className="text-[12px] text-[var(--ink-500)]">{row.subjectName}</p>
-                    </td>
-                    <td className="py-2 pr-4">{row.group}</td>
-                    <td className="py-2 pr-4 font-medium">{row.room}</td>
-                    <td className="py-2 pr-4 text-[var(--ink-600)]">{row.lecturerName}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="py-2 pr-4">{row.group}</TableCell>
+                    <TableCell className="py-2 pr-4 font-medium">{row.room}</TableCell>
+                    <TableCell className="py-2 pr-4 text-[var(--ink-600)]">{row.lecturerName}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </Card>
       )}
@@ -331,14 +324,16 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
         <div className="flex items-center justify-between mb-2">
           <SectionHeader title="Import history" />
           {entries.some((e) => e.source === "IMPORTED") && (
-            <button
+            <Button
               type="button"
+              variant="ghost-danger"
+              size="sm"
               onClick={handleClearImported}
-              className="text-xs font-semibold text-[var(--danger-700)] hover:bg-[var(--danger-100)] px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+              className="text-[var(--danger-700)]"
             >
               <Trash2 className="w-3 h-3" />
               Clear imported schedule
-            </button>
+            </Button>
           )}
         </div>
 
@@ -348,28 +343,28 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
           </Card>
         ) : (
           <Card className="p-0 overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
-                  <th className="px-5 py-3">File</th>
-                  <th className="px-5 py-3">Imported</th>
-                  <th className="px-5 py-3">Rows</th>
-                  <th className="px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-[var(--paper-200)] text-left text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">
+                  <TableHead className="px-5 py-3">File</TableHead>
+                  <TableHead className="px-5 py-3">Imported</TableHead>
+                  <TableHead className="px-5 py-3">Rows</TableHead>
+                  <TableHead className="px-5 py-3">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {history.map((h) => (
-                  <tr key={h.id}
+                  <TableRow key={h.id}
                   className="border-b border-[var(--paper-100)] last:border-0">
-                    <td className="px-5 py-3 font-medium text-[var(--ink-900)] flex items-center gap-2">
+                    <TableCell className="px-5 py-3 font-medium text-[var(--ink-900)] flex items-center gap-2">
                       <FileText className="w-3.5 h-3.5 text-[var(--brand-500)]" />
                       {h.fileName}
-                    </td>
-                    <td className="px-5 py-3 tabular-nums text-[var(--ink-600)]">
+                    </TableCell>
+                    <TableCell className="px-5 py-3 tabular-nums text-[var(--ink-600)]">
                       {dateTimeFormatter.format(new Date(h.importedAt))}
-                    </td>
-                    <td className="px-5 py-3 tabular-nums">{h.rowCount} classes</td>
-                    <td className="px-5 py-3">
+                    </TableCell>
+                    <TableCell className="px-5 py-3 tabular-nums">{h.rowCount} classes</TableCell>
+                    <TableCell className="px-5 py-3">
                       {h.status === "SUCCESS" ? (
                         <span className="inline-flex items-center gap-1.5 text-[var(--success-700)] font-semibold text-[12.5px]">
                           <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} /> Success
@@ -379,11 +374,11 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
                           <XCircle className="w-3.5 h-3.5" strokeWidth={2} /> Failed
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </Card>
         )}
       </div>

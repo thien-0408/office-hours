@@ -5,6 +5,7 @@ import { UserMinus } from "lucide-react";
 import type { BookingParticipant } from "@/lib/office-hours/types";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormField, TextInput } from "./FormField";
+import { Button } from "@/components/ui/button";
 
 // Group-booking participants aren't wired to a real backend yet — this is a
 // UI/interaction demo: purely local state, no persistence. Note the shape
@@ -46,14 +47,16 @@ export function ParticipantManager({
                 <p className="text-sm font-semibold text-[var(--ink-900)] truncate capitalize">{p.name}</p>
                 <p className="text-[12px] text-[var(--ink-500)] truncate">{p.email}</p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost-danger"
+                size="icon-sm"
                 onClick={() => setPendingRemoveId(p.id)}
-                className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--ink-400)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)] transition-colors shrink-0"
+                className="shrink-0 rounded-full"
                 aria-label={`Remove ${p.name}`}
               >
                 <UserMinus className="w-4 h-4" strokeWidth={2} />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -68,13 +71,14 @@ export function ParticipantManager({
             placeholder="classmate@school.edu"
           />
         </FormField>
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={addParticipant}
-          className="px-3.5 py-2.5 rounded-xl border border-[var(--paper-200)] text-sm font-bold text-[var(--brand-700)] hover:bg-[var(--brand-50)] transition-colors"
+          className="text-[var(--brand-700)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
         >
           Add
-        </button>
+        </Button>
       </div>
 
       <ConfirmModal

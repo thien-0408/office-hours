@@ -70,13 +70,12 @@ export default function ProfilePage() {
             </button>
             <div>
               <p className="text-sm font-semibold text-[var(--ink-900)]">{t("profile.avatar")}</p>
-              <button
+              <Button variant="link-brand"
                 type="button"
                 onClick={() => setAvatarPickerOpen(true)}
-                className="text-[13px] font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] transition-colors"
               >
                 {t("profile.changeAvatar")}
-              </button>
+              </Button>
             </div>
           </div>
           <FormField label={t("profile.fullName")}>

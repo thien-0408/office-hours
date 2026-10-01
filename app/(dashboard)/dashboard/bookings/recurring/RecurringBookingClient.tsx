@@ -72,13 +72,12 @@ function SeriesCard({ series, onCancel }: { series: RecurringSeries; onCancel: (
       </div>
 
       {series.status === "ACTIVE" && (
-        <button
+        <Button variant="link-danger"
           type="button"
-          onClick={onCancel}
-          className="text-[13px] font-semibold text-[var(--danger-700)] hover:underline w-fit"
+          onClick={onCancel} className="w-fit"
         >
           Cancel series
-        </button>
+        </Button>
       )}
     </Card>
   );

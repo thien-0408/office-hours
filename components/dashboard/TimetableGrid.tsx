@@ -7,9 +7,10 @@ import {
   School,
   Trash2,
   Users,
-  X,
 } from "lucide-react";
 import type { ScheduleBlock } from "@/lib/office-hours/types";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export type DayRangeFilter = "WORKDAYS" | "PLUS_SAT" | "FULL_WEEK";
 export type ShiftFilter = "ALL" | "MORNING" | "AFTERNOON" | "EVENING";
@@ -634,7 +635,7 @@ export function TimetableGrid({
                               event.stopPropagation();
                               handleBlockClick(block);
                             }}
-                            className={`group absolute z-10 overflow-hidden rounded-lg border transition-[box-shadow,background-color] duration-150 hover:shadow-[0_3px_10px_rgba(15,23,42,0.1)] ${styleTokens.bg} ${styleTokens.border} ${styleTokens.text}`}
+                            className={`group absolute z-10 cursor-pointer overflow-hidden rounded-lg border transition-[box-shadow,background-color] duration-150 hover:shadow-[0_3px_10px_rgba(15,23,42,0.1)] ${styleTokens.bg} ${styleTokens.border} ${styleTokens.text}`}
                             style={{
                               top: `${topOffset}px`,
                               height: `${blockHeight}px`,
@@ -697,8 +698,8 @@ export function TimetableGrid({
 
       {/* Session Details Modal */}
       {selectedBlock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px] animate-in fade-in duration-150">
-          <div className="w-full max-w-lg overflow-hidden rounded-xl border border-[var(--paper-200)] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+        <Dialog open onOpenChange={(open) => !open && setSelectedBlock(null)}>
+          <DialogContent className="sm:max-w-lg">
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -712,21 +713,14 @@ export function TimetableGrid({
                     {selectedBlock.source === "IMPORTED" ? "AAO import" : "Manual event"}
                   </span>
                 </div>
-                <h2 className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--ink-900)]">
+                <DialogTitle className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--ink-900)]">
                   {selectedBlock.subjectName || selectedBlock.title}
-                </h2>
+                </DialogTitle>
                 <p className="mt-1 text-xs text-[var(--ink-500)]">
                   {DAY_METADATA[selectedBlock.dayOfWeek]?.en} ({DAY_METADATA[selectedBlock.dayOfWeek]?.vn})
                   {selectedBlock.date ? ` · ${selectedBlock.date}` : ""} · {getShiftForTime(selectedBlock.startTime).vn}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBlock(null)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--ink-400)] transition-colors hover:bg-[var(--paper-100)] hover:text-[var(--ink-700)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
 
             <div className="divide-y divide-[var(--paper-200)] border-y border-[var(--paper-200)] text-xs">
@@ -777,31 +771,32 @@ export function TimetableGrid({
 
             <div className="mt-5 flex items-center justify-between">
               {selectedBlock.source === "MANUAL" && onDeleteBlock ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost-danger"
+                  size="sm"
+                  className="text-[var(--danger-700)]"
                   onClick={() => {
                     onDeleteBlock(selectedBlock.id);
                     setSelectedBlock(null);
                   }}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[var(--danger-700)] transition-colors hover:bg-[var(--danger-100)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete event
-                </button>
+                </Button>
               ) : (
                 <span className="text-[10.5px] text-[var(--ink-400)]">AAO synchronized schedule</span>
               )}
 
-              <button
+              <Button variant="dark" size="sm"
                 type="button"
                 onClick={() => setSelectedBlock(null)}
-                className="rounded-lg bg-[var(--ink-900)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Done
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import { Card } from "@/components/dashboard/Card";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { NotificationItem } from "@/components/dashboard/NotificationItem";
 import { getMockNotifications } from "@/lib/office-hours/mock-data";
+import { Button } from "@/components/ui/button";
 
 type Filter = "ALL" | "UNREAD";
 
@@ -33,13 +34,12 @@ export default function NotificationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold text-[var(--ink-900)]">Notifications</h1>
         {unreadCount > 0 && (
-          <button
+          <Button variant="link-brand"
             type="button"
-            onClick={markAllRead}
-            className="text-sm font-semibold text-[var(--brand-500)] hover:underline w-fit"
+            onClick={markAllRead} className="w-fit"
           >
             Mark all read
-          </button>
+          </Button>
         )}
       </div>
 

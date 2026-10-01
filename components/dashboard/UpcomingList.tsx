@@ -7,6 +7,7 @@ import type { Booking } from "@/lib/office-hours/types";
 import { Card } from "./Card";
 import { useI18n } from "@/i18n/provider";
 import { formatDate, formatTime } from "@/i18n/formatters";
+import { Button } from "@/components/ui/button";
 
 function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -48,11 +49,10 @@ export function UpcomingList({
   const filterChip = filterDay && (
     <div className="mb-2.5 flex items-center justify-between gap-2 rounded-xl bg-[var(--rose-100)] px-3 py-1.5 text-[12px] font-semibold text-[var(--rose-700)]">
       <span>{t("dashboard.filteringBy", { day: dayLabel(filterDay) })}</span>
-      <button type="button" onClick={onClearFilter}
-      className="inline-flex items-center gap-1 hover:underline">
+      <Button type="button" variant="link-brand" onClick={onClearFilter} className="text-[12px] text-inherit">
         {t("dashboard.clearDayFilter")}
         <X className="h-3 w-3" strokeWidth={2.5} />
-      </button>
+      </Button>
     </div>
   );
 

@@ -12,6 +12,7 @@ import type { WaitlistEntry } from "@/lib/office-hours/types";
 import { formatDate, formatTime } from "@/i18n/formatters";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
+import { FilterTabs } from "@/components/dashboard/FilterTabs";
 
 type Filter = "ALL" | "WAITING" | "OFFERED";
 
@@ -96,13 +97,14 @@ function WaitlistEntryCard({
           >
             {t("waitlist.acceptOffer")}
           </Button>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onDecline}
-            className="inline-flex min-h-[38px] items-center justify-center rounded-[10px] border border-[var(--paper-200)] bg-white px-3.5 py-2 text-xs font-extrabold text-[var(--ink-700)] transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
+            className="min-h-[38px] font-extrabold text-[var(--ink-700)] hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]"
           >
             {t("waitlist.decline")}
-          </button>
+          </Button>
         </div>
       </Card>
     );
@@ -205,24 +207,7 @@ export default function WaitlistPage() {
         </div>
       </div>
 
-      <div className="mb-5 inline-flex flex-wrap items-center gap-1 rounded-full border border-[var(--paper-200)] bg-white p-1">
-        {filterOptions.map((option) => {
-          const active = option.value === filter;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(option.value)}
-              className={`min-h-[29px] rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
-                active ? "bg-[var(--brand-500)] text-white" : "text-[var(--ink-600)] hover:bg-[var(--paper-100)]"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      <FilterTabs variant="compact" className="mb-5" options={filterOptions} value={filter} onChange={setFilter} />
 
       {filtered.length === 0 ? (
         <Card className="p-[34px] text-center">

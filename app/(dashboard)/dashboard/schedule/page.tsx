@@ -953,7 +953,6 @@ import {
   Plus,
   Printer,
   School,
-  X,
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { Card } from "@/components/dashboard/Card";
@@ -983,6 +982,7 @@ import type {
 import { useI18n } from "@/i18n/provider";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type PageTab = "VIEW" | "IMPORT";
 type ViewMode = "GRID" | "AGENDA";
@@ -1220,32 +1220,15 @@ export default function SchedulePage() {
               <span className="hidden pl-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-400)] sm:inline">
                 Layout
               </span>
-              <div className="flex rounded-lg border border-[var(--paper-200)] bg-white p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("GRID")}
-                  className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${
-                    viewMode === "GRID"
-                      ? "bg-[var(--ink-900)] text-white"
-                      : "text-[var(--ink-500)] hover:bg-[var(--paper-50)] hover:text-[var(--ink-900)]"
-                  }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  Week
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("AGENDA")}
-                  className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${
-                    viewMode === "AGENDA"
-                      ? "bg-[var(--ink-900)] text-white"
-                      : "text-[var(--ink-500)] hover:bg-[var(--paper-50)] hover:text-[var(--ink-900)]"
-                  }`}
-                >
-                  <ListFilter className="h-3.5 w-3.5" />
-                  Agenda
-                </button>
-              </div>
+              <FilterTabs
+                variant="dark"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: "GRID", label: "Week", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+                  { value: "AGENDA", label: "Agenda", icon: <ListFilter className="h-3.5 w-3.5" /> },
+                ]}
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
@@ -1290,13 +1273,12 @@ export default function SchedulePage() {
               <p className="mx-auto mb-4 mt-1 max-w-sm text-xs leading-5 text-[var(--ink-500)]">
                 Import the official AAO timetable or add a manual event to start building your week.
               </p>
-              <button
+              <Button variant="dark" size="sm"
                 type="button"
                 onClick={() => setTab("IMPORT")}
-                className="rounded-lg bg-[var(--ink-900)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Import AAO PDF
-              </button>
+              </Button>
             </Card>
           ) : (
             <section className="overflow-hidden rounded-2xl border border-[var(--paper-200)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
@@ -1370,19 +1352,9 @@ export default function SchedulePage() {
       )}
 
       {/* Add Manual Event Modal */}
-      {isAddModalOpen && (
-        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 duration-150 backdrop-blur-[2px]">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[var(--paper-200)] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold text-[var(--ink-900)]">Add Schedule Event</h2>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ink-400)] transition-colors hover:bg-[var(--paper-100)]"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="text-base font-bold text-[var(--ink-900)]">Add Schedule Event</DialogTitle>
 
             <form onSubmit={handleCreateManualBlock}
             className="flex flex-col gap-4">
@@ -1457,13 +1429,12 @@ export default function SchedulePage() {
               </FormField>
 
               <div className="flex items-center justify-end gap-2 border-t border-[var(--paper-200)] pt-3">
-                <button
+                <Button variant="ghost" size="sm"
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-lg px-4 py-2 text-xs font-semibold text-[var(--ink-600)] transition-colors hover:bg-[var(--paper-100)]"
                 >
                   Cancel
-                </button>
+                </Button>
                 <Button
                   type="submit"
                 >
@@ -1471,9 +1442,8 @@ export default function SchedulePage() {
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

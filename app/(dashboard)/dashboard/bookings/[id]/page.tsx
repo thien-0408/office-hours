@@ -16,6 +16,8 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { getMockBookingById, getMockBookingTimeline } from "@/lib/office-hours/mock-data";
 import type { Booking } from "@/lib/office-hours/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" });
 const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
@@ -119,13 +121,12 @@ export default function BookingDetailPage() {
           <div className="flex flex-wrap gap-2.5">
             {user.role === "STUDENT" && (
               <>
-                <button
+                <Button variant="outline-danger"
                   type="button"
                   onClick={() => setPendingAction("CANCEL")}
-                  className="px-4 py-2 rounded-xl border border-[var(--danger-100)] text-[var(--danger-700)] text-sm font-bold hover:bg-[var(--danger-100)] transition-colors"
                 >
                   Cancel booking
-                </button>
+                </Button>
                 <Button variant="outline"
                   type="button"
                   onClick={() => setRescheduling(true)}
@@ -146,13 +147,12 @@ export default function BookingDetailPage() {
                 >
                   Confirm
                 </Button>
-                <button
+                <Button variant="outline-danger"
                   type="button"
                   onClick={() => setPendingAction("DECLINE")}
-                  className="px-4 py-2 rounded-xl border border-[var(--danger-100)] text-[var(--danger-700)] text-sm font-bold hover:bg-[var(--danger-100)] transition-colors"
                 >
                   Decline
-                </button>
+                </Button>
               </>
             )}
 
@@ -167,13 +167,12 @@ export default function BookingDetailPage() {
                 >
                   Mark completed
                 </Button>
-                <button
+                <Button variant="outline-danger"
                   type="button"
                   onClick={() => setPendingAction("NO_SHOW")}
-                  className="px-4 py-2 rounded-xl border border-[var(--danger-100)] text-[var(--danger-700)] text-sm font-bold hover:bg-[var(--danger-100)] transition-colors"
                 >
                   Mark no-show
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -184,23 +183,17 @@ export default function BookingDetailPage() {
         <Card>
           <SectionHeader title="Meeting record" />
           <label className="flex items-center gap-2 text-sm text-[var(--ink-700)] mb-3">
-            <input
-              type="checkbox"
-              checked={attended}
-              onChange={(e) => setAttended(e.target.checked)}
-              className="w-4 h-4 accent-[var(--brand-500)]"
-            />
+            <Checkbox checked={attended} onCheckedChange={(value) => setAttended(value)} />
             Student attended
           </label>
-          <textarea
+          <Textarea
             value={meetingNotes}
             onChange={(e) => {
               setMeetingNotes(e.target.value);
               setRecordSaved(false);
             }}
             placeholder="Notes from the session…"
-            rows={3}
-            className="w-full rounded-xl border border-[var(--paper-200)] bg-white px-3.5 py-2.5 text-sm text-[var(--ink-900)] outline-none focus:ring-2 focus:ring-[var(--brand-300)] resize-none"
+            rows={3} className="resize-none"
           />
           <div className="flex items-center gap-3 mt-3">
             <Button

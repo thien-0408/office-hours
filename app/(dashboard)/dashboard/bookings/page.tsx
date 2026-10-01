@@ -129,20 +129,18 @@ export default function BookingsPage() {
             >
               {t("bookings.confirmSelected")}
             </Button>
-            <button
+            <Button variant="outline-danger"
               type="button"
               onClick={() => setBulkDeclineOpen(true)}
-              className="px-3.5 py-1.5 rounded-lg border border-[var(--danger-100)] text-[var(--danger-700)] text-[13px] font-bold hover:bg-[var(--danger-100)] transition-colors"
             >
               {t("bookings.declineSelected")}
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost" size="sm"
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-[var(--ink-600)] hover:bg-[var(--paper-100)] transition-colors"
             >
               {t("common.clear")}
-            </button>
+            </Button>
           </div>
         </div>
       )}

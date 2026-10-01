@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "./Card";
 import { useI18n } from "@/i18n/provider";
 import { formatDate } from "@/i18n/formatters";
+import { Button } from "@/components/ui/button";
 
 // Self-contained week-strip — no external calendar lib yet. react-day-picker is
 // deferred (docs/DASHBOARD-UPGRADE.md Phase 3+) to the slot picker, which needs
@@ -44,23 +45,21 @@ export function MiniCalendar({
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <button
+        <Button variant="ghost-brand" size="icon-sm"
           type="button"
           onClick={() => setAnchor((d) => addDays(d, -5))}
-          className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
           aria-label={t("common.previousDays")}
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
-        </button>
+        </Button>
         <p className="text-sm font-bold text-[var(--ink-900)]">{formatDate(anchor, locale, { month: "long", year: "numeric" })}</p>
-        <button
+        <Button variant="ghost-brand" size="icon-sm"
           type="button"
           onClick={() => setAnchor((d) => addDays(d, 5))}
-          className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
           aria-label={t("common.nextDays")}
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-5 gap-1.5 text-center">

@@ -8,20 +8,29 @@ tokens in `docs/DESIGN.md` — **no new colors, no visual redesign**. Migrate in
 
 ## 0. Progress log
 
+Auth pages and the landing page are **out of scope** (they run on their own neo-brutalist `--po-*` style); the glass
+treatment in DESIGN.md §1 is not being pursued.
+
 | Phase | Status | Notes |
 |---|---|---|
-| 0 Foundations | ✅ | shadcn init + token mapping + `Button`/`Input`/`Textarea`/`Label`/`Card`/`Badge`/`Skeleton`/`Switch`/`Tabs`/`Dialog`/`AlertDialog`/`Sheet`/`DropdownMenu`/`Tooltip`/`Table`/`NativeSelect`/`Checkbox` |
-| 1 Dashboard cards | ✅ | `NextUpCard` uses `Button`/`buttonVariants`; `FilterTabs` → `Tabs`. `dashboard/Card` deliberately **kept** as a bare token-styled div (the shadcn `Card` is a flex-col with `gap`/`overflow-hidden`, which would break the ~40 call sites that pass their own layout classes); use `components/ui/card` for *new* composed cards |
-| 2 Forms | ✅ | `FormField`/`TextInput` → `Label`/`Input`; `ToggleSwitch` → `Switch`; 12 hand-styled `<select>` → `NativeSelect` (codemod) |
-| 3 Overlays | ✅ | `ConfirmModal` → `AlertDialog` (glass), `AvatarPickerModal`/`BookSlotModal`/`RescheduleModal` → `Dialog`; `DashboardShell` mobile drawer → `Sheet` (removed ~45 lines of hand-written focus-trap/scroll-lock), user menu → `DropdownMenu` (now closes on outside click / Esc). **Not done:** modals inside `schedule/page.tsx` and `TimetableGrid.tsx`, `LocaleSwitcher` popover |
-| 4 Data display | 🟡 | `StatusBadge`/`WaitlistStatusBadge` → `Badge`; `DashboardSkeleton` → `Skeleton`. **Not done:** `Table` (BookingsTable, admin/*, TimetableImport) |
-| 5 Auth | ⏭ skipped | **Correction to §2:** auth pages actually use the landing's neo-brutalist `--po-*` style (`border-2 border-blue-950`, hard shadows — see `AUTH_SUBMIT_CLASS`/`AUTH_INPUT_CLASS`), *not* full glass as DESIGN.md §1 says. shadcn defaults don't fit; treat auth like landing (out of scope) or add a `neo` Button/Input variant first. DESIGN.md should be corrected |
-| 6 Monster files | 🟡 | `schedule/page.tsx` got the codemod (selects/buttons) only; splitting it into sub-components is still TODO |
-| 7 Cleanup | ⬜ | ESLint ban on raw `<button className>` outside `components/ui`, delete dead wrappers, DESIGN.md update |
+| 0 Foundations | done | shadcn init + token mapping; `Button` (variants below), `Input`, `Textarea`, `Label`, `Card`, `Badge`, `Skeleton`, `Switch`, `Tabs`, `Dialog`, `AlertDialog`, `Sheet`, `DropdownMenu`, `Tooltip`, `Table`, `NativeSelect`, `Checkbox` |
+| 1 Dashboard cards | done | `NextUpCard` on `Button`/`buttonVariants`; `FilterTabs` is a wrapper over `Tabs` with 5 skins (`pill`, `compact`, `chips`, `dark`, `paper`). `dashboard/Card` is intentionally **kept** as a token-styled div (the shadcn `Card` is a flex-col with `gap`/`overflow-hidden` and would break ~40 call sites that pass their own layout); it is now keyboard-operable when `onClick` is passed. Use `components/ui/card` for new composed cards |
+| 2 Forms | done | `FormField`/`TextInput` -> `Label`/`Input`; `ToggleSwitch` -> `Switch`; every hand-styled `<select>` -> `NativeSelect`; 2 `<textarea>` -> `Textarea`; 4 checkboxes -> `Checkbox` |
+| 3 Overlays | done | `ConfirmModal` -> `AlertDialog` (glass look kept); `AvatarPickerModal`, `BookSlotModal`, `RescheduleModal`, the schedule "Add event" modal and the `TimetableGrid` session-details modal -> `Dialog`; `DashboardShell` mobile drawer -> `Sheet`, user menu and `LocaleSwitcher` -> `DropdownMenu` (outside-click/Esc/focus-return for free) |
+| 4 Data display | done | `StatusBadge`, `WaitlistStatusBadge`, admin "Active/Inactive" -> `Badge`; all 8 app tables -> `Table*`; shared `SortButton` extracted (was duplicated); `DashboardSkeleton` -> `Skeleton` |
+| 5 Auth | skipped | Out of scope by decision (see above) |
+| 6 Monster files | partial | `schedule/page.tsx` (1.4k lines) and `TimetableGrid.tsx` had their buttons/selects/modals migrated but were **not split** into sub-components; the top ~900 lines of `schedule/page.tsx` are a commented-out legacy implementation that can simply be deleted (be careful: scripted edits must anchor on `\nexport default function SchedulePage`, not the first match) |
+| 7 Cleanup | done | ESLint `no-restricted-syntax` (warn) flags `<button className>` and `<input|textarea|select className>` outside `components/ui`, landing and auth. **18 accepted warnings remain**: bespoke tile/row buttons (slot picker, calendar day, avatar grid, task/notification rows, timetable cells, toast action) plus `TimetableShowcaseDemo`/`WelcomeExperience` (landing-style) |
 
-**Codemod:** 26 buttons (22 primary, 4 outline) and 12 selects were converted mechanically
-(`scratchpad` script, not committed). The remaining ~86 raw `<button>`s are icon buttons, tab-likes, destructive links and
-one-off styles that need a human decision; migrate them per file when touched.
+**Button variants** (all in `components/ui/button.tsx`): `default`, `outline`, `secondary`, `ghost`, `destructive`, `link`, `glass`,
+`ghost-danger|success|brand` (tone-on-hover icon/row actions), `outline-danger`, `dark`, `link-brand|danger|muted`.
+Sizes: `default` (h-9), `xs`, `sm`, `lg`, `icon` / `icon-md` / `icon-sm` / `icon-xs` / `icon-lg`. Prop `loading` shows a spinner and disables.
+
+**Codemods** (scripts lived in the session scratchpad, not committed): 26 primary/outline buttons, 12 selects, 36 icon/link/danger/ghost/dark
+buttons, 8 table files, 5 segmented controls and 2 modals were converted mechanically; the remainder by hand.
+
+**Not verified in a browser.** Only `tsc --noEmit` and `eslint` were run. Click through: every modal (focus, Esc, outside click),
+the mobile drawer, the user/locale menus, the three `FilterTabs` skins, sortable table headers and the bookings bulk-select checkboxes.
 
 ---
 
@@ -168,25 +177,17 @@ Delete dead one-off components (`FormField.TextInput`, `ToggleSwitch`, etc.), ad
 
 Root cause: Tailwind 4 preflight sets buttons to `cursor: default`.
 
-**Status: fixed globally** by the base-layer rule in `app/globals.css` (`button:not(:disabled)`, `[role=button]`,
-`summary`, `select`), and `Button`, `Switch`, `NativeSelect`, `DropdownMenuItem` set it themselves.
-The list below is the *verification* list — raw `<button>` tags that still don't carry a `cursor-pointer` class
-(brace-aware scan; the first scan in this doc over-counted because it stopped at the `>` in `=>`).
-After the codemod + migrations: **86 raw `<button>` remain, 9 carry the class, 77 rely on the global rule.**
-Each one disappears from this list when its file is migrated to `<Button>`.
+**Fixed globally** by the base-layer rule in `app/globals.css` (`button:not(:disabled)`, `[role=button]`, `summary`, `select`);
+`Button`, `Switch`, `NativeSelect` and `DropdownMenuItem` also set it themselves. Brace-aware re-scan after the refactor
+(the first scan in this doc over-counted because it stopped at the `>` in `=>`):
+**31 raw `<button>` remain (app + components, excl. auth/landing), 9 carry the class, the rest rely on the global rule.**
+All clickable non-buttons are fixed (`Card` with `onClick` is now `role=button` + keyboard + `cursor-pointer`;
+`TimetableAgenda` delete handle and `TimetableGrid` block wrapper got the class).
 
-`file [line numbers of raw <button> without the class]`
+Raw `<button>`s still without the class (intentional bespoke surfaces; covered by the global rule):
+`admin/research` [466 policy tile] - `profile` [54 avatar] - `waitlist` [57, 115 expandable rows] - `TimetableShowcaseDemo` [82, 94, 106] -
+`ToastProvider` [109] - `WelcomeExperience` [284] - `AvatarPickerModal` [47] - `MiniCalendar` [71 day tile] - `NotificationItem` [17] -
+`TaskList` [32] - `TimetableAgenda` [126 row] - `WeekSlotGrid` [44 slot tile] - `app/public/office-hours` [117].
 
-- Auth: `forgot-password/ForgotPasswordForm.tsx` [43, 75] · `login/LoginForm.tsx` [190] · `register/RegisterForm.tsx` [185] · `reset-password/ResetPasswordForm.tsx` [118]
-- Admin: `allocation` [70, 79, 245] · `analytics` [73] · `research` [141, 365, 471] · `schedule` [198] · `users` [40, 95, 190, 198, 258, 267]
-- Dashboard pages: `availability` [102, 110, 230, 313] · `bookings/[id]` [122, 149, 170] · `bookings` [132, 139] · `bookings/recurring` [75] · `lecturers/[id]/slots` [61, 70] · `notifications` [36] · `profile` [54, 73] · `schedule` [1224, 1236, 1293, 1378, 1460] · `waitlist` [56, 99, 113, 212]
-- Public / misc: `app/public/office-hours/page.tsx` [117] · `components/LocaleSwitcher.tsx` [25, 42] · `TimetableShowcaseDemo.tsx` [82, 94, 106] · `ToastProvider.tsx` [109] · `WelcomeExperience.tsx` [284] · `landing/FAQAccordion.tsx` [58]
-- Dashboard components: `ActivityChart` [291] · `AvatarPickerModal` [47 — memoji grid] · `BookingsTable` [25, 189] · `DashboardShell` [190, 201, 336] · `MiniCalendar` [47, 56, 72] · `NotificationItem` [17] · `ParticipantManager` [49, 71] · `SuggestedSlotsCard` [102] · `TaskList` [32] · `TimetableAgenda` [98, 123] · `TimetableGrid` [723, 780, 795] · `TimetableImport` [245, 258, 334] · `UpcomingList` [51] · `WeekSlotGrid` [44]
-
-**Clickable non-buttons (NOT covered by the global rule — real cursor + keyboard-a11y bugs; convert to `<button>`):**
-- `components/dashboard/Card.tsx:13` — `<div onClick>`
-- `components/dashboard/TimetableAgenda.tsx:161` — `<span onClick>`
-- `components/dashboard/TimetableGrid.tsx:629` — `<div onClick>`
-
-**Convention going forward:** never add `cursor-pointer` by hand to a `<button>`; use `<Button>` (or `buttonVariants()` on a
-`<Link>`). Disabled buttons use `cursor-not-allowed` (the global rule skips `:disabled`).
+**Convention:** never hand-add `cursor-pointer` to a `<button>`; use `<Button>` (or `buttonVariants()` on a `<Link>`).
+Disabled buttons use `cursor-not-allowed` (the global rule skips `:disabled`).

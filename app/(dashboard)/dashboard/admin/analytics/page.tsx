@@ -17,6 +17,8 @@ import {
 import type { PolicyComparisonRow } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { useI18n } from "@/i18n/provider";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const POLICY_LABELS: Record<PolicyComparisonRow["policyName"], string> = {
   FCFS: "FCFS",
@@ -70,33 +72,32 @@ function EquitySection() {
             <h2 className="text-sm font-bold text-[var(--ink-900)]">Lorenz curve — slots per student</h2>
             <p className="text-[12px] text-[var(--ink-500)] mt-0.5">Dashed line = perfect equality. The further the curve sags below it, the more unequal access is.</p>
           </div>
-          <button
+          <Button variant="link-muted"
             type="button"
-            onClick={() => setShowTable((v) => !v)}
-            className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--ink-500)] hover:text-[var(--brand-700)] transition-colors shrink-0"
+            onClick={() => setShowTable((v) => !v)} className="shrink-0"
           >
             <Table2 className="w-3.5 h-3.5" strokeWidth={2} />
             {showTable ? "View chart" : "View as table"}
-          </button>
+          </Button>
         </div>
 
         {showTable ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--paper-200)]">
-                <th className="text-left py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Cumulative students</th>
-                <th className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Cumulative slots</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--paper-200)]">
+                <TableHead className="text-left py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Cumulative students</TableHead>
+                <TableHead className="text-right py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--ink-500)]">Cumulative slots</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {metrics.lorenzCurve.map((p) => (
-                <tr key={p.cumulativeStudentsPct} className="border-b border-[var(--paper-100)] last:border-0">
-                  <td className="py-2 text-[var(--ink-800)] tabular-nums">{p.cumulativeStudentsPct}%</td>
-                  <td className="py-2 text-right font-semibold text-[var(--ink-900)] tabular-nums">{p.cumulativeSlotsPct}%</td>
-                </tr>
+                <TableRow key={p.cumulativeStudentsPct} className="border-b border-[var(--paper-100)] last:border-0">
+                  <TableCell className="py-2 text-[var(--ink-800)] tabular-nums">{p.cumulativeStudentsPct}%</TableCell>
+                  <TableCell className="py-2 text-right font-semibold text-[var(--ink-900)] tabular-nums">{p.cumulativeSlotsPct}%</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         ) : (
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">

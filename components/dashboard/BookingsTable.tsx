@@ -2,38 +2,18 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpDown } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { Booking } from "@/lib/office-hours/types";
 import { Card } from "./Card";
 import { useI18n } from "@/i18n/provider";
 import { formatDate, formatTime } from "@/i18n/formatters";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortButton } from "./SortButton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Perspective = "student" | "lecturer" | "admin";
 type SortKey = "name" | "startAt" | "status";
-
-function SortButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-        active ? "text-[var(--brand-700)]" : "text-[var(--ink-500)] hover:text-[var(--brand-700)]"
-      }`}
-    >
-      {label}
-      <ArrowUpDown className="w-3 h-3" strokeWidth={2} />
-    </button>
-  );
-}
 
 // `perspective` picks which side of the booking is the "who" column: a student
 // wants to see the lecturer, a lecturer wants to see the student, an admin
@@ -104,34 +84,28 @@ export function BookingsTable({
 
   return (
     <Card className="p-0 overflow-hidden overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[var(--paper-200)]">
+      <Table className="w-full text-sm">
+        <TableHeader>
+          <TableRow className="border-b border-[var(--paper-200)]">
             {onToggleSelectAll && (
-              <th className="px-5 py-3 w-10">
-                <input
-                  type="checkbox"
-                  aria-label={t("common.selectAll")}
-                  checked={allSelected}
-                  onChange={() => onToggleSelectAll(allSelected ? [] : selectableIds)}
-                  className="w-4 h-4 accent-[var(--brand-500)]"
-                />
-              </th>
+              <TableHead className="px-5 py-3 w-10">
+                <Checkbox checked={allSelected} onCheckedChange={() => onToggleSelectAll(allSelected ? [] : selectableIds)} />
+              </TableHead>
             )}
-            <th className="text-left px-5 py-3">
+            <TableHead className="text-left px-5 py-3">
               <SortButton label={nameColumnLabel} active={sortKey === "name"} onClick={() => handleSort("name")} />
-            </th>
-            <th className="text-left px-5 py-3 hidden sm:table-cell">{t("booking.topic")}</th>
-            <th className="text-left px-5 py-3">
+            </TableHead>
+            <TableHead className="text-left px-5 py-3 hidden sm:table-cell">{t("booking.topic")}</TableHead>
+            <TableHead className="text-left px-5 py-3">
               <SortButton label={t("booking.dateTime")} active={sortKey === "startAt"} onClick={() => handleSort("startAt")} />
-            </th>
-            <th className="text-left px-5 py-3">
+            </TableHead>
+            <TableHead className="text-left px-5 py-3">
               <SortButton label={t("booking.statusLabel")} active={sortKey === "status"} onClick={() => handleSort("status")} />
-            </th>
-            {onCancelBooking && <th className="px-5 py-3" />}
-          </tr>
-        </thead>
-        <tbody>
+            </TableHead>
+            {onCancelBooking && <TableHead className="px-5 py-3" />}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {sorted.map((booking) => {
             const nameCell =
               perspective === "admin" ? (
@@ -147,24 +121,18 @@ export function BookingsTable({
               );
 
             return (
-            <tr
+            <TableRow
               key={booking.id}
               className="border-b border-[var(--paper-100)] last:border-0 hover:bg-[var(--paper-50)] transition-colors"
             >
               {onToggleSelectAll && (
-                <td className="px-5 py-3.5">
+                <TableCell className="px-5 py-3.5">
                   {(!isSelectable || isSelectable(booking)) && (
-                    <input
-                      type="checkbox"
-                      aria-label={`${t("common.select")} ${booking[primaryField]}`}
-                      checked={selectedIds?.has(booking.id) ?? false}
-                      onChange={() => onToggleSelect?.(booking.id)}
-                      className="w-4 h-4 accent-[var(--brand-500)]"
-                    />
+                    <Checkbox checked={selectedIds?.has(booking.id) ?? false} onCheckedChange={() => onToggleSelect?.(booking.id)} />
                   )}
-                </td>
+                </TableCell>
               )}
-              <td className="px-5 py-3.5">
+              <TableCell className="px-5 py-3.5">
                 {getRowHref ? (
                   <Link href={getRowHref(booking)} className="block no-underline hover:no-underline">
                     {nameCell}
@@ -172,39 +140,38 @@ export function BookingsTable({
                 ) : (
                   nameCell
                 )}
-              </td>
-              <td className="px-5 py-3.5 text-[var(--ink-600)] hidden sm:table-cell truncate max-w-[220px]">
+              </TableCell>
+              <TableCell className="px-5 py-3.5 text-[var(--ink-600)] hidden sm:table-cell truncate max-w-[220px]">
                 {booking.topic ?? "—"}
-              </td>
-              <td className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">
+              </TableCell>
+              <TableCell className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">
                 {formatDate(new Date(booking.startAt), locale, { month: "short", day: "numeric" })} ·{" "}
                 {formatTime(new Date(booking.startAt), locale)}
-              </td>
-              <td className="px-5 py-3.5">
+              </TableCell>
+              <TableCell className="px-5 py-3.5">
                 <StatusBadge status={booking.status} />
-              </td>
+              </TableCell>
               {onCancelBooking && (
-                <td className="px-5 py-3.5 text-right">
+                <TableCell className="px-5 py-3.5 text-right">
                   {(!isCancellable || isCancellable(booking)) && (
-                    <button
+                    <Button variant="link-danger"
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         onCancelBooking(booking);
                       }}
-                      className="text-[13px] font-bold text-[var(--danger-700)] hover:underline"
                     >
                       {t("booking.cancel")}
-                    </button>
+                    </Button>
                   )}
-                </td>
+                </TableCell>
               )}
-            </tr>
+            </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </Card>
   );
 }

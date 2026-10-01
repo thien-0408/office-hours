@@ -311,3 +311,29 @@ Use the shared `LocaleSwitcher` in public, auth, and app-shell navigation. Use `
 5. `app/page.tsx` was rebuilt on the ProjectOne-referenced neo-brutalist system (§1.1); the
    Slingshot-referenced rough.js version and the separate Educo-referenced `/landing` route it
    briefly coexisted with are both gone — one landing page, one system.
+
+---
+
+## 7. UI kit — shadcn/ui on repo tokens
+
+App-shell UI (dashboard, admin, modals, forms) is built from `components/ui/*` (shadcn, **Base UI** primitives, not Radix),
+themed by the tokens above — no separate palette. Auth pages and the landing page are the exception: they keep their own
+`--po-*` neo-brutalist style and do not use these components.
+
+- **Token mapping** lives in `app/globals.css`: `--primary -> --brand-500`, `--background -> --bg-canvas`, `--card -> --bg-surface`,
+  `--border -> --border-subtle`, `--destructive -> --danger-500`, `--ring -> --focus-ring`, `--radius: 0.75rem`. They follow the
+  existing dark blocks, so there is no `.dark` class; the `dark:` variant keys off `[data-theme="dark"]`.
+- **`--accent` stays brand blue.** shadcn's "accent" (a subtle hover surface) is exposed to Tailwind as `--ui-accent` (`--brand-50`),
+  so `bg-accent` in a shadcn component is a pale tint; use `bg-primary` for the brand color.
+- **Buttons:** use `<Button variant=... size=...>`; for links use `className={buttonVariants({...})}` on `<Link>`. Never hand-write
+  `bg-[var(--brand-500)] ... hover:bg-[var(--brand-600)]` strings. Never add `cursor-pointer` to a `<button>` by hand — Tailwind 4
+  resets it to `default`, and a global base-layer rule in `globals.css` plus the components restore it.
+- **Status:** `Badge` has `success|warning|danger|info|neutral|brand` variants that are the `HUE_TOKENS` pairs (§4); domain wrappers
+  `StatusBadge` / `WaitlistStatusBadge` stay the way to render a booking/waitlist status.
+- **Overlays:** `Dialog` (forms/details), `AlertDialog` (confirmations; `ConfirmModal` wraps it with the glass look),
+  `Sheet` (mobile nav), `DropdownMenu` (menus). Do not hand-roll `fixed inset-0` overlays.
+- **Segmented controls:** `FilterTabs` (wrapper over `Tabs`) with `variant` `pill | compact | chips | dark | paper`.
+- **Lint:** `no-restricted-syntax` warns on a hand-styled `<button>` / `<input>` / `<textarea>` / `<select>` outside `components/ui`.
+- Adding components: `bunx shadcn@latest add <name>`, then run
+  `sed -i 's#from "cn"#from "@/lib/utils"#' components/ui/*.tsx && bun remove cn` (the CLI re-adds a wrong `cn` package).
+- Plan and history: `docs/SHADCN-REFACTOR-PLAN.md`.

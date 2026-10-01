@@ -18,6 +18,21 @@ const buttonVariants = cva(
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
         // Auth pages sit on a dark gradient (docs/DESIGN.md §1) — light-surface variants don't read there.
+        // Tone-on-hover ghost buttons: icon/row actions that only reveal their meaning on hover.
+        "ghost-danger":
+          "text-[var(--ink-500)] hover:bg-[var(--danger-100)] hover:text-[var(--danger-700)]",
+        "ghost-success":
+          "text-[var(--ink-500)] hover:bg-[var(--success-100)] hover:text-[var(--success-700)]",
+        "ghost-brand":
+          "text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)]",
+        "outline-danger":
+          "border-[var(--danger-100)] bg-transparent text-[var(--danger-700)] hover:bg-[var(--danger-100)]",
+        // Solid near-black action (schedule editor primary).
+        dark: "bg-[var(--ink-900)] text-white hover:opacity-90",
+        // Inline text actions inside tables/cards.
+        "link-brand": "h-auto p-0 text-[var(--brand-500)] hover:underline",
+        "link-danger": "h-auto p-0 text-[var(--danger-700)] hover:underline",
+        "link-muted": "h-auto p-0 text-[var(--ink-600)] hover:text-[var(--ink-900)]",
         glass:
           "border-[var(--glass-border)] bg-[var(--glass-bg)] text-white backdrop-blur hover:bg-white/25",
       },
@@ -28,6 +43,7 @@ const buttonVariants = cva(
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-10 gap-2 rounded-xl px-5 text-sm has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4",
         icon: "size-9 rounded-xl",
+        "icon-md": "size-8 rounded-full",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":

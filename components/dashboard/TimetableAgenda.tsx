@@ -18,6 +18,7 @@ import {
   timeToMinutes,
   type DayRangeFilter,
 } from "./TimetableGrid";
+import { Button } from "@/components/ui/button";
 
 export function TimetableAgenda({
   blocks,
@@ -95,14 +96,16 @@ export function TimetableAgenda({
                 {totalHours > 0 && ` · ${Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1)}h`}
               </span>
               {onAddManualBlock && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={() => onAddManualBlock(dayNum)}
-                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-semibold text-[var(--ink-600)] transition-colors hover:bg-[var(--paper-100)] hover:text-[var(--ink-900)]"
+                  className="text-[10.5px] text-[var(--ink-600)] hover:text-[var(--ink-900)]"
                 >
                   <Plus className="h-3 w-3" />
                   Add
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -172,7 +175,7 @@ export function TimetableAgenda({
                                 onDeleteBlock(block.id);
                               }
                             }}
-                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--ink-300)] opacity-0 transition-all hover:bg-white/70 hover:text-[var(--danger-700)] group-hover:opacity-100"
+                            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-[var(--ink-300)] opacity-0 transition-all hover:bg-white/70 hover:text-[var(--danger-700)] group-hover:opacity-100"
                             title="Delete manual entry"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
