@@ -1,5 +1,5 @@
 # OfficeHours — Database Schema Specification
-### Derived from `capstone-officehours-plan.md` (Draft v0.1) — ERD §10, Design Notes §10.1
+### Derived from `capstone-officehours-plan.md` (Draft v0.2) — ERD §10, Design Notes §10.1
 
 | | |
 |---|---|

@@ -1,5 +1,5 @@
 # OfficeHours — API Endpoint Specification
-### Derived from `capstone-officehours-plan.md` (Draft v0.1)
+### Derived from `capstone-officehours-plan.md` (Draft v0.2)
 
 | | |
 |---|---|

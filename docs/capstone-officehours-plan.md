@@ -7,7 +7,7 @@
 | **Institution** | Eastern International University (EIU) |
 | **Stack** | Spring Boot · Next.js (TS) · PostgreSQL · Redis · Docker |
 | **Research thread** | Fairness in constrained slot allocation |
-| **Document status** | Draft v0.1 — pre-validation (to be confirmed with lecturer interviews) |
+| **Document status** | Draft v0.2 — pre-validation (to be confirmed with lecturer interviews); aligned with the API/DB design docs |
 
 ---
 
@@ -30,7 +30,7 @@ Current office-hours coordination at most universities is manual and inefficient
 3. **Allocation is unfair.** Popular lecturers get oversubscribed. Fast-responding or well-connected students capture most slots; others are shut out. There is no principled way to share scarce advisor time.
 4. **No accountability.** There is no record of who met whom, when, or why — making advisor-load analysis and no-show tracking impossible.
 
-> **Validation note:** Problems 1–4 are *hypotheses* until confirmed. The lecturer interview guide (Section 15) exists to validate them. If lecturers don't feel this pain, the project should be reconsidered.
+> **Validation note:** Problems 1–4 are *hypotheses* until confirmed. The lecturer interview guide (Section 17) exists to validate them. If lecturers don't feel this pain, the project should be reconsidered.
 
 ---
 
@@ -312,9 +312,15 @@ erDiagram
     USERS ||--o{ BOOKING_PARTICIPANTS : "joins (group)"
     USERS ||--o{ WAITLIST_ENTRIES : "joins"
     USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o| LECTURER_PROFILES : "has (lecturers)"
+    USERS ||--o{ PASSWORD_RESET_TOKENS : requests
+    USERS ||--o{ RECURRING_BOOKINGS : "student / lecturer"
+    USERS ||--o{ SCHEDULE_IMPORTS : "uploads / target"
+    SCHEDULE_IMPORTS ||--o{ SCHEDULE_ENTRIES : produces
     SEMESTERS ||--o{ AVAILABILITY_RULES : scopes
     SEMESTERS ||--o{ SCHEDULE_ENTRIES : scopes
     SEMESTERS ||--o{ BOOKINGS : scopes
+    SEMESTERS ||--o{ RECURRING_BOOKINGS : scopes
     SLOTS ||--o{ BOOKINGS : "booked as"
     SLOTS ||--o{ WAITLIST_ENTRIES : "queued for"
     AVAILABILITY_RULES ||--o{ SLOTS : generates
@@ -331,6 +337,20 @@ erDiagram
         enum role "STUDENT|LECTURER|ADMIN"
         string department
         timestamptz created_at
+    }
+    LECTURER_PROFILES {
+        bigint user_id PK "FK to USERS (role=LECTURER)"
+        string slug UK "amara-chen"
+        string photo_url
+        string blurb
+        string specialty
+    }
+    PASSWORD_RESET_TOKENS {
+        bigint id PK
+        bigint user_id FK
+        string token_hash UK "SHA-256; raw token only in the email"
+        timestamptz expires_at
+        timestamptz used_at "NULL = redeemable"
     }
     SEMESTERS {
         bigint id PK
@@ -375,6 +395,19 @@ erDiagram
         enum location_type "LAB|ROOM|ONLINE|OTHER"
         string lecturer_name "instructor"
         string source "AAO_IMPORT|MANUAL"
+        bigint import_batch_id FK "NULL for manual blocks"
+    }
+    SCHEDULE_IMPORTS {
+        bigint id PK
+        bigint semester_id FK
+        bigint uploaded_by FK
+        bigint target_user_id FK "NULL = self-service"
+        string_array source_files "PDF names, audit only"
+        enum mode "REPLACE|MERGE"
+        enum status "COMPLETED|FAILED (QUEUED/PROCESSING reserved)"
+        int rows_processed
+        int rows_added
+        timestamptz created_at
     }
     SLOTS {
         bigint id PK
@@ -393,6 +426,7 @@ erDiagram
         enum status "PENDING|CONFIRMED|DECLINED|CANCELLED|COMPLETED|NO_SHOW"
         boolean is_group
         string topic
+        string decline_reason
         timestamptz created_at
         timestamptz confirmed_at
         tstzrange time_range "for EXCLUDE constraint"
@@ -400,6 +434,16 @@ erDiagram
     BOOKING_PARTICIPANTS {
         bigint booking_id FK
         bigint student_id FK
+    }
+    RECURRING_BOOKINGS {
+        bigint id PK
+        bigint student_id FK
+        bigint lecturer_id FK
+        bigint semester_id FK
+        smallint day_of_week "1=Mon .. 7=Sun"
+        time start_time
+        time end_time
+        boolean is_cancelled
     }
     MEETING_RECORDS {
         bigint id PK
@@ -414,6 +458,8 @@ erDiagram
         timestamptz requested_at
         numeric priority_score
         enum status "WAITING|OFFERED|EXPIRED|FULFILLED|CANCELLED"
+        timestamptz offered_at
+        timestamptz offer_expires_at
     }
     ALLOCATION_POLICIES {
         bigint id PK
@@ -448,7 +494,9 @@ erDiagram
 - **SLOTS: materialized vs computed.** Two options: (a) generate concrete `SLOTS` rows from rules (simpler to reason about, easier to attach waitlists and allocation events — **recommended**), or (b) compute slots on the fly (less storage, harder to reference). The ERD assumes (a) because the research needs concrete, referenceable slot objects.
 - **SCHEDULE_ENTRIES is generic and shift-aware.** Both student classes and lecturer teaching are stored here as busy blocks. Intervals align with the university 07:30 AM standard (Ca Sáng: `07:30–12:30`, Ca Chiều: `12:30–16:30`, Ca Tối: `16:30–20:30`) across 7 days (Thứ 2 to Chủ Nhật). This keeps conflict detection uniform — the query is "does any schedule_entry for this user overlap this slot?" Since the table is per-`user_id` and populated from that user's own authoritative AAO export (with support for multi-file batch uploads and `REPLACE` vs `MERGE` modes), self-service upload by students and lecturers requires no schema change — the same generic busy-block row is produced regardless of who uploaded it.
 - **ALLOCATION_EVENTS is the reproducibility backbone.** Every decision records the policy, the computed score, and the random seed → experiments are replayable, which is exactly what a committee wants to see.
-- **Large-Scale Timetable Ingestion Architecture.** Ingestion supports massive multi-page PDF files via an asynchronous producer-consumer pipeline: streaming PDF workers write to a staging table (`SCHEDULE_IMPORT_STAGING`), provide live progress via Server-Sent Events (SSE), enable paginated dry-run inspection, and perform atomic high-throughput commits via batch SQL `ON CONFLICT DO NOTHING`. For single-user self-service (1-2 pages), a client-side Web Worker fast-path offloads 100% of parse CPU from backend servers.
+- **Timetable ingestion is client-parsed (MVP).** The browser parses the AAO PDF(s) (`lib/timetable/parse-pdf.ts`) and posts **one JSON array** of rows to `POST /users/me/schedule-entries/batch` (`POST /users/{userId}/schedule-entries/batch` for admins). The backend validates the schema and size caps, de-duplicates for `MERGE`, writes `SCHEDULE_ENTRIES` plus one `SCHEDULE_IMPORTS` audit row in a single transaction, and rejects the whole batch if any row is invalid. There is no server-side PDF pipeline, staging table or progress stream in the MVP; a `SCHEDULE_IMPORT_STAGING`/queue design is kept in `capstone-db-schema.md` only as deferred work for department-wide bulk ingestion.
+- **Day-of-week is ISO everywhere** (`1` = Monday … `7` = Sunday) in the tables, the API and the frontend.
+- **`LECTURER_PROFILES`** holds the directory-only fields (slug, photo, blurb, specialty) so `USERS` stays role-neutral.
 
 ---
 
@@ -543,7 +591,7 @@ gantt
     title OfficeHours Capstone Timeline
 
     section Validation & Design
-    Lecturer interviews          :a1, 2026-01-12, 1w
+    Lecturer interviews          :a1, 2026-10-05, 1w
     Requirements + proposal      :a2, after a1, 1w
     Architecture + ERD sign-off  :a3, after a2, 1w
 
@@ -560,11 +608,11 @@ gantt
     Experiments + analysis        :c4, after c3, 1w
 
     section Wrap-up
-    Pilot deploy + feedback       :d1, 2026-04-06, 2w
+    Pilot deploy + feedback       :d1, after b4, 4w
     Report + defense prep         :d2, after c4, 2w
 ```
 
-> Adjust dates to your real academic calendar. The key ordering: **validate → core booking → research** — don't start policies before conflict-aware booking works, since the research depends on real bookings/waitlists.
+> Dates assume a start on 2026-10-05 (a 14-week build + 2-week wrap-up); shift them to your real academic calendar. The pilot runs for 4 weeks, in parallel with the research track, to meet the success criterion in §3.3. The key ordering: **validate → core booking → research** — don't start policies before conflict-aware booking works, since the research depends on real bookings/waitlists.
 
 ---
 
@@ -616,7 +664,7 @@ Interview 5–10 lecturers. Goal: validate the pain and recruit ≥ 1 pilot user
 **Commitment**
 10. Would you be willing to pilot it for a few weeks next semester and give feedback?
 
-> **Kill criterion:** If most lecturers shrug at Q3–Q6 and none commit at Q10, the domain pain isn't real enough — revisit the API Gateway or another option rather than building something nobody wants.
+> **Kill criterion:** If most lecturers shrug at Q3–Q6 and none commit at Q10, the domain pain isn't real enough — revisit the topic (or pivot to another problem) rather than building something nobody wants.
 
 ---
 
@@ -629,4 +677,4 @@ Interview 5–10 lecturers. Goal: validate the pain and recruit ≥ 1 pilot user
 
 ---
 
-*Draft v0.1 — validate assumptions before committing. The single biggest risk is building something lecturers don't want; the interview guide exists to retire that risk first.*
+*Draft v0.2 — validate assumptions before committing. The single biggest risk is building something lecturers don't want; the interview guide exists to retire that risk first.*
