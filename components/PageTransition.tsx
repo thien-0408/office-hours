@@ -9,7 +9,10 @@ import { motion, useReducedMotion } from "framer-motion";
 // forgot-password <-> reset-password hop. It only fires entering/leaving the group.
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password"];
 
+// The dashboard shell (sidebar + top bar) must persist across its own routes, so every
+// /dashboard/* path shares one key; DashboardShell animates just its content area instead.
 function transitionKey(pathname: string) {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return "dashboard";
   const isAuthRoute = AUTH_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );

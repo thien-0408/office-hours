@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Bell,
   BookOpen,
@@ -269,6 +270,7 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
   const { logout } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
+  const prefersReducedMotion = useReducedMotion();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -399,7 +401,16 @@ export function DashboardShell({ user, children }: { user: AuthUser; children: R
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-8 max-w-[1400px] w-full mx-auto">{children}</main>
+        <main className="flex-1 px-6 py-8 max-w-[1400px] w-full mx-auto">
+          <motion.div
+            key={pathname}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {children}
+          </motion.div>
+        </main>
       </div>
 
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
