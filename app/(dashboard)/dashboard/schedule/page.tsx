@@ -945,13 +945,8 @@
 
 import { useMemo, useState } from "react";
 import {
-  CalendarDays,
-  Clock,
-  Laptop,
   LayoutGrid,
   ListFilter,
-  Plus,
-  Printer,
   School,
 } from "lucide-react";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -980,6 +975,7 @@ import type {
   ScheduleImportHistoryEntry,
 } from "@/lib/office-hours/types";
 import { useI18n } from "@/i18n/provider";
+import { ChalkboardTeacher, CalendarDots, ClockCountdown, Laptop as PhLaptop, PlusIcon, PrinterIcon } from "@phosphor-icons/react";
 import { SelectField } from "@/components/ui/select-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -1115,7 +1111,7 @@ export default function SchedulePage() {
             </span>
             <span className="h-1 w-1 rounded-full bg-[var(--paper-300)]" />
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-500)]">
-              <Clock className="h-3.5 w-3.5" />
+              <ClockCountdown className="h-4 w-4 text-[var(--brand-500)]" weight="fill" aria-hidden />
               Starts 07:30
             </span>
           </div>
@@ -1134,7 +1130,7 @@ export default function SchedulePage() {
               className="h-9"
               title="Print or export timetable"
             >
-              <Printer className="h-3.5 w-3.5" />
+              <PrinterIcon className="h-4 w-4" weight="bold" aria-hidden />
               {t("schedule.print")}
             </Button>
             <Button
@@ -1142,7 +1138,7 @@ export default function SchedulePage() {
               onClick={() => handleOpenAddModal()}
               className="h-9"
             >
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" weight="bold" aria-hidden />
               {t("schedule.addEvent")}
             </Button>
           </div>
@@ -1166,8 +1162,8 @@ export default function SchedulePage() {
           {/* Compact weekly summary */}
           <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[var(--paper-200)] bg-white sm:grid-cols-4">
             <div className="flex min-h-[74px] items-center gap-3 border-b border-r border-[var(--paper-200)] px-4 py-3 sm:border-b-0">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-50)] text-[var(--brand-600)]">
-                <Clock className="h-4 w-4" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-500)] text-white shadow-[0_6px_14px_-4px_color-mix(in_srgb,var(--brand-500)_55%,transparent)]">
+                <ClockCountdown className="h-5 w-5" weight="fill" aria-hidden />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-400)]">Weekly load</p>
@@ -1178,8 +1174,8 @@ export default function SchedulePage() {
             </div>
 
             <div className="flex min-h-[74px] items-center gap-3 border-b border-[var(--paper-200)] px-4 py-3 sm:border-b-0 sm:border-r">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--coral-100)] text-[var(--coral-600)]">
-                <CalendarDays className="h-4 w-4" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--coral-500)] text-white shadow-[0_6px_14px_-4px_color-mix(in_srgb,var(--coral-500)_55%,transparent)]">
+                <CalendarDots className="h-5 w-5" weight="fill" aria-hidden />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-400)]">Sessions</p>
@@ -1190,8 +1186,8 @@ export default function SchedulePage() {
             </div>
 
             <div className="flex min-h-[74px] items-center gap-3 border-r border-[var(--paper-200)] px-4 py-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--info-100)] text-[var(--info-600)]">
-                <Laptop className="h-4 w-4" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--info-500)] text-white shadow-[0_6px_14px_-4px_color-mix(in_srgb,var(--info-500)_55%,transparent)]">
+                <PhLaptop className="h-5 w-5" weight="fill" aria-hidden />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-400)]">Labs</p>
@@ -1202,8 +1198,8 @@ export default function SchedulePage() {
             </div>
 
             <div className="flex min-h-[74px] items-center gap-3 px-4 py-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--mint-100)] text-[var(--mint-600)]">
-                <School className="h-4 w-4" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-500)] text-white shadow-[0_6px_14px_-4px_color-mix(in_srgb,var(--mint-500)_55%,transparent)]">
+                <ChalkboardTeacher className="h-5 w-5" weight="fill" aria-hidden />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-400)]">Lecture / online</p>
