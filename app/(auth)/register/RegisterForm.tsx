@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import type { RegisterPayload } from "@/lib/auth/types";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 import { PillTag, CapIcon } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 const ROLES: { value: RegisterPayload["role"]; label: string; sub: string; icon: React.ReactNode }[] = [
   {
@@ -38,6 +39,7 @@ const ROLES: { value: RegisterPayload["role"]; label: string; sub: string; icon:
 export default function RegisterForm() {
   const router = useRouter();
   const { register } = useAuth();
+  const { t } = useI18n();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -72,7 +74,7 @@ export default function RegisterForm() {
       <div className="mb-2">
         <PillTag icon={<CapIcon />}>Join the campus pilot</PillTag>
       </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">Create account</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">{t("auth.createAccount")}</h1>
 
       {error && (
         <p className="text-xs text-red-600 mb-3" role="alert">
@@ -83,7 +85,7 @@ export default function RegisterForm() {
       <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="fullName" className={AUTH_LABEL_CLASS}>
-            Full name
+            {t("profile.fullName")}
           </label>
           <input
             id="fullName"
@@ -100,7 +102,7 @@ export default function RegisterForm() {
 
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="email" className={AUTH_LABEL_CLASS}>
-            Email
+            {t("auth.email")}
           </label>
           <input
             id="email"
@@ -117,7 +119,7 @@ export default function RegisterForm() {
 
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="password" className={AUTH_LABEL_CLASS}>
-            Password
+            {t("auth.password")}
           </label>
           <input
             id="password"
@@ -134,7 +136,7 @@ export default function RegisterForm() {
         </div>
 
         <div className="flex flex-col gap-1.5 text-left">
-          <label className={AUTH_LABEL_CLASS}>Account type</label>
+          <label className={AUTH_LABEL_CLASS}>{t("auth.accountType")}</label>
           <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="I am a">
             {ROLES.map((r) => {
               const isSelected = role === r.value;
@@ -167,7 +169,7 @@ export default function RegisterForm() {
 
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="department" className={AUTH_LABEL_CLASS}>
-            Department <span className="opacity-60 font-normal">(optional)</span>
+            {t("profile.department")} <span className="opacity-60 font-normal">({t("common.optional")})</span>
           </label>
           <input
             id="department"
@@ -181,17 +183,16 @@ export default function RegisterForm() {
         </div>
 
         <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
-          {isSubmitting ? "Creating account…" : "Create account"}
+          {isSubmitting ? t("auth.creatingAccount") : t("auth.createAccount")}
         </button>
       </form>
 
       <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
         Already have an account?{" "}
         <Link href="/login" className={AUTH_LINK_CLASS}>
-          Log in
+          {t("auth.login")}
         </Link>
       </p>
     </div>
   );
 }
-

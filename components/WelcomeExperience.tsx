@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LogoWithText } from "@/components/LogoWithText";
 import FacultyOfficeDiorama from "@/components/FacultyOfficeDiorama";
 import { TimetableShowcaseDemo } from "@/components/TimetableShowcaseDemo";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { useI18n } from "@/i18n/provider";
 
 // /welcome — Academic Experience Tour & Faculty Hub
 // Sourced from docs/DESIGN.md & academic platform requirements.
@@ -139,6 +141,7 @@ const ROLE_FEATURES: Record<RoleTab, { role: string; subtitle: string; features:
 };
 
 export default function WelcomeExperience() {
+  const { t } = useI18n();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sceneRefs = useRef<(HTMLDivElement | null)[]>([]);
   const scrollHintRef = useRef<HTMLDivElement | null>(null);
@@ -174,29 +177,30 @@ export default function WelcomeExperience() {
             <LogoWithText className="h-7 w-auto text-blue-950" />
           </Link>
           <div className="flex items-center gap-3 bg-white/85 backdrop-blur-md rounded-full pl-5 pr-2 py-2 shadow-xs border border-blue-900/10">
+            <LocaleSwitcher variant="marketing" />
             <Link
               href="/"
               className="hidden sm:inline text-[13px] font-semibold text-slate-700 no-underline hover:text-blue-600 transition-colors"
             >
-              Classic landing
+              {t("common.home")}
             </Link>
             <Link
               href="/public/office-hours"
               className="hidden md:inline text-[13px] font-semibold text-slate-700 no-underline hover:text-blue-600 transition-colors"
             >
-              Browse slots
+              {t("booking.openSlots")}
             </Link>
             <Link
               href="/login"
               className="text-[13px] font-semibold text-slate-700 no-underline hover:text-blue-600 transition-colors"
             >
-              Log in
+              {t("auth.login")}
             </Link>
             <Link
               href="/register"
               className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[13px] font-bold px-[18px] py-2 rounded-full no-underline shadow-xs hover:bg-blue-700 transition-colors"
             >
-              Join pilot <ArrowRight className="w-3.5 h-3.5" />
+              {t("auth.register")} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </nav>

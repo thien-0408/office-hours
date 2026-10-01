@@ -5,7 +5,7 @@ import LandingHero from "@/components/landing/LandingHero";
 import ChecklistSection from "@/components/landing/ChecklistSection";
 import TimetablePreview from "@/components/landing/TimetablePreview";
 import ValueGrid from "@/components/landing/ValueGrid";
-import { Marquee } from "@/components/landing/shared";
+import LandingTicker from "@/components/landing/LandingTicker";
 import ProcessTimeline from "@/components/landing/ProcessTimeline";
 import PricingSection from "@/components/landing/PricingSection";
 import ComparisonTable from "@/components/landing/ComparisonTable";
@@ -21,8 +21,6 @@ export const metadata: Metadata = {
   description: "A booking system that checks every slot against your real class schedule. No email chase, no double-books.",
 };
 
-const TICKER = ["Free for students", "Conflict-checked", "Fair waitlist", "Senior-built", "Live on your campus"];
-
 export default function LandingPage() {
   return (
     <div className={`flex flex-1 flex-col bg-[var(--po-bg)] ${satoshi.className}`} style={PROJECT_ONE_TOKENS}>
@@ -30,7 +28,7 @@ export default function LandingPage() {
       <ChecklistSection />
       <TimetablePreview />
       <ValueGrid />
-      <Marquee items={TICKER} />
+      <LandingTicker />
       <ProcessTimeline />
       <PricingSection />
       <ComparisonTable />

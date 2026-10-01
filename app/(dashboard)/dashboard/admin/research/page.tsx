@@ -33,6 +33,7 @@ import type {
   SyntheticDemandRun,
 } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
+import { useI18n } from "@/i18n/provider";
 
 type Tab = "DEMAND" | "EXPERIMENTS";
 
@@ -576,6 +577,7 @@ function ExperimentsTab({
 // ---- Page --------------------------------------------------------------------
 
 export default function AdminResearchPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("DEMAND");
   const [runs, setRuns] = useState<SyntheticDemandRun[]>(() => getMockSyntheticDemandRuns());
   const [experiments, setExperiments] = useState<Experiment[]>(() => getMockExperiments());
@@ -584,7 +586,7 @@ export default function AdminResearchPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Research tools</h1>
+        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">{t("admin.researchTitle")}</h1>
         <p className="text-sm text-[var(--ink-600)]">
           Generate synthetic demand streams and replay them through allocation policies — the §11 fairness study&apos;s experiment console.
         </p>

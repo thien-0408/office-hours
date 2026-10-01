@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { DarkButton, NEO_LIGHT, NEO_DARK } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 const ROTATIONS = ["-rotate-1", "rotate-1", "rotate-1", "-rotate-1"];
 
@@ -11,28 +14,33 @@ const TILES = [
 ];
 
 export default function FairnessSection() {
+  const { t } = useI18n();
+  const tiles = [
+    { label: "FCFS", sub: t("landing.fairness.fcfs") },
+    { label: "Priority", sub: t("landing.fairness.priority") },
+    { label: "Round-robin", sub: t("landing.fairness.roundRobin") },
+    { label: "Hybrid", sub: t("landing.fairness.hybrid") },
+  ];
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 py-16 md:py-20">
       <div className="flex flex-col items-center gap-12 md:flex-row md:gap-16">
         <div className="w-full text-center md:flex-1 md:text-left">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--po-text-secondary)]">
-            Fairness, not favorites
+            {t("landing.fairness.eyebrow")}
           </p>
           <h2 className="mt-3 max-w-[16ch] text-balance text-[clamp(24px,3vw,32px)] font-extrabold leading-[1.05] tracking-[-0.01em] text-[var(--po-text-primary)] mx-auto md:mx-0">
-            Every Waitlist Decision Is Logged and Reproducible
+            {t("landing.fairness.title")}
           </h2>
           <p className="mx-auto mt-4 max-w-[44ch] text-[14.5px] leading-[1.65] text-[var(--po-text-primary)]/70 md:mx-0">
-            We compare four allocation policies head-to-head so a slot never goes to whoever
-            refreshed fastest. Every offer is logged with its policy, score, and seed &mdash; fully
-            auditable.
+            {t("landing.fairness.body")}
           </p>
           <div className="mt-6">
-            <DarkButton href="/public/office-hours">See open slots</DarkButton>
+            <DarkButton href="/public/office-hours">{t("landing.fairness.cta")}</DarkButton>
           </div>
         </div>
 
         <div className="grid w-full grid-cols-2 gap-4 md:max-w-[400px] md:flex-1">
-          {TILES.map((tile, i) => (
+          {tiles.map((tile, i) => (
             <div
               key={tile.label}
               className={`rounded-2xl p-5 transition-transform hover:-translate-y-0.5 hover:rotate-0 ${ROTATIONS[i]} ${
@@ -49,11 +57,7 @@ export default function FairnessSection() {
       </div>
 
       <p className="mt-10 text-center text-[12px] text-[var(--po-text-secondary)]">
-        Curious how the policies compare? See the{" "}
-        <Link href="/public/office-hours" className="font-bold text-[var(--po-text-primary)] underline underline-offset-2">
-          live listing
-        </Link>{" "}
-        or ask your admin for the research dashboard.
+        {t("landing.fairness.footer")}
       </p>
     </section>
   );

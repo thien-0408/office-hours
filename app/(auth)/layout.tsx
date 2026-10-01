@@ -8,6 +8,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PROJECT_ONE_TOKENS } from "@/components/landing/tokens";
 import { satoshi } from "@/components/landing/fonts";
 import { memojiSrc } from "@/lib/avatar";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { useI18n } from "@/i18n/provider";
 
 const ROUTE_ORDER = ["/login", "/register", "/forgot-password", "/reset-password"];
 
@@ -20,6 +22,7 @@ const variants = {
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
+  const { t } = useI18n();
 
   // Derived-during-render state (React's documented pattern for reacting to
   // prop changes without an effect) — tracks which way to slide the card.
@@ -172,12 +175,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* eslint-disable-next-line @next/next/no-img-element -- plain SVG asset */}
           <img src="/logos/concept-4-full.svg" alt="OfficeHours" className="h-9 w-auto" />
         </Link>
-        <Link
-          href="/"
-          className="text-[13px] font-bold uppercase tracking-[0.04em] text-[var(--po-text-primary)] no-underline hover:opacity-60 transition-opacity"
-        >
-          &larr; Back to home
-        </Link>
+        <div className="flex items-center gap-4">
+          <LocaleSwitcher variant="marketing" />
+          <Link
+            href="/"
+            className="text-[13px] font-bold uppercase tracking-[0.04em] text-[var(--po-text-primary)] no-underline hover:opacity-60 transition-opacity"
+          >
+            &larr; {t("auth.backHome")}
+          </Link>
+        </div>
       </nav>
 
       {/* Main card viewport */}
@@ -201,4 +207,3 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-

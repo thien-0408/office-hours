@@ -16,6 +16,7 @@ import {
 import type { AvailabilityException, AvailabilityRule, ExceptionType } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
+import { useI18n } from "@/i18n/provider";
 
 // Mon-Fri only — matches RecurringBookingClient's DAY_OPTIONS convention
 // (office hours don't run on weekends in this dataset).
@@ -475,6 +476,7 @@ function WaitlistTab() {
 // ---- Page -----------------------------------------------------------------
 
 export default function AvailabilityPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("RULES");
   const [rules, setRules] = useState<AvailabilityRule[]>(() => getMockAvailabilityRules());
   const [exceptions, setExceptions] = useState<AvailabilityException[]>(() => getMockAvailabilityExceptions());
@@ -483,21 +485,21 @@ export default function AvailabilityPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Availability</h1>
-        <p className="text-sm text-[var(--ink-600)]">Manage your weekly office-hours rules and one-off changes.</p>
+        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">{t("availability.title")}</h1>
+        <p className="text-sm text-[var(--ink-600)]">{t("availability.description")}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <StatTile icon={CalendarPlus} tone={ACCENT_TOKENS.mint} value={rules.filter((r) => r.active).length} label="Active rules" />
-        <StatTile icon={CalendarOff} tone={HUE_TOKENS.danger} value={exceptions.filter((x) => x.type === "BLOCK").length} label="Blocked windows" />
-        <StatTile icon={Users2} tone={HUE_TOKENS.info} value={waitlistCount} label="Students waiting" />
+        <StatTile icon={CalendarPlus} tone={ACCENT_TOKENS.mint} value={rules.filter((r) => r.active).length} label={t("availability.activeRules")} />
+        <StatTile icon={CalendarOff} tone={HUE_TOKENS.danger} value={exceptions.filter((x) => x.type === "BLOCK").length} label={t("availability.blockedWindows")} />
+        <StatTile icon={Users2} tone={HUE_TOKENS.info} value={waitlistCount} label={t("availability.studentsWaiting")} />
       </div>
 
       <FilterTabs
         options={[
-          { value: "RULES" as Tab, label: "Rules" },
-          { value: "EXCEPTIONS" as Tab, label: "Exceptions" },
-          { value: "WAITLIST" as Tab, label: "Waitlist" },
+          { value: "RULES" as Tab, label: t("availability.rules") },
+          { value: "EXCEPTIONS" as Tab, label: t("availability.exceptions") },
+          { value: "WAITLIST" as Tab, label: t("nav.myWaitlist") },
         ]}
         value={tab}
         onChange={setTab}

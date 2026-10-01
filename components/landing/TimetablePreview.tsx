@@ -1,4 +1,7 @@
+"use client";
+
 import { NEO_LIGHT } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 // A read-only preview of the real weekly timetable feature
 // (components/dashboard/TimetableGrid.tsx, the grid that renders a
@@ -82,19 +85,24 @@ function rowStart(t: string) {
 }
 
 export default function TimetablePreview() {
+  const { t } = useI18n();
+  const days = [t("landing.timetable.mon"), t("landing.timetable.tue"), t("landing.timetable.wed"), t("landing.timetable.thu"), t("landing.timetable.fri")];
+  const shifts = [
+    { label: t("landing.timetable.morning"), from: 7 * 60 + 30, to: 12 * 60 + 30 },
+    { label: t("landing.timetable.afternoon"), from: 12 * 60 + 30, to: 16 * 60 + 30 },
+    { label: t("landing.timetable.evening"), from: 16 * 60 + 30, to: 18 * 60 + 30 },
+  ];
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 py-16 md:py-20">
       <div className="text-center">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--po-text-secondary)]">
-          Not just a calendar — your actual class schedule
+          {t("landing.timetable.eyebrow")}
         </p>
         <h2 className="mx-auto mt-3 max-w-[22ch] text-balance text-[clamp(26px,3.4vw,38px)] font-extrabold leading-[1.05] tracking-[-0.01em] text-[var(--po-text-primary)]">
-          Every Open Slot, Checked Against the Timetable You Already Have
+          {t("landing.timetable.title")}
         </h2>
         <p className="mx-auto mt-4 max-w-[52ch] text-[14.5px] leading-[1.65] text-[var(--po-text-primary)]/70">
-          Upload your official AAO schedule export once — parsed entirely in your browser, nothing
-          uploaded to a server — and OfficeHours builds this exact week view. Every slot you&rsquo;re
-          offered is already checked against it, shift by shift.
+          {t("landing.timetable.body")}
         </p>
       </div>
 
@@ -102,7 +110,7 @@ export default function TimetablePreview() {
         <div className="min-w-[760px]">
           <div className="grid grid-cols-[64px_repeat(5,1fr)] gap-2">
             <div />
-            {DAYS.map((d) => (
+            {days.map((d) => (
               <div key={d} className="pb-2 text-center text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--po-text-secondary)]">
                 {d}
               </div>
@@ -123,7 +131,7 @@ export default function TimetablePreview() {
                   </div>
                 ) : null
               )}
-              {SHIFTS.map((s) => (
+              {shifts.map((s) => (
                 <div
                   key={s.label}
                   className="absolute left-0 -rotate-90 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--po-accent)]"
@@ -142,7 +150,7 @@ export default function TimetablePreview() {
                 style={{ height: ROW_COUNT * ROW_PX }}
               >
                 {/* Shift divider lines */}
-                {SHIFTS.slice(1).map((s) => (
+                {shifts.slice(1).map((s) => (
                   <div
                     key={s.label}
                     className="absolute inset-x-0 border-t border-dashed border-[var(--po-border)]"
@@ -165,9 +173,9 @@ export default function TimetablePreview() {
                             {b.code}
                           </span>
                         ) : (
-                          <span className="text-[8.5px] font-bold uppercase tracking-wide opacity-70">Event</span>
+                          <span className="text-[8.5px] font-bold uppercase tracking-wide opacity-70">{t("landing.timetable.event")}</span>
                         )}
-                        {b.group ? <span className="text-[8.5px] font-semibold opacity-60">Nhóm {b.group}</span> : null}
+                        {b.group ? <span className="text-[8.5px] font-semibold opacity-60">{t("landing.timetable.group", { group: b.group })}</span> : null}
                       </div>
                       {height > ROW_PX * 1.5 ? (
                         <>

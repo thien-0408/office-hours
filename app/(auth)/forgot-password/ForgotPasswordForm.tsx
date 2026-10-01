@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 import { PillTag, CapIcon } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 export default function ForgotPasswordForm() {
   const { forgotPassword } = useAuth();
+  const { t } = useI18n();
 
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,9 +30,9 @@ export default function ForgotPasswordForm() {
   return (
     <div className={AUTH_CARD_CLASS}>
       <div className="mb-2">
-        <PillTag icon={<CapIcon />}>Account Recovery</PillTag>
+        <PillTag icon={<CapIcon />}>{t("auth.accountRecovery")}</PillTag>
       </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">Forgot password?</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">{t("auth.forgotPassword")}</h1>
 
       {submitted ? (
         <>
@@ -55,7 +57,7 @@ export default function ForgotPasswordForm() {
           <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
             <div className="flex flex-col gap-1.5 text-left">
               <label htmlFor="email" className={AUTH_LABEL_CLASS}>
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="email"
@@ -71,7 +73,7 @@ export default function ForgotPasswordForm() {
             </div>
 
             <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
-              {isSubmitting ? "Sending…" : "Send reset link"}
+              {isSubmitting ? t("auth.sending") : t("auth.sendResetLink")}
             </button>
           </form>
         </>
@@ -79,7 +81,7 @@ export default function ForgotPasswordForm() {
 
       <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
         <Link href="/login" className={AUTH_LINK_CLASS}>
-          &larr; Back to login
+          &larr; {t("auth.backToLogin")}
         </Link>
       </p>
     </div>

@@ -980,12 +980,14 @@ import type {
   ScheduleBlock,
   ScheduleImportHistoryEntry,
 } from "@/lib/office-hours/types";
+import { useI18n } from "@/i18n/provider";
 
 type PageTab = "VIEW" | "IMPORT";
 type ViewMode = "GRID" | "AGENDA";
 
 export default function SchedulePage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const isStudent = user?.role === "STUDENT";
 
   const [tab, setTab] = useState<PageTab>("VIEW");
@@ -1098,9 +1100,7 @@ export default function SchedulePage() {
     setEntries((prev) => prev.filter((b) => b.id !== id));
   }
 
-  const subtitle = isStudent
-    ? "A cleaner weekly timetable with calmer hierarchy, softer course cards, and less dashboard noise."
-    : "A cleaner weekly teaching timetable with calmer hierarchy, softer course cards, and less dashboard noise.";
+  const subtitle = isStudent ? t("schedule.studentSubtitle") : t("schedule.lecturerSubtitle");
 
   return (
     <div className="flex flex-col gap-7">
@@ -1109,7 +1109,7 @@ export default function SchedulePage() {
         <div className="max-w-2xl">
           <div className="mb-2 flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-400)]">
-              Schedule
+              {t("nav.schedule")}
             </span>
             <span className="h-1 w-1 rounded-full bg-[var(--paper-300)]" />
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-500)]">
@@ -1119,7 +1119,7 @@ export default function SchedulePage() {
           </div>
 
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink-900)] sm:text-[28px]">
-            {isStudent ? "My Class Schedule" : "My Teaching Schedule"}
+            {isStudent ? t("schedule.studentTitle") : t("schedule.lecturerTitle")}
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-[var(--ink-500)]">{subtitle}</p>
         </div>
@@ -1133,7 +1133,7 @@ export default function SchedulePage() {
               title="Print or export timetable"
             >
               <Printer className="h-3.5 w-3.5" />
-              Print
+              {t("schedule.print")}
             </button>
             <button
               type="button"
@@ -1141,7 +1141,7 @@ export default function SchedulePage() {
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-500)] px-3.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[var(--brand-600)]"
             >
               <Plus className="h-4 w-4" />
-              Add event
+              {t("schedule.addEvent")}
             </button>
           </div>
         )}

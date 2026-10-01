@@ -6,11 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 import { PillTag, CapIcon } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { resetPassword } = useAuth();
+  const { t } = useI18n();
 
   const token = searchParams.get("token");
 
@@ -45,12 +47,12 @@ export default function ResetPasswordForm() {
         <div className="mb-2">
           <PillTag icon={<CapIcon />}>Security</PillTag>
         </div>
-        <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">Invalid reset link</h1>
+        <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">{t("auth.invalidResetLink")}</h1>
         <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
           This link is missing its reset token. Request a new one below.
         </p>
         <Link href="/forgot-password" className={`${AUTH_SUBMIT_CLASS} inline-block`}>
-          Request new link
+          {t("auth.requestNewLink")}
         </Link>
       </div>
     );
@@ -59,9 +61,9 @@ export default function ResetPasswordForm() {
   return (
     <div className={AUTH_CARD_CLASS}>
       <div className="mb-2">
-        <PillTag icon={<CapIcon />}>Account Security</PillTag>
+        <PillTag icon={<CapIcon />}>{t("auth.accountSecurity")}</PillTag>
       </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">Set a new password</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">{t("auth.setNewPassword")}</h1>
 
       {error && (
         <div className="mb-3">
@@ -79,7 +81,7 @@ export default function ResetPasswordForm() {
       <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="password" className={AUTH_LABEL_CLASS}>
-            New password
+            {t("profile.newPassword")}
           </label>
           <input
             id="password"
@@ -97,7 +99,7 @@ export default function ResetPasswordForm() {
 
         <div className="flex flex-col gap-1.5 text-left">
           <label htmlFor="confirmPassword" className={AUTH_LABEL_CLASS}>
-            Confirm new password
+            {t("profile.confirmPassword")}
           </label>
           <input
             id="confirmPassword"
@@ -114,13 +116,13 @@ export default function ResetPasswordForm() {
         </div>
 
         <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
-          {isSubmitting ? "Resetting…" : "Reset password"}
+          {isSubmitting ? t("auth.resetting") : t("auth.resetPassword")}
         </button>
       </form>
 
       <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
         <Link href="/login" className={AUTH_LINK_CLASS}>
-          &larr; Back to login
+          &larr; {t("auth.backToLogin")}
         </Link>
       </p>
     </div>

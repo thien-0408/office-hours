@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "./Card";
+import { useI18n } from "@/i18n/provider";
+import { formatDate } from "@/i18n/formatters";
 
 // Self-contained week-strip — no external calendar lib yet. react-day-picker is
 // deferred (docs/DASHBOARD-UPGRADE.md Phase 3+) to the slot picker, which needs
 // real date-range logic; this widget only needs "pick a nearby day."
-const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" });
-const weekdayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
-
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -21,6 +20,7 @@ function isSameDay(a: Date, b: Date): boolean {
 }
 
 export function MiniCalendar() {
+  const { locale, t } = useI18n();
   const today = new Date();
   const [anchor, setAnchor] = useState(today);
   const [selected, setSelected] = useState(today);
@@ -34,16 +34,16 @@ export function MiniCalendar() {
           type="button"
           onClick={() => setAnchor((d) => addDays(d, -5))}
           className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
-          aria-label="Previous days"
+          aria-label={t("common.previousDays")}
         >
           <ChevronLeft className="w-4 h-4" strokeWidth={2} />
         </button>
-        <p className="text-sm font-bold text-[var(--ink-900)]">{monthFormatter.format(anchor)}</p>
+        <p className="text-sm font-bold text-[var(--ink-900)]">{formatDate(anchor, locale, { month: "long", year: "numeric" })}</p>
         <button
           type="button"
           onClick={() => setAnchor((d) => addDays(d, 5))}
           className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--ink-500)] hover:bg-[var(--brand-50)] hover:text-[var(--brand-700)] transition-colors"
-          aria-label="Next days"
+          aria-label={t("common.nextDays")}
         >
           <ChevronRight className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -66,7 +66,7 @@ export function MiniCalendar() {
                     : "text-[var(--ink-600)] hover:bg-[var(--paper-100)]"
               }`}
             >
-              <span className="text-[10px] uppercase opacity-80">{weekdayFormatter.format(day)}</span>
+              <span className="text-[10px] uppercase opacity-80">{formatDate(day, locale, { weekday: "short" })}</span>
               <span className="tabular-nums">{day.getDate()}</span>
             </button>
           );

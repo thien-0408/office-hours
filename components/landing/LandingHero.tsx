@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import LandingNav from "@/components/landing/LandingNav";
 import { LimeButton, DarkButton, PillTag, PolaroidCard, CapIcon, CheckDot } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 // Photos self-hosted from Unsplash (images.unsplash.com, Unsplash License —
 // free for commercial use, no attribution required) rather than fetched at
@@ -25,6 +26,7 @@ const POLAROIDS = [
 
 export default function LandingHero() {
   const reduceMotion = useReducedMotion();
+  const { t } = useI18n();
 
   return (
     <section className="relative overflow-hidden bg-[var(--po-bg)]">
@@ -60,7 +62,7 @@ export default function LandingHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
           >
-            <PillTag icon={<CapIcon />}>Built for campus scheduling</PillTag>
+            <PillTag icon={<CapIcon />}>{t("landing.hero.eyebrow")}</PillTag>
           </motion.div>
 
           <motion.p
@@ -69,7 +71,7 @@ export default function LandingHero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--po-text-secondary)]"
           >
-            One inbox. One calendar. Zero conflicts.
+            {t("landing.hero.tagline")}
           </motion.p>
 
           <motion.h1
@@ -78,7 +80,7 @@ export default function LandingHero() {
             transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="mt-3 max-w-[15ch] text-balance text-[clamp(36px,6vw,62px)] font-extrabold leading-[0.98] tracking-[-0.02em] text-[var(--po-text-primary)]"
           >
-            Office Hours, Handled.
+            {t("landing.hero.title")}
           </motion.h1>
 
           <motion.p
@@ -87,8 +89,7 @@ export default function LandingHero() {
             transition={{ duration: 0.5, delay: 0.22 }}
             className="mt-5 max-w-[46ch] text-[15px] leading-[1.6] text-[var(--po-text-primary)]/70"
           >
-            A booking system that checks every slot against your real class schedule. No email
-            chase, no double-books, no spreadsheet sign-up sheet taped to an office door.
+            {t("landing.hero.description")}
           </motion.p>
 
           <motion.div
@@ -97,8 +98,8 @@ export default function LandingHero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
           >
-            <LimeButton href="/register">Get started free</LimeButton>
-            <DarkButton href="/public/office-hours">Browse lecturers</DarkButton>
+            <LimeButton href="/register">{t("landing.hero.getStarted")}</LimeButton>
+            <DarkButton href="/public/office-hours">{t("landing.hero.browse")}</DarkButton>
           </motion.div>
 
           <motion.p
@@ -108,7 +109,7 @@ export default function LandingHero() {
             className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold text-[var(--po-text-secondary)]"
           >
             <CheckDot />
-            Free for every student and lecturer
+            {t("landing.hero.freeForEveryone")}
           </motion.p>
         </div>
       </div>

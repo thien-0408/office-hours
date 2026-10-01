@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { SmoothAnchor } from "@/components/landing/shared";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { useI18n } from "@/i18n/provider";
 
 const LINKS = [
   { href: "#how-it-works", label: "How it works" },
@@ -9,6 +13,13 @@ const LINKS = [
 ];
 
 export default function LandingNav() {
+  const { t } = useI18n();
+  const links = [
+    { href: "#how-it-works", label: t("landing.nav.howItWorks") },
+    { href: "#pricing", label: t("landing.nav.pricing") },
+    { href: "#why-us", label: t("landing.nav.whyUs") },
+    { href: "#faqs", label: t("landing.nav.faqs") },
+  ];
   return (
     <header className="mx-auto flex w-full max-w-[1280px] items-center justify-between px-6 py-8">
       <Link href="/" className="flex items-center">
@@ -17,24 +28,27 @@ export default function LandingNav() {
       </Link>
 
       <nav className="hidden items-center gap-9 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--po-text-primary)] md:flex">
-        {LINKS.map((link) => (
+        {links.map((link) => (
           <SmoothAnchor key={link.href} href={link.href} className="transition-opacity hover:opacity-60">
             {link.label}
           </SmoothAnchor>
         ))}
       </nav>
 
-      <Link
-        href="/register"
-        className="inline-flex items-center gap-2.5 rounded-full bg-[var(--po-text-primary)] py-2.5 pl-5 pr-2 text-[11.5px] font-bold uppercase tracking-[0.04em] text-white"
-      >
-        Get started
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--po-accent)] text-[var(--po-text-primary)]">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        </span>
-      </Link>
+      <div className="flex items-center gap-3">
+        <LocaleSwitcher variant="marketing" />
+        <Link
+          href="/register"
+          className="inline-flex items-center gap-2.5 rounded-full bg-[var(--po-text-primary)] py-2.5 pl-5 pr-2 text-[11.5px] font-bold uppercase tracking-[0.04em] text-white"
+        >
+          {t("landing.nav.getStarted")}
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--po-accent)] text-[var(--po-text-primary)]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </span>
+        </Link>
+      </div>
     </header>
   );
 }

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Marquee, SmoothAnchor } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 const TICKER = ["100% money-back on complaints", "Free for students", "Fair waitlist", "Conflict-checked", "Senior-built"];
 
@@ -16,9 +19,23 @@ const SOCIAL = [
 ] as const;
 
 export default function LandingFooter() {
+  const { t } = useI18n();
+  const ticker = [
+    t("landing.pricing.noLockIn"),
+    t("landing.hero.freeForEveryone"),
+    t("landing.fairness.eyebrow"),
+    t("landing.timetable.eyebrow"),
+    t("landing.stats.lecturers"),
+  ];
+  const nav = [
+    { label: t("landing.nav.howItWorks"), href: "#how-it-works" },
+    { label: t("landing.nav.pricing"), href: "#pricing" },
+    { label: t("landing.nav.whyUs"), href: "#why-us" },
+    { label: t("landing.nav.faqs"), href: "#faqs" },
+  ];
   return (
     <footer>
-      <Marquee items={TICKER} />
+      <Marquee items={ticker} />
 
       <div className="bg-[var(--po-text-primary)] pt-14 pb-8">
         <div className="mx-auto w-full max-w-[1180px] px-6">
@@ -30,15 +47,14 @@ export default function LandingFooter() {
                 <span className="text-[15px] font-bold text-white">OfficeHours</span>
               </Link>
               <p className="mt-4 max-w-[30ch] text-[12.5px] leading-relaxed text-white/50">
-                Conflict-free office hours booking, built for campus. Free for every student and
-                lecturer.
+                {t("landing.footer.description")}
               </p>
             </div>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">Navigation</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">{t("landing.footer.navigation")}</p>
               <ul className="mt-4 flex flex-col gap-2.5">
-                {NAV.map((link) => (
+                {nav.map((link) => (
                   <li key={link.label}>
                     <SmoothAnchor href={link.href} className="text-[13px] font-semibold text-white/70 hover:text-white">
                       {link.label}
@@ -49,7 +65,7 @@ export default function LandingFooter() {
             </div>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">Socials</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">{t("landing.footer.socials")}</p>
               <div className="mt-4 flex items-center gap-2">
                 {SOCIAL.map((s) => (
                   <span
@@ -69,8 +85,8 @@ export default function LandingFooter() {
           <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
             <p className="text-[11.5px] text-white/40">&copy; {new Date().getFullYear()} OfficeHours. All rights reserved.</p>
             <div className="flex items-center gap-5 text-[11.5px] text-white/40">
-              <Link href="/login" className="hover:text-white">Sign in</Link>
-              <Link href="/register" className="hover:text-white">Create account</Link>
+              <Link href="/login" className="hover:text-white">{t("landing.footer.signIn")}</Link>
+              <Link href="/register" className="hover:text-white">{t("landing.footer.createAccount")}</Link>
             </div>
           </div>
         </div>

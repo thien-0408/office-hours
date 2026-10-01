@@ -13,9 +13,11 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { initials } from "@/lib/avatar";
 import { setAvatarOverride, useAvatarIndex } from "@/lib/use-avatar";
 import { getMockNotificationPrefs } from "@/lib/office-hours/mock-data";
+import { useI18n } from "@/i18n/provider";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const prefs0 = getMockNotificationPrefs();
 
   // Seeded once from `user` via the useState initializer — re-syncing on a
@@ -42,17 +44,17 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-xl">
-      <h1 className="text-2xl font-bold text-[var(--ink-900)]">My Profile</h1>
+      <h1 className="text-2xl font-bold text-[var(--ink-900)]">{t("profile.title")}</h1>
 
       <Card>
-        <SectionHeader title="Identity" />
+        <SectionHeader title={t("profile.identity")} />
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setAvatarPickerOpen(true)}
               className="group relative rounded-full"
-              aria-label="Change avatar"
+              aria-label={t("profile.changeAvatar")}
             >
               <Image
                 src={`/memoji/${avatarIndex}.png`}
@@ -66,17 +68,17 @@ export default function ProfilePage() {
               </span>
             </button>
             <div>
-              <p className="text-sm font-semibold text-[var(--ink-900)]">Avatar</p>
+              <p className="text-sm font-semibold text-[var(--ink-900)]">{t("profile.avatar")}</p>
               <button
                 type="button"
                 onClick={() => setAvatarPickerOpen(true)}
                 className="text-[13px] font-semibold text-[var(--brand-600)] hover:text-[var(--brand-700)] transition-colors"
               >
-                Change avatar
+                {t("profile.changeAvatar")}
               </button>
             </div>
           </div>
-          <FormField label="Full name">
+          <FormField label={t("profile.fullName")}>
             <TextInput
               value={fullName}
               onChange={(e) => {
@@ -85,7 +87,7 @@ export default function ProfilePage() {
               }}
             />
           </FormField>
-          <FormField label="Department">
+          <FormField label={t("profile.department")}>
             <TextInput
               value={department ?? ""}
               onChange={(e) => {
@@ -94,7 +96,7 @@ export default function ProfilePage() {
               }}
             />
           </FormField>
-          <FormField label="Email">
+          <FormField label={t("auth.email")}>
             <TextInput value={user.email} disabled />
           </FormField>
           {/* No backend yet — "Save" only updates local state. Real wiring
@@ -105,37 +107,37 @@ export default function ProfilePage() {
               onClick={() => setSavedIdentity(true)}
               className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit"
             >
-              Save changes
+              {t("profile.saveChanges")}
             </button>
-            {savedIdentity && <span className="text-[13px] text-[var(--success-700)] font-semibold">Saved</span>}
+            {savedIdentity && <span className="text-[13px] text-[var(--success-700)] font-semibold">{t("profile.saved")}</span>}
           </div>
         </div>
       </Card>
 
       <Card>
-        <SectionHeader title="Notification preferences" />
+        <SectionHeader title={t("profile.notifications")} />
         <div className="flex flex-col divide-y divide-[var(--paper-100)]">
           <ToggleSwitch
-            label="Booking confirmed"
-            description="Email when a lecturer confirms your booking"
+            label={t("profile.bookingConfirmed")}
+            description={t("profile.bookingConfirmed")}
             checked={prefs.bookingConfirmed}
             onChange={(v) => setPrefs((p) => ({ ...p, bookingConfirmed: v }))}
           />
           <ToggleSwitch
-            label="Booking declined"
-            description="Email when a booking is declined or cancelled"
+            label={t("profile.bookingDeclined")}
+            description={t("booking.status.cancelled")}
             checked={prefs.bookingDeclined}
             onChange={(v) => setPrefs((p) => ({ ...p, bookingDeclined: v }))}
           />
           <ToggleSwitch
-            label="Waitlist offers"
-            description="Email when a waitlisted slot opens up"
+            label={t("profile.waitlistOffers")}
+            description={t("booking.openSlots")}
             checked={prefs.waitlistOffer}
             onChange={(v) => setPrefs((p) => ({ ...p, waitlistOffer: v }))}
           />
           <ToggleSwitch
-            label="Reminders"
-            description="Email reminders before upcoming bookings"
+            label={t("profile.reminders")}
+            description={t("profile.reminders")}
             checked={prefs.reminders}
             onChange={(v) => setPrefs((p) => ({ ...p, reminders: v }))}
           />
@@ -143,19 +145,19 @@ export default function ProfilePage() {
       </Card>
 
       <Card>
-        <SectionHeader title="Change password" />
+        <SectionHeader title={t("profile.changePassword")} />
         <div className="flex flex-col gap-4">
-          <FormField label="Current password">
+          <FormField label={t("profile.currentPassword")}>
             <TextInput
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
             />
           </FormField>
-          <FormField label="New password">
+          <FormField label={t("profile.newPassword")}>
             <TextInput type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
           </FormField>
-          <FormField label="Confirm new password">
+          <FormField label={t("profile.confirmPassword")}>
             <TextInput
               type="password"
               value={confirmPassword}
@@ -163,10 +165,10 @@ export default function ProfilePage() {
             />
           </FormField>
           {newPassword.length > 0 && newPassword.length < 8 && (
-            <p className="text-[12.5px] text-[var(--danger-700)]">Password must be at least 8 characters.</p>
+            <p className="text-[12.5px] text-[var(--danger-700)]">{t("profile.passwordTooShort")}</p>
           )}
           {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-            <p className="text-[12.5px] text-[var(--danger-700)]">Passwords don&apos;t match.</p>
+            <p className="text-[12.5px] text-[var(--danger-700)]">{t("profile.passwordMismatch")}</p>
           )}
           <div className="flex items-center gap-3">
             <button
@@ -175,9 +177,9 @@ export default function ProfilePage() {
               onClick={() => setPasswordConfirmOpen(true)}
               className="px-4 py-2 rounded-xl bg-[var(--brand-500)] text-white text-sm font-bold hover:bg-[var(--brand-600)] transition-colors w-fit disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--brand-500)]"
             >
-              Change password
+              {t("profile.changePassword")}
             </button>
-            {passwordChanged && <span className="text-[13px] text-[var(--success-700)] font-semibold">Password changed</span>}
+            {passwordChanged && <span className="text-[13px] text-[var(--success-700)] font-semibold">{t("profile.passwordChanged")}</span>}
           </div>
         </div>
       </Card>

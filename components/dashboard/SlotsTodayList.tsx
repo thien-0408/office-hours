@@ -1,13 +1,14 @@
 import type { PublicSlot } from "@/lib/office-hours/types";
 import { Card } from "./Card";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+import { useI18n } from "@/i18n/provider";
+import { formatTime } from "@/i18n/formatters";
 
 export function SlotsTodayList({ slots }: { slots: PublicSlot[] }) {
+  const { locale, t } = useI18n();
   if (slots.length === 0) {
     return (
       <Card className="text-center py-6">
-        <p className="text-[13px] text-[var(--ink-500)]">No open slots left today.</p>
+        <p className="text-[13px] text-[var(--ink-500)]">{t("common.noOpenSlotsToday")}</p>
       </Card>
     );
   }
@@ -19,7 +20,7 @@ export function SlotsTodayList({ slots }: { slots: PublicSlot[] }) {
           key={`${slot.startAt}-${i}`}
           className="px-3 py-1.5 rounded-full text-[12.5px] font-bold tabular-nums bg-[var(--brand-50)] text-[var(--brand-700)] border border-[var(--brand-100)]"
         >
-          {timeFormatter.format(new Date(slot.startAt))}
+          {formatTime(new Date(slot.startAt), locale)}
         </span>
       ))}
     </div>

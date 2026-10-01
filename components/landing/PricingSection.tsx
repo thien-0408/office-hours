@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { memojiSrc } from "@/lib/avatar";
 import { CheckBadge, PillTag, LimeButton, NEO_LIGHT, NEO_DARK } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 const PLAN_INCLUDES = [
   "Unlimited bookings, every semester",
@@ -25,32 +28,38 @@ const PREVIEW_LECTURERS = [
 ];
 
 export default function PricingSection() {
+  const { t } = useI18n();
+  const planIncludes = [
+    t("landing.pricing.include1"), t("landing.pricing.include2"), t("landing.pricing.include3"),
+    t("landing.pricing.include4"), t("landing.pricing.include5"), t("landing.pricing.include6"),
+  ];
+  const supportAddons = [t("landing.pricing.addon1"), t("landing.pricing.addon2"), t("landing.pricing.addon3")];
   return (
     <section id="pricing" className="mx-auto w-full max-w-[1180px] px-6 py-16 md:py-20">
       <div className="text-center">
-        <PillTag>Official campus rollout</PillTag>
+        <PillTag>{t("landing.pricing.pill")}</PillTag>
         <h2 className="mx-auto mt-4 max-w-[16ch] text-balance text-[clamp(26px,3.4vw,38px)] font-extrabold leading-[1.05] tracking-[-0.01em] text-[var(--po-text-primary)]">
-          One Plan. Free for Everyone.
+          {t("landing.pricing.title")}
         </h2>
         <p className="mx-auto mt-3 max-w-[42ch] text-[14.5px] text-[var(--po-text-primary)]/70">
-          We host it, we maintain it, you just show up to office hours.
+          {t("landing.pricing.body")}
         </p>
       </div>
 
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         <div className={`rounded-3xl bg-[var(--po-text-primary)] p-6 text-[var(--po-text-tertiary)] -rotate-1 ${NEO_DARK}`}>
           <span className="inline-block rounded-full bg-[var(--po-accent)] px-2.5 py-1 text-[10px] font-bold text-[var(--po-text-primary)]">
-            THE ONLY PLAN
+            {t("landing.pricing.onlyPlan")}
           </span>
           <p className="mt-4 text-[38px] font-extrabold leading-none">
-            $0<span className="text-[14px] font-semibold text-white/60">/forever</span>
+            $0<span className="text-[14px] font-semibold text-white/60">{t("landing.pricing.forever")}</span>
           </p>
-          <p className="mt-1 text-[12px] text-white/50">For students &amp; lecturers</p>
+          <p className="mt-1 text-[12px] text-white/50">{t("landing.pricing.audience")}</p>
           <LimeButton href="/register" className="mt-5 w-full justify-center">
-            Get started
+            {t("landing.pricing.getStarted")}
           </LimeButton>
           <ul className="mt-6 flex flex-col gap-2.5 border-t border-white/10 pt-5">
-            {PLAN_INCLUDES.map((item) => (
+            {planIncludes.map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-[12.5px] text-white/75">
                 <CheckBadge dark />
                 {item}
@@ -62,13 +71,13 @@ export default function PricingSection() {
         <div className="flex flex-col gap-4">
           <div className={`rounded-3xl bg-[var(--po-accent)] p-6 rotate-1 ${NEO_LIGHT}`}>
             <span className="inline-block rounded-full bg-[var(--po-text-primary)] px-2.5 py-1 text-[10px] font-bold text-[var(--po-accent)]">
-              FOR DEPARTMENTS
+              {t("landing.pricing.departments")}
             </span>
             <p className="mt-3 text-[15px] font-bold text-[var(--po-text-primary)]">
-              Bring your whole department online in a week
+              {t("landing.pricing.departmentTitle")}
             </p>
             <ul className="mt-4 flex flex-col gap-2">
-              {SUPPORT_ADDONS.map((item) => (
+              {supportAddons.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-[12px] font-semibold text-[var(--po-text-primary)]/80">
                   <CheckBadge />
                   {item}
@@ -81,14 +90,14 @@ export default function PricingSection() {
               !
             </span>
             <p className="text-[12px] leading-snug text-[var(--po-text-primary)]/70">
-              No lock-in. Leave anytime &mdash; your bookings and history export with you.
+              {t("landing.pricing.noLockIn")}
             </p>
           </div>
         </div>
 
         <div className={`rounded-3xl bg-[var(--po-text-primary)] p-6 text-[var(--po-text-tertiary)] rotate-1 ${NEO_DARK}`}>
-          <p className="text-[18px] font-bold">See it live</p>
-          <p className="mt-1 text-[12px] text-white/50">Real open slots, right now.</p>
+          <p className="text-[18px] font-bold">{t("landing.pricing.seeLive")}</p>
+          <p className="mt-1 text-[12px] text-white/50">{t("landing.pricing.liveBody")}</p>
           <div className="mt-5 flex flex-col gap-3">
             {PREVIEW_LECTURERS.map((l) => (
               <div key={l.seed} className="flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-2.5">
@@ -104,7 +113,7 @@ export default function PricingSection() {
             href="/public/office-hours"
             className="mt-5 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--po-accent)]"
           >
-            Browse all lecturers <span aria-hidden="true">&rarr;</span>
+            {t("landing.pricing.browseAll")} <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
       </div>

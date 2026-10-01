@@ -6,12 +6,11 @@ import { ArrowUpDown } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { Booking } from "@/lib/office-hours/types";
 import { Card } from "./Card";
+import { useI18n } from "@/i18n/provider";
+import { formatDate, formatTime } from "@/i18n/formatters";
 
 type Perspective = "student" | "lecturer" | "admin";
 type SortKey = "name" | "startAt" | "status";
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
-const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
 
 function SortButton({
   label,
@@ -60,11 +59,12 @@ export function BookingsTable({
   onToggleSelect?: (id: number) => void;
   onToggleSelectAll?: (ids: number[]) => void;
 }) {
+  const { locale, t } = useI18n();
   const [sortKey, setSortKey] = useState<SortKey>("startAt");
   const [ascending, setAscending] = useState(true);
 
   const primaryField = perspective === "lecturer" ? "studentName" : "lecturerName";
-  const nameColumnLabel = perspective === "admin" ? "Lecturer / Student" : perspective === "lecturer" ? "Student" : "Lecturer";
+  const nameColumnLabel = perspective === "admin" ? `${t("nav.roleLecturer")} / ${t("nav.roleStudent")}` : perspective === "lecturer" ? t("nav.roleStudent") : t("nav.roleLecturer");
 
   const sorted = useMemo(() => {
     const copy = [...bookings];
@@ -94,7 +94,7 @@ export function BookingsTable({
   if (bookings.length === 0) {
     return (
       <Card className="text-center py-8">
-        <p className="text-sm text-[var(--ink-500)]">No bookings yet.</p>
+        <p className="text-sm text-[var(--ink-500)]">{t("booking.noBookings")}</p>
       </Card>
     );
   }
@@ -111,7 +111,7 @@ export function BookingsTable({
               <th className="px-5 py-3 w-10">
                 <input
                   type="checkbox"
-                  aria-label="Select all"
+                  aria-label={t("common.selectAll")}
                   checked={allSelected}
                   onChange={() => onToggleSelectAll(allSelected ? [] : selectableIds)}
                   className="w-4 h-4 accent-[var(--brand-500)]"
@@ -121,12 +121,12 @@ export function BookingsTable({
             <th className="text-left px-5 py-3">
               <SortButton label={nameColumnLabel} active={sortKey === "name"} onClick={() => handleSort("name")} />
             </th>
-            <th className="text-left px-5 py-3 hidden sm:table-cell">Topic</th>
+            <th className="text-left px-5 py-3 hidden sm:table-cell">{t("booking.topic")}</th>
             <th className="text-left px-5 py-3">
-              <SortButton label="Date & time" active={sortKey === "startAt"} onClick={() => handleSort("startAt")} />
+              <SortButton label={t("booking.dateTime")} active={sortKey === "startAt"} onClick={() => handleSort("startAt")} />
             </th>
             <th className="text-left px-5 py-3">
-              <SortButton label="Status" active={sortKey === "status"} onClick={() => handleSort("status")} />
+              <SortButton label={t("booking.statusLabel")} active={sortKey === "status"} onClick={() => handleSort("status")} />
             </th>
             {onCancelBooking && <th className="px-5 py-3" />}
           </tr>
@@ -156,7 +156,7 @@ export function BookingsTable({
                   {(!isSelectable || isSelectable(booking)) && (
                     <input
                       type="checkbox"
-                      aria-label={`Select booking with ${booking[primaryField]}`}
+                      aria-label={`${t("common.select")} ${booking[primaryField]}`}
                       checked={selectedIds?.has(booking.id) ?? false}
                       onChange={() => onToggleSelect?.(booking.id)}
                       className="w-4 h-4 accent-[var(--brand-500)]"
@@ -177,8 +177,8 @@ export function BookingsTable({
                 {booking.topic ?? "—"}
               </td>
               <td className="px-5 py-3.5 tabular-nums text-[var(--ink-700)] whitespace-nowrap">
-                {dateFormatter.format(new Date(booking.startAt))} ·{" "}
-                {timeFormatter.format(new Date(booking.startAt))}
+                {formatDate(new Date(booking.startAt), locale, { month: "short", day: "numeric" })} ·{" "}
+                {formatTime(new Date(booking.startAt), locale)}
               </td>
               <td className="px-5 py-3.5">
                 <StatusBadge status={booking.status} />
@@ -195,7 +195,7 @@ export function BookingsTable({
                       }}
                       className="text-[13px] font-bold text-[var(--danger-700)] hover:underline"
                     >
-                      Cancel
+                      {t("booking.cancel")}
                     </button>
                   )}
                 </td>

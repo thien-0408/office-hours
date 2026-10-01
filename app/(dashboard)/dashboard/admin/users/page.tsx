@@ -10,6 +10,7 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { getMockAdminUsers, getMockSemesters } from "@/lib/office-hours/mock-data";
 import type { AdminUserRow, Semester } from "@/lib/office-hours/types";
 import type { UserRole } from "@/lib/auth/types";
+import { useI18n } from "@/i18n/provider";
 
 type Tab = "USERS" | "SEMESTERS";
 type RoleFilter = UserRole | "ALL";
@@ -347,6 +348,7 @@ function SemestersTab({ semesters, setSemesters }: { semesters: Semester[]; setS
 }
 
 export default function AdminUsersPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("USERS");
   const [users, setUsers] = useState<AdminUserRow[]>(() => getMockAdminUsers());
   const [semesters, setSemesters] = useState<Semester[]>(() => getMockSemesters());
@@ -354,14 +356,14 @@ export default function AdminUsersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Users & Semesters</h1>
+        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">{t("admin.usersTitle")}</h1>
         <p className="text-sm text-[var(--ink-600)]">Manage platform accounts and academic terms.</p>
       </div>
 
       <FilterTabs
         options={[
-          { value: "USERS" as Tab, label: "Users" },
-          { value: "SEMESTERS" as Tab, label: "Semesters" },
+          { value: "USERS" as Tab, label: t("admin.users") },
+          { value: "SEMESTERS" as Tab, label: t("admin.semesters") },
         ]}
         value={tab}
         onChange={setTab}

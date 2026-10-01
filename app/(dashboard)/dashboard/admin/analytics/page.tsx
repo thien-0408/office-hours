@@ -16,6 +16,7 @@ import {
 } from "@/lib/office-hours/mock-data";
 import type { PolicyComparisonRow } from "@/lib/office-hours/types";
 import { ACCENT_TOKENS } from "@/lib/ui/accent-palette";
+import { useI18n } from "@/i18n/provider";
 
 const POLICY_LABELS: Record<PolicyComparisonRow["policyName"], string> = {
   FCFS: "FCFS",
@@ -204,34 +205,35 @@ function PolicyComparisonSection() {
 // ---- Page --------------------------------------------------------------------
 
 export default function AdminAnalyticsPage() {
+  const { t } = useI18n();
   const advisorLoad = getMockAdvisorLoad();
   const noShowRate = getMockNoShowRateByLecturer();
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Analytics</h1>
-        <p className="text-sm text-[var(--ink-600)]">Advisor load, no-show rate, access equity, and policy comparison for the pilot semester.</p>
+        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">{t("admin.analytics")}</h1>
+        <p className="text-sm text-[var(--ink-600)]">{t("admin.analyticsDescription")}</p>
       </div>
 
       <div className="flex flex-col gap-4">
-        <SectionHeader title="Advisor load this week" />
-        <ActivityChart title="Bookings per lecturer" data={advisorLoad} accent="coral" />
+        <SectionHeader title={t("admin.advisorLoad")} />
+        <ActivityChart title={t("admin.bookingsPerLecturer")} data={advisorLoad} accent="coral" />
       </div>
 
       <div className="flex flex-col gap-4">
-        <SectionHeader title="No-show rate by lecturer" />
+        <SectionHeader title={t("admin.noShowByLecturer")} />
         {noShowRate.length === 0 ? (
           <Card className="text-center py-8">
-            <p className="text-sm text-[var(--ink-500)]">Not enough closed bookings yet.</p>
+            <p className="text-sm text-[var(--ink-500)]">{t("admin.notEnoughClosed")}</p>
           </Card>
         ) : (
           <ActivityChart
-            title="No-show %"
+            title={t("admin.noShowPercent")}
             data={noShowRate}
             accent="brand"
-            valueLabel="No-show %"
-            formatValue={(v) => `${v}% no-show`}
+            valueLabel={t("admin.noShowPercent")}
+            formatValue={(v) => `${v}% ${t("admin.noShowPercent").toLowerCase()}`}
           />
         )}
       </div>

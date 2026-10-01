@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { getMockAllocationEvents, getMockAllocationPolicies } from "@/lib/office-hours/mock-data";
 import type { AllocationDecision, AllocationEvent, AllocationPolicy, AllocationPolicyName } from "@/lib/office-hours/types";
 import { HUE_TOKENS } from "@/lib/ui/status-hues";
+import { useI18n } from "@/i18n/provider";
 
 type Tab = "POLICIES" | "EVENTS";
 
@@ -371,6 +372,7 @@ function EventsTab({ events, setEvents, policies }: { events: AllocationEvent[];
 // ---- Page --------------------------------------------------------------------
 
 export default function AdminAllocationPage() {
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("POLICIES");
   const [policies, setPolicies] = useState<AllocationPolicy[]>(() => getMockAllocationPolicies());
   const [events, setEvents] = useState<AllocationEvent[]>(() => getMockAllocationEvents());
@@ -378,7 +380,7 @@ export default function AdminAllocationPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">Allocation</h1>
+        <h1 className="text-2xl font-bold text-[var(--ink-900)] mb-1">{t("admin.allocationTitle")}</h1>
         <p className="text-sm text-[var(--ink-600)]">Manage waitlist allocation policies and review the decision audit log.</p>
       </div>
 

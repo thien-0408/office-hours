@@ -1,14 +1,15 @@
 import { BOOKING_STATUS_CONFIG, HUE_TOKENS } from "@/lib/ui/status-hues";
 import type { Booking } from "@/lib/office-hours/types";
 import { Card } from "./Card";
-
-const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+import { useI18n } from "@/i18n/provider";
+import { formatTime } from "@/i18n/formatters";
 
 export function UpcomingList({ bookings }: { bookings: Booking[] }) {
+  const { locale, t } = useI18n();
   if (bookings.length === 0) {
     return (
       <Card className="text-center py-6">
-        <p className="text-[13px] text-[var(--ink-500)]">Nothing on the calendar yet.</p>
+        <p className="text-[13px] text-[var(--ink-500)]">{t("common.noCalendarItems")}</p>
       </Card>
     );
   }
@@ -25,10 +26,10 @@ export function UpcomingList({ bookings }: { bookings: Booking[] }) {
           >
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold text-[var(--ink-900)] truncate">{booking.lecturerName}</p>
-              <p className="text-[11.5px] text-[var(--ink-500)] truncate">{booking.department ?? "Office hours"}</p>
+              <p className="text-[11.5px] text-[var(--ink-500)] truncate">{booking.department ?? t("common.officeHours")}</p>
             </div>
             <span className="shrink-0 text-[11.5px] font-bold text-[var(--ink-700)] tabular-nums">
-              {timeFormatter.format(new Date(booking.startAt))}
+              {formatTime(new Date(booking.startAt), locale)}
             </span>
           </div>
         );

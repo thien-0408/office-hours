@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ToastProvider";
 import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
 import { PillTag, CapIcon } from "@/components/landing/shared";
+import { useI18n } from "@/i18n/provider";
 
 const DEMO_ACCOUNTS = [
   {
@@ -41,6 +42,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const toast = useToast();
+  const { t } = useI18n();
   const prefersReducedMotion = useReducedMotion();
 
   const [email, setEmail] = useState("");
@@ -112,7 +114,7 @@ export default function LoginForm() {
           )}
         </div>
 
-        <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">Login</h1>
+        <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">{t("auth.login")}</h1>
 
         {error && (
           <p className="text-xs text-red-600 mb-3" role="alert">
@@ -124,7 +126,7 @@ export default function LoginForm() {
           {/* Email Field */}
           <div className="flex flex-col gap-1.5 text-left">
             <label htmlFor="email" className={AUTH_LABEL_CLASS}>
-              Email
+              {t("auth.email")}
             </label>
             <input
               id="email"
@@ -142,7 +144,7 @@ export default function LoginForm() {
           {/* Password Field */}
           <div className="flex flex-col gap-1.5 text-left">
             <label htmlFor="password" className={AUTH_LABEL_CLASS}>
-              Password
+              {t("auth.password")}
             </label>
             <div className="relative flex items-center">
               <input
@@ -150,7 +152,7 @@ export default function LoginForm() {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -160,7 +162,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 text-[var(--po-text-secondary)] hover:text-[var(--po-text-primary)] transition-colors cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               >
                 {showPassword ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -180,13 +182,13 @@ export default function LoginForm() {
           {/* Forgot Password Link */}
           <div className="text-left mt-0.5">
             <Link href="/forgot-password" className={`text-xs ${AUTH_LINK_CLASS}`}>
-              Forgot Password?
+              {t("auth.forgotPassword")}
             </Link>
           </div>
 
           {/* Submit Button */}
           <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
-            {isSubmitting ? "Signing in…" : "Sign in"}
+            {isSubmitting ? t("auth.signingIn") : t("auth.signIn")}
           </button>
         </form>
 
@@ -233,7 +235,7 @@ export default function LoginForm() {
         <p className="text-xs text-[var(--po-text-secondary)] text-center">
           Don&apos;t have an account yet?{" "}
           <Link href="/register" className={AUTH_LINK_CLASS}>
-            Register for free
+            {t("auth.registerFree")}
           </Link>
         </p>
       </div>
@@ -330,4 +332,3 @@ export default function LoginForm() {
     </>
   );
 }
-
