@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div
-      className={`relative flex-1 flex flex-col min-h-screen overflow-hidden bg-[var(--po-bg)] ${satoshi.className}`}
+      className={`relative flex-1 flex flex-col min-h-screen overflow-hidden bg-[var(--po-bg)] ${satoshi.variable} font-landing`}
       style={PROJECT_ONE_TOKENS}
     >
       {/* Background decoration:

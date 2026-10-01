@@ -145,7 +145,7 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-accent: var(--ui-accent);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-archivo);
   --font-heading: var(--font-sans);
@@ -223,6 +223,12 @@
   --accent: var(--brand-500);
   --accent-hover: var(--brand-600);
   --focus-ring: var(--brand-400);
+}
+
+/* Landing/auth face: Satoshi has no Vietnamese glyphs, so those characters fall back
+   per-glyph to the app's primary font (Plus Jakarta Sans). */
+.font-landing {
+  font-family: var(--font-satoshi), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 * {

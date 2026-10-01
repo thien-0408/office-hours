@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className={`flex flex-1 flex-col bg-[var(--po-bg)] ${satoshi.className}`} style={PROJECT_ONE_TOKENS}>
+    <div className={`flex flex-1 flex-col bg-[var(--po-bg)] ${satoshi.variable} font-landing`} style={PROJECT_ONE_TOKENS}>
       <LandingHero />
       <ChecklistSection />
       <TimetablePreview />
