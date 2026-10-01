@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Student dashboard layout previews · OfficeHours</title>
+    <style>
+      :root {
+        --brand-50: #eff4ff; --brand-100: #dce7ff; --brand-200: #b7ceff; --brand-300: #8fb0ff;
+        --brand-500: #3465e0; --brand-600: #274fc0; --brand-700: #1d3b98;
+        --paper-0: #fff; --paper-50: #f6f8fc; --paper-100: #edf1f8; --paper-200: #dce2ed;
+        --ink-400: #8d96aa; --ink-500: #6b7488; --ink-600: #4e566a; --ink-700: #383f52;
+        --ink-800: #262b3b; --ink-900: #171a26;
+        --rose-100: #fce7f3; --rose-500: #ec4899; --rose-700: #be185d;
+        --coral-100: #ffedd5; --coral-500: #f97316; --coral-700: #c2410c;
+        --mint-100: #dcfce7; --mint-500: #22c55e; --mint-700: #15803d;
+        --warning-100: #fbead4; --warning-700: #a15e17;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink-900);
+        background: var(--paper-50);
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; min-width: 320px; }
+      button, select { font: inherit; }
+      button { cursor: pointer; }
+      :focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+      .icon { width: 17px; height: 17px; flex: none; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .icon.sm { width: 15px; height: 15px; }
+      .icon.lg { width: 20px; height: 20px; }
+
+      /* Preview controls live outside the simulated product screen. */
+      .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px clamp(16px, 3vw, 36px); background: var(--ink-900); color: white; box-shadow: 0 6px 24px rgba(11, 27, 73, .13); }
+      .preview-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px 13px; }
+      .preview-heading strong { font-size: 13px; }
+      .preview-heading span { color: var(--ink-400); font-size: 11px; }
+      .variant-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+      .variant-tabs button { border: 1px solid rgba(255,255,255,.18); border-radius: 9px; padding: 8px 11px; color: #e9edfa; background: transparent; font-size: 11px; font-weight: 700; }
+      .variant-tabs button[aria-selected="true"] { border-color: var(--brand-300); color: var(--brand-700); background: var(--brand-50); }
+      .variant-tabs button:hover:not([aria-selected="true"]) { background: rgba(255,255,255,.1); }
+
+      .product { display: grid; grid-template-columns: 272px minmax(0, 1fr); min-height: calc(100vh - 58px); }
+      .sidebar { position: sticky; top: 58px; align-self: start; display: flex; flex-direction: column; min-height: calc(100vh - 58px); margin: 8px 0 8px 8px; padding: 16px 12px 12px; border: 1px solid var(--paper-200); border-radius: 18px; background: var(--paper-0); }
+      .brand { display: flex; align-items: center; gap: 7px; padding: 3px 14px 24px; font-family: Georgia, serif; color: var(--brand-700); font-size: 14px; }
+      .brand strong { letter-spacing: -.06em; }
+      .brand-mark { position: relative; display: inline-block; width: 23px; height: 18px; }
+      .brand-mark::before, .brand-mark::after { content: ""; position: absolute; top: 2px; width: 12px; height: 12px; border: 2px solid var(--brand-500); border-radius: 50%; }
+      .brand-mark::before { left: 0; }
+      .brand-mark::after { left: 7px; border-color: var(--mint-500); }
+      .nav-label { margin: 5px 13px 11px; color: var(--ink-400); font-size: 10px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
+      .nav { display: grid; gap: 3px; }
+      .nav a { display: flex; align-items: center; gap: 13px; min-height: 44px; padding: 0 13px; border-radius: 12px; color: var(--ink-600); font-size: 12px; font-weight: 650; text-decoration: none; }
+      .nav a.current { position: relative; color: var(--brand-700); background: var(--brand-50); }
+      .nav a.current::before { content: ""; position: absolute; left: 0; width: 3px; height: 25px; border-radius: 3px; background: var(--brand-500); }
+      .nav a.current .nav-icon { color: var(--brand-700); background: var(--brand-100); }
+      .nav-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; }
+      .sidebar-bottom { margin-top: auto; }
+      .quick-link { display: grid; gap: 3px; margin: 0 3px 12px; padding: 12px 13px; border: 1px solid var(--brand-100); border-left: 3px solid var(--brand-500); border-radius: 12px; color: var(--ink-900); background: var(--brand-50); text-decoration: none; }
+      .quick-link small { color: var(--brand-700); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      .quick-link strong { font-size: 12px; }
+      .quick-link span { color: var(--ink-500); font-size: 10px; }
+      .account { display: flex; align-items: center; gap: 9px; padding: 11px 9px 1px; border-top: 1px solid var(--paper-200); }
+      .avatar { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 11px; background: var(--brand-100); color: var(--brand-700); font-size: 16px; font-weight: 800; }
+      .account strong, .account small { display: block; }
+      .account strong { font-size: 11px; }
+      .account small { margin-top: 2px; color: var(--ink-500); font-size: 10px; }
+
+      .app { min-width: 0; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 clamp(18px, 3vw, 44px); border-bottom: 1px solid var(--paper-200); background: rgba(255,255,255,.8); }
+      .search { display: flex; align-items: center; gap: 9px; width: min(385px, 45vw); height: 38px; padding: 0 12px; border: 1px solid var(--paper-200); border-radius: 999px; color: var(--ink-400); font-size: 12px; }
+      .top-actions { display: flex; align-items: center; gap: 14px; font-size: 11px; font-weight: 650; }
+      .top-chip { padding: 8px 11px; border: 1px solid var(--paper-200); border-radius: 999px; background: white; }
+      .bell { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: var(--coral-500); color: white; }
+      .top-avatar { width: 28px; height: 28px; border-radius: 50%; }
+      .page { max-width: 1480px; margin: 0 auto; padding: 34px clamp(18px, 3vw, 44px) 60px; }
+      .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--paper-200); }
+      .eyebrow { margin: 0 0 9px; color: var(--ink-400); font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+      .eyebrow span { margin-left: 10px; color: var(--ink-500); font-weight: 550; letter-spacing: 0; text-transform: none; }
+      h1 { margin: 0; font-size: clamp(24px, 2.2vw, 31px); font-weight: 750; line-height: 1.14; letter-spacing: -.045em; }
+      .subtitle { margin: 9px 0 0; color: var(--ink-500); font-size: 13px; }
+      .updated { color: var(--ink-400); font-size: 11px; white-space: nowrap; }
+      .updated::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: var(--mint-500); vertical-align: 2px; }
+      .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 30px; margin-top: 28px; }
+      .primary, .rail { display: flex; flex-direction: column; min-width: 0; gap: 20px; }
+      .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .stat, .card { border: 1px solid var(--paper-200); border-radius: 16px; background: var(--paper-0); }
+      .stat { display: flex; align-items: center; gap: 12px; min-height: 86px; padding: 16px; }
+      .stat-icon { display: grid; place-items: center; width: 41px; height: 41px; flex: none; border-radius: 12px; }
+      .stat-icon.rose { color: var(--rose-700); background: var(--rose-100); }
+      .stat-icon.warning { color: var(--warning-700); background: var(--warning-100); }
+      .stat-icon.mint { color: var(--mint-700); background: var(--mint-100); }
+      .stat strong { display: block; font-size: 21px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .stat span { display: block; margin-top: 4px; color: var(--ink-600); font-size: 11px; line-height: 1.25; }
+
+      .chart-card { padding: 20px 23px 17px; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+      .card-head h2 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+      .chart-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+      .chart-actions select { min-height: 35px; padding: 0 30px 0 11px; border: 1px solid var(--paper-200); border-radius: 9px; color: var(--ink-700); background: white; font-size: 11px; font-weight: 650; }
+      .text-control { display: inline-flex; align-items: center; gap: 6px; min-height: 35px; padding: 0 3px; border: 0; background: transparent; color: var(--ink-500); font-size: 11px; font-weight: 700; }
+      .text-control:hover { color: var(--brand-700); }
+      .chart-intro { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 5px; color: var(--ink-500); font-size: 11px; }
+      .chart-intro strong { color: var(--rose-700); font-variant-numeric: tabular-nums; }
+      .chart { height: 260px; margin-top: 13px; }
+      .chart.lollipop { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 8px; align-items: end; padding: 9px 8px 0; border-bottom: 1px solid var(--paper-200); }
+      .lolli { display: grid; grid-template-rows: 22px 1fr 24px; height: 100%; text-align: center; }
+      .lolli .value { align-self: end; color: var(--ink-600); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+      .lolli.hot .value { color: var(--rose-700); font-size: 14px; }
+      .stem-space { position: relative; display: flex; align-items: end; justify-content: center; }
+      .stem { position: relative; width: 3px; height: var(--h); background: var(--brand-200); }
+      .stem::after { content: ""; position: absolute; top: -6px; left: 50%; width: 13px; height: 13px; border: 3px solid var(--paper-0); border-radius: 50%; background: var(--brand-500); box-shadow: 0 0 0 1px var(--brand-300); transform: translateX(-50%); }
+      .lolli.hot .stem { background: var(--rose-100); }
+      .lolli.hot .stem::after { background: var(--rose-500); box-shadow: 0 0 0 1px var(--rose-500); }
+      .lolli .day { align-self: end; padding-bottom: 4px; color: var(--ink-500); font-size: 11px; font-weight: 700; }
+      .chart.ranking { display: grid; align-content: center; gap: 13px; }
+      .rank-row { display: grid; grid-template-columns: 35px 1fr 20px; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; }
+      .rank-row span { color: var(--ink-600); }
+      .rank-row .track { height: 13px; border-radius: 99px; background: var(--paper-100); }
+      .rank-row .bar { height: 100%; width: var(--w); border-radius: inherit; background: var(--brand-300); }
+      .rank-row.hot .bar { background: var(--rose-500); }
+      .rank-row strong { color: var(--ink-700); text-align: right; font-variant-numeric: tabular-nums; }
+      .rank-row.hot strong { color: var(--rose-700); }
+      .chart.trend { padding: 3px 0 0; }
+      .chart.trend svg { display: block; width: 100%; height: 225px; overflow: visible; }
+      .trend-labels { display: grid; grid-template-columns: repeat(7,1fr); padding: 0 3.7%; color: var(--ink-500); text-align: center; font-size: 11px; font-weight: 700; }
+      .chart-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 15px; color: var(--ink-500); font-size: 11px; }
+      .chart-foot b { color: var(--ink-800); }
+      .chart-foot .legend-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--rose-500); }
+      .chart-table { width: 100%; margin-top: 19px; border-collapse: collapse; font-size: 12px; }
+      .chart-table th, .chart-table td { padding: 9px 12px; border-bottom: 1px solid var(--paper-100); text-align: left; }
+      .chart-table th:last-child, .chart-table td:last-child { text-align: right; }
+      .chart-table th { color: var(--ink-500); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+      .chart-table tr.peak td { color: var(--rose-700); font-weight: 750; }
+
+      .action { display: flex; align-items: center; gap: 14px; min-height: 104px; padding: 18px 20px; border-radius: 15px; }
+      .action-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 11px; }
+      .action-copy { min-width: 0; flex: 1; }
+      .action-copy strong { display: block; font-size: 13px; }
+      .action-copy span { display: block; margin-top: 4px; color: var(--ink-600); font-size: 11px; line-height: 1.45; }
+      .action-link { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; min-height: 36px; padding: 0 13px; border-radius: 9px; color: white; font-size: 11px; font-weight: 750; text-decoration: none; white-space: nowrap; }
+      .variant-a .action { border: 1px solid var(--brand-200); background: var(--brand-50); }
+      .variant-a .action-icon { color: var(--brand-700); background: white; }
+      .variant-a .action-link { background: var(--brand-500); }
+      .variant-b .action { border: 1px solid var(--coral-100); background: var(--coral-100); }
+      .variant-b .action-icon { color: var(--coral-700); background: white; }
+      .variant-b .action-link { background: var(--coral-500); }
+      .variant-c .action { min-height: 76px; padding: 10px 0; border-top: 1px solid var(--paper-200); border-bottom: 1px solid var(--paper-200); border-radius: 0; background: transparent; }
+      .variant-c .action-icon { width: 32px; height: 32px; color: var(--brand-700); background: var(--brand-50); }
+      .variant-c .action-link { padding: 0; color: var(--brand-700); background: transparent; }
+      .variant-c .action-link:hover { text-decoration: underline; }
+      .variant-b .chart-card { order: 0; }
+      .variant-b .action { order: 1; }
+      .variant-b .bookings { order: 2; }
+      .variant-c .chart-card { order: 0; }
+      .variant-c .action { order: 1; }
+      .variant-c .bookings { order: 2; }
+
+      .bookings { padding: 18px 20px 12px; }
+      .bookings-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+      .bookings-title h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+      .bookings-title a { color: var(--brand-500); font-size: 11px; font-weight: 700; text-decoration: none; }
+      .bookings table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      .bookings th, .bookings td { padding: 12px 10px; border-bottom: 1px solid var(--paper-100); text-align: left; }
+      .bookings th { color: var(--ink-500); font-size: 10px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+      .bookings td { color: var(--ink-700); }
+      .status { display: inline-block; padding: 5px 8px; border-radius: 99px; color: var(--brand-700); background: var(--brand-50); font-size: 10px; font-weight: 700; }
+
+      .profile { padding: 23px 24px; text-align: center; }
+      .profile .avatar { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; font-size: 28px; }
+      .profile h2 { margin: 0; font-size: 14px; }
+      .profile .handle { margin: 4px 0 16px; color: var(--ink-500); font-size: 11px; }
+      .profile dl { display: grid; gap: 12px; margin: 0; padding: 17px 0; border-top: 1px solid var(--paper-200); text-align: left; }
+      .profile dl div { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; }
+      .profile dt { color: var(--ink-600); }
+      .profile dd { margin: 0; font-weight: 700; text-align: right; }
+      .profile a { display: block; padding: 10px; border-radius: 10px; color: white; background: var(--brand-500); font-size: 11px; font-weight: 750; text-decoration: none; }
+      .calendar { padding: 16px 19px 19px; }
+      .calendar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; font-size: 12px; font-weight: 750; }
+      .calendar-head span { color: var(--ink-500); font-size: 17px; font-weight: 400; }
+      .days { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; text-align: center; }
+      .days div { padding: 6px 0; border-radius: 10px; color: var(--ink-600); font-size: 10px; }
+      .days small { display: block; margin-bottom: 5px; font-size: 9px; }
+      .days strong { font-size: 11px; }
+      .days .today { color: white; background: var(--rose-500); }
+      .upcoming-title { margin: 0 0 -8px; color: var(--ink-700); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+      .meeting { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 63px; padding: 12px; border-left: 3px solid var(--mint-500); }
+      .meeting + .meeting { border-left-color: var(--coral-500); }
+      .meeting strong, .meeting span { display: block; }
+      .meeting strong { font-size: 11px; }
+      .meeting span { margin-top: 3px; color: var(--ink-500); font-size: 10px; }
+      .meeting time { font-size: 10px; font-weight: 700; }
+
+      .notes { max-width: 1140px; margin: 0 auto; padding: 32px 20px 52px; }
+      .notes h2 { margin: 0 0 13px; font-size: 16px; }
+      .notes-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+      .note { padding: 17px; border: 1px solid var(--paper-200); border-radius: 14px; background: white; }
+      .note strong { display: block; margin-bottom: 6px; font-size: 12px; }
+      .note p { margin: 0; color: var(--ink-600); font-size: 11px; line-height: 1.5; }
+      .swatches { display: flex; gap: 5px; margin-top: 12px; }
+      .swatches i { width: 20px; height: 20px; border-radius: 6px; background: var(--swatch); }
+      .note.selected { border-color: var(--brand-300); box-shadow: 0 0 0 2px var(--brand-50); }
+      @media (max-width: 1150px) { .layout { grid-template-columns: minmax(0,1fr) 270px; gap: 18px; } .sidebar { margin-left: 0; border-radius: 0; } .product { grid-template-columns: 230px minmax(0,1fr); } }
+      @media (max-width: 900px) { .product { display: block; } .sidebar { position: static; min-height: 0; margin: 0; padding: 11px 16px; border-radius: 0; border-left: 0; border-right: 0; } .brand { padding: 0; } .nav-label, .nav, .sidebar-bottom { display: none; } .layout { grid-template-columns: minmax(0,1fr) 250px; } }
+      @media (max-width: 700px) { .preview-bar { align-items: flex-start; flex-direction: column; } .topbar { height: 60px; } .search { width: auto; flex: 1; } .top-actions span:last-child { display: none; } .page { padding-top: 24px; } .page-heading { align-items: flex-start; flex-direction: column; gap: 10px; } .layout { grid-template-columns: 1fr; } .rail { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); align-items: start; } .profile { grid-row: span 2; } .stats { gap: 8px; } .stat { align-items: flex-start; flex-direction: column; padding: 11px; } .notes-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 500px) { .top-chip { display: none; } .action { align-items: flex-start; flex-wrap: wrap; } .action-copy { flex-basis: calc(100% - 54px); } .action-link { margin-left: 54px; } .variant-c .action-link { margin-left: 44px; } .rail { display: flex; } .profile { display: none; } .chart-card { padding: 16px 12px; } .chart { height: 225px; } .chart-intro { flex-wrap: wrap; } .bookings { overflow-x: auto; } .bookings table { min-width: 550px; } }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-2.3-1.8-5.5-2-9-1v15c3.5-1 6.7-.8 9 1 2.3-1.8 5.5-2 9-1V5c-3.5-1-6.7-.8-9 1Zm0 0v15"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2c0-3 2.5-5 6-5s6 2 6 5v2M17 5a3 3 0 0 1 0 6M18 13c2 .4 3 2 3 5v2"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+      <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></symbol>
+    </svg>
+    <div class="preview-bar">
+      <div class="preview-heading"><strong>OfficeHours · Dashboard previews</strong><span>Same data, three quieter layouts</span></div>
+      <div class="variant-tabs" role="tablist" aria-label="Dashboard preview options">
+        <button type="button" role="tab" data-variant="a" aria-selected="true">A · Blue action strip</button>
+        <button type="button" role="tab" data-variant="b" aria-selected="false">B · Coral card</button>
+        <button type="button" role="tab" data-variant="c" aria-selected="false">C · Minimal link</button>
+      </div>
+    </div>
+
+    <div class="product variant-a" id="product">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand"><span class="brand-mark"></span><strong>OfficeHours</strong></div>
+        <div class="nav-label">Không gian làm việc</div>
+        <nav class="nav">
+          <a class="current" href="#" aria-current="page"><span class="nav-icon"><svg class="icon"><use href="#i-grid"/></svg></span>Tổng quan</a>
+          <a href="#"><span class="nav-icon"><svg class="icon"><use href="#i-search"/></svg></span>Tìm giảng viên</a>
+          <a href="#"><span class="nav-icon"><svg class="icon"><use href="#i-calendar"/></svg></span>Lịch đặt của tôi</a>
+          <a href="#"><span class="nav-icon"><svg class="icon"><use href="#i-clock"/></svg></span>Danh sách chờ</a>
+          <a href="#"><span class="nav-icon"><svg class="icon"><use href="#i-book"/></svg></span>Lịch của tôi</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <a class="quick-link" href="#"><small>Truy cập nhanh</small><strong>Tìm khung giờ phù hợp</strong><span>Xem giờ trống của giảng viên</span></a>
+          <div class="account"><div class="avatar">M</div><div><strong>Minh Nguyen</strong><small>Sinh viên · Computer Science</small></div></div>
+        </div>
+      </aside>
+
+      <div class="app">
+        <header class="topbar"><div class="search"><svg class="icon sm"><use href="#i-search"/></svg>Tìm giảng viên, khoa...</div><div class="top-actions"><span class="top-chip">◉ &nbsp; VI ﹀</span><span class="bell"><svg class="icon sm"><use href="#i-bell"/></svg></span><span class="avatar top-avatar">M</span><span>Minh Nguyen ﹀</span></div></header>
+        <main class="page">
+          <div class="page-heading"><div><p class="eyebrow">Tổng quan <span>Không gian sinh viên</span></p><h1>Buổi chiều, Minh</h1><p class="subtitle">Đây là những lịch sắp tới với cố vấn của bạn.</p></div><div class="updated">Không gian đã được cập nhật</div></div>
+          <div class="layout">
+            <div class="primary">
+              <div class="stats" aria-label="Tổng quan đặt lịch">
+                <div class="stat"><div class="stat-icon rose"><svg class="icon lg"><use href="#i-calendar"/></svg></div><div><strong>3</strong><span>Lịch đặt sắp tới</span></div></div>
+                <div class="stat"><div class="stat-icon warning"><svg class="icon lg"><use href="#i-clock"/></svg></div><div><strong>2</strong><span>Chờ xác nhận</span></div></div>
+                <div class="stat"><div class="stat-icon mint"><svg class="icon lg"><use href="#i-users"/></svg></div><div><strong>144</strong><span>Khung giờ trống trong tuần</span></div></div>
+              </div>
+
+              <div class="action" id="action"><div class="action-icon"><svg class="icon lg"><use href="#i-search"/></svg></div><div class="action-copy"><strong>Tìm giảng viên và giờ trống</strong><span>Khám phá giờ tư vấn theo khoa, ngày và lịch học của bạn.</span></div><a class="action-link" href="#">Mở danh bạ <svg class="icon sm"><use href="#i-arrow"/></svg></a></div>
+
+              <section class="card chart-card" aria-labelledby="activity-title">
+                <div class="card-head"><h2 id="activity-title">Hoạt động đặt lịch tuần này</h2><div class="chart-actions"><label for="chart-style" style="position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden">Kiểu biểu đồ</label><select id="chart-style"><option value="lollipop">Biểu đồ chấm</option><option value="ranking">Thanh xếp hạng ngang</option><option value="trend">Đường và vùng</option></select><button class="text-control" id="table-toggle" type="button" aria-pressed="false"><svg class="icon sm"><use href="#i-table"/></svg><span>Xem dạng bảng</span></button></div></div>
+                <div class="chart-intro"><span>7 ngày gần đây · số lịch đặt mỗi ngày</span><span>Cao nhất <strong>7 lịch</strong> vào thứ Tư</span></div>
+                <div id="chart-slot"></div>
+                <div class="chart-foot" id="chart-foot"><span><i class="legend-dot"></i>Thứ Tư có nhiều lịch đặt nhất</span><span><b>25</b> lịch trong tuần</span></div>
+              </section>
+
+              <section class="card bookings"><div class="bookings-title"><h2>Lịch đặt của bạn</h2><a href="#">Xem tất cả →</a></div><table><thead><tr><th>Giảng viên</th><th>Nội dung</th><th>Ngày và giờ</th><th>Trạng thái</th></tr></thead><tbody><tr><td><strong>Prof. Michael Osei</strong></td><td>Physics lab report</td><td>Thứ Tư, 14:00</td><td><span class="status">Đã xác nhận</span></td></tr><tr><td><strong>Dr. Amara Chen</strong></td><td>Capstone progress</td><td>Thứ Năm, 10:00</td><td><span class="status">Chờ xác nhận</span></td></tr></tbody></table></section>
+            </div>
+
+            <aside class="rail" aria-label="Thông tin của bạn"><section class="card profile"><div class="avatar">M</div><h2>Minh Nguyen</h2><p class="handle">@student</p><dl><div><dt>Vai trò</dt><dd>Sinh viên</dd></div><div><dt>Khoa</dt><dd>Computer Science</dd></div><div><dt>Email</dt><dd>student@officehours.dev</dd></div></dl><a href="#">Chỉnh sửa hồ sơ</a></section><section class="card calendar"><div class="calendar-head"><span>‹</span>tháng 9 năm 2026<span>›</span></div><div class="days"><div><small>THỨ 2</small><strong>28</strong></div><div><small>THỨ 3</small><strong>29</strong></div><div class="today"><small>THỨ 4</small><strong>30</strong></div><div><small>THỨ 5</small><strong>1</strong></div><div><small>THỨ 6</small><strong>2</strong></div></div></section><h2 class="upcoming-title">Sắp tới</h2><div class="card meeting"><div><strong>Dr. Amara Chen</strong><span>Computer Science</span></div><time>10:00</time></div><div class="card meeting"><div><strong>Prof. Daniel Reyes</strong><span>Computer Science</span></div><time>14:00</time></div></aside>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <section class="notes" aria-label="Compare the options"><h2>Điểm khác nhau</h2><div class="notes-grid"><div class="note selected" data-note="a"><strong>A · Blue action strip</strong><p>Giữ lối vào danh bạ dễ thấy trong khoảng 104px. Dùng màu tương tác chính của hệ thống. Biểu đồ ngay dưới khung hành động.</p><div class="swatches"><i style="--swatch:var(--brand-50)"></i><i style="--swatch:var(--brand-500)"></i><i style="--swatch:var(--rose-500)"></i></div></div><div class="note" data-note="b"><strong>B · Coral card</strong><p>Giữ sắc cam đã có ở dashboard nhưng giảm diện tích và bỏ nền chuyển màu. Biểu đồ xuất hiện trước hành động khám phá.</p><div class="swatches"><i style="--swatch:var(--coral-100)"></i><i style="--swatch:var(--coral-500)"></i><i style="--swatch:var(--rose-500)"></i></div></div><div class="note" data-note="c"><strong>C · Minimal link</strong><p>Ưu tiên dữ liệu tuần. Liên kết danh bạ là một hàng tiện ích gọn, để bảng lịch đặt xuất hiện sớm hơn.</p><div class="swatches"><i style="--swatch:var(--paper-50)"></i><i style="--swatch:var(--brand-500)"></i><i style="--swatch:var(--rose-500)"></i></div></div></div></section>
+
+    <script>
+      const data = [{ day: "Mon", value: 2 }, { day: "Tue", value: 4 }, { day: "Wed", value: 7 }, { day: "Thu", value: 3 }, { day: "Fri", value: 5 }, { day: "Sat", value: 1 }, { day: "Sun", value: 3 }];
+      const chartSlot = document.getElementById("chart-slot");
+      const chartStyle = document.getElementById("chart-style");
+      const tableToggle = document.getElementById("table-toggle");
+      let showTable = false;
+
+      function renderChart() {
+        document.getElementById("chart-foot").hidden = showTable;
+        tableToggle.setAttribute("aria-pressed", String(showTable));
+        tableToggle.querySelector("span").textContent = showTable ? "Xem biểu đồ" : "Xem dạng bảng";
+        if (showTable) {
+          chartSlot.innerHTML = `<table class="chart-table"><thead><tr><th>Ngày</th><th>Lịch đặt</th></tr></thead><tbody>${data.map(d => `<tr class="${d.day === "Wed" ? "peak" : ""}"><td>${d.day}</td><td>${d.value}</td></tr>`).join("")}</tbody></table>`;
+          return;
+        }
+        if (chartStyle.value === "ranking") {
+          chartSlot.innerHTML = `<div class="chart ranking" role="img" aria-label="Lịch đặt trong tuần: thứ Hai 2, thứ Ba 4, thứ Tư 7, thứ Năm 3, thứ Sáu 5, thứ Bảy 1, Chủ Nhật 3">${data.map(d => `<div class="rank-row ${d.day === "Wed" ? "hot" : ""}"><span>${d.day}</span><div class="track"><div class="bar" style="--w:${d.value / 7 * 100}%"></div></div><strong>${d.value}</strong></div>`).join("")}</div>`;
+          return;
+        }
+        if (chartStyle.value === "trend") {
+          chartSlot.innerHTML = `<div class="chart trend" role="img" aria-label="Xu hướng lịch đặt trong tuần: 2, 4, 7, 3, 5, 1, 3"><svg viewBox="0 0 760 220" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--brand-300)" stop-opacity=".45"/><stop offset="1" stop-color="var(--brand-50)" stop-opacity=".15"/></linearGradient></defs><path d="M35 55H725M35 112H725M35 169H725" stroke="var(--paper-100)" stroke-dasharray="3 4"/><path d="M35 160 L150 118 L265 35 L380 139 L495 97 L610 181 L725 139 L725 211 L35 211 Z" fill="url(#area)"/><path d="M35 160 L150 118 L265 35 L380 139 L495 97 L610 181 L725 139" fill="none" stroke="var(--brand-500)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${[[35,160],[150,118],[265,35],[380,139],[495,97],[610,181],[725,139]].map(([x,y],i) => `<circle cx="${x}" cy="${y}" r="${i===2?6:5}" fill="${i===2?'var(--rose-500)':'white'}" stroke="${i===2?'var(--rose-500)':'var(--brand-500)'}" stroke-width="2"/>`).join("")}</svg><div class="trend-labels">${data.map(d=>`<span>${d.day}</span>`).join("")}</div></div>`;
+          return;
+        }
+        chartSlot.innerHTML = `<div class="chart lollipop" role="img" aria-label="Lịch đặt trong tuần: thứ Hai 2, thứ Ba 4, thứ Tư 7, thứ Năm 3, thứ Sáu 5, thứ Bảy 1, Chủ Nhật 3">${data.map(d => `<div class="lolli ${d.day === "Wed" ? "hot" : ""}"><span class="value">${d.day === "Wed" ? d.value : ""}</span><div class="stem-space"><div class="stem" style="--h:${d.value / 7 * 84}%"></div></div><span class="day">${d.day}</span></div>`).join("")}</div>`;
+      }
+      chartStyle.addEventListener("change", renderChart);
+      tableToggle.addEventListener("click", () => { showTable = !showTable; renderChart(); });
+      document.querySelectorAll("[data-variant]").forEach(button => button.addEventListener("click", () => {
+        const variant = button.dataset.variant;
+        document.getElementById("product").className = `product variant-${variant}`;
+        document.querySelectorAll("[data-variant]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
+        document.querySelectorAll("[data-note]").forEach(note => note.classList.toggle("selected", note.dataset.note === variant));
+      }));
+      renderChart();
+    </script>
+  </body>
+</html>

@@ -10,6 +10,11 @@ const PUBLIC_PATHS = [
   "/public/office-hours",
   "/forgot-password",
   "/reset-password",
+  "/sidebar-previews.html",
+  "/booking-flow-preview.html",
+  "/chart-style-previews.html",
+  "/student-dashboard-layout-previews.html",
+  "/route-previews.html",
 ];
 
 function isPublicPath(pathname: string) {

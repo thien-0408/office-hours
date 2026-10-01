@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Booking flow preview — OfficeHours</title>
+    <style>
+      :root {
+        --brand-50: #eff4ff;
+        --brand-100: #dce7ff;
+        --brand-200: #b7ceff;
+        --brand-300: #8fb0ff;
+        --brand-500: #3465e0;
+        --brand-600: #274fc0;
+        --brand-700: #1d3b98;
+        --brand-900: #0b1b49;
+        --paper-0: #ffffff;
+        --paper-50: #f6f8fc;
+        --paper-100: #edf1f8;
+        --paper-200: #dce2ed;
+        --ink-300: #b7bfce;
+        --ink-400: #8d96aa;
+        --ink-500: #6b7488;
+        --ink-600: #4e566a;
+        --ink-700: #383f52;
+        --ink-900: #171a26;
+        --ink-950: #0b0d14;
+        --success-100: #d7f4e8;
+        --success-500: #1e9e6b;
+        --success-700: #12704a;
+        --warning-100: #fbead4;
+        --warning-500: #d9822b;
+        --warning-700: #a15e17;
+        --danger-100: #fbdede;
+        --danger-500: #e24c4c;
+        --danger-700: #a62f2f;
+        --info-100: #e8e1ff;
+        --info-500: #7c5cff;
+        --info-700: #5433c4;
+        --coral-100: #ffedd5;
+        --coral-500: #f97316;
+        --coral-700: #c2410c;
+        --mint-100: #dcfce7;
+        --mint-500: #22c55e;
+        --mint-700: #15803d;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink-900);
+        background: var(--paper-50);
+      }
+
+      * { box-sizing: border-box; }
+      html { min-width: 320px; background: var(--paper-50); }
+      body { margin: 0; min-width: 320px; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      a { color: inherit; }
+      :focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+      ::selection { background: var(--brand-200); color: var(--brand-900); }
+
+      .preview-bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 12px clamp(16px, 3vw, 38px);
+        border-bottom: 1px solid var(--paper-200);
+        background: color-mix(in srgb, var(--paper-0) 92%, transparent);
+        backdrop-filter: blur(18px);
+      }
+
+      .preview-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .mark { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 9px; color: white; background: var(--brand-500); box-shadow: 3px 3px 0 var(--brand-900); font-weight: 900; font-size: 12px; }
+      .preview-brand strong { font-size: 13px; letter-spacing: -.02em; white-space: nowrap; }
+      .preview-brand span { color: var(--ink-500); font-size: 11px; white-space: nowrap; }
+      .preview-controls { display: flex; align-items: center; gap: 8px; }
+      .control-label { color: var(--ink-500); font-size: 11px; font-weight: 700; }
+      .control-button { min-height: 32px; padding: 7px 10px; border: 1px solid var(--paper-200); border-radius: 9px; background: var(--paper-0); color: var(--ink-700); font-size: 11px; font-weight: 750; }
+      .control-button:hover, .control-button.active { border-color: var(--brand-300); background: var(--brand-50); color: var(--brand-700); }
+
+      .frame { max-width: 1500px; margin: 0 auto; padding: 22px clamp(12px, 2.8vw, 38px) 46px; }
+      .shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 760px; border: 1px solid var(--paper-200); border-radius: 22px; background: var(--paper-50); box-shadow: 0 18px 60px rgba(11, 27, 73, .07); overflow: hidden; }
+
+      .sidebar { display: flex; flex-direction: column; min-width: 0; padding: 22px 14px 16px; border-right: 1px solid var(--paper-200); background: var(--paper-0); }
+      .logo { display: flex; align-items: center; gap: 8px; padding: 0 9px; color: var(--brand-700); font-size: 15px; font-weight: 850; letter-spacing: -.04em; }
+      .logo-dot { display: grid; place-items: center; width: 25px; height: 25px; border: 2px solid var(--brand-500); border-radius: 50%; color: var(--brand-500); font-size: 10px; font-weight: 900; }
+      .workspace-label { margin: 30px 10px 9px; color: var(--ink-400); font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+      .nav { display: grid; gap: 4px; }
+      .nav-button { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; min-height: 43px; padding: 9px 10px; border: 0; border-radius: 11px; background: transparent; color: var(--ink-600); text-align: left; font-size: 13px; font-weight: 700; transition: .16s ease; }
+      .nav-button:hover { background: var(--paper-100); color: var(--brand-700); transform: translateX(2px); }
+      .nav-button.active { background: var(--brand-50); color: var(--brand-700); }
+      .nav-button.active::before { content: ""; position: absolute; inset: 9px auto 9px 0; width: 3px; border-radius: 0 5px 5px 0; background: var(--brand-500); }
+      .nav-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: currentColor; }
+      .nav-button.active .nav-icon { background: var(--brand-100); }
+      .nav-icon svg, .icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .sidebar-bottom { margin-top: auto; }
+      .quick-card { position: relative; margin: 16px 4px; padding: 14px; border: 1px solid var(--brand-100); border-radius: 13px; background: var(--brand-50); overflow: hidden; }
+      .quick-card::before { content: ""; position: absolute; inset: 12px auto 12px 0; width: 3px; border-radius: 0 5px 5px 0; background: var(--brand-500); }
+      .quick-label { color: var(--brand-700); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+      .quick-card strong { display: block; margin-top: 8px; font-size: 13px; letter-spacing: -.02em; }
+      .quick-card span:last-child { display: block; margin-top: 4px; color: var(--ink-600); font-size: 11px; line-height: 1.4; }
+      .profile { display: flex; align-items: center; gap: 10px; padding: 14px 7px 0; border-top: 1px solid var(--paper-200); }
+      .avatar { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 11px; background: var(--coral-100); color: var(--coral-700); font-size: 12px; font-weight: 850; }
+      .profile-text { min-width: 0; }
+      .profile-text strong, .profile-text span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .profile-text strong { font-size: 12px; }
+      .profile-text span { margin-top: 3px; color: var(--ink-500); font-size: 10px; }
+
+      .main { min-width: 0; background: var(--paper-50); }
+      .mobile-header { display: none; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 28px; border-bottom: 1px solid var(--paper-200); background: rgba(255,255,255,.7); backdrop-filter: blur(14px); }
+      .crumb { color: var(--ink-500); font-size: 11px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+      .top-actions { display: flex; align-items: center; gap: 9px; }
+      .top-search { display: flex; align-items: center; gap: 8px; width: min(280px, 34vw); padding: 8px 11px; border: 1px solid var(--paper-200); border-radius: 999px; background: rgba(255,255,255,.8); color: var(--ink-400); }
+      .top-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink-800); font-size: 12px; }
+      .top-search input::placeholder { color: var(--ink-400); }
+      .bell { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--coral-500); color: #fff; }
+
+      .content { max-width: 1060px; margin: 0 auto; padding: 34px clamp(18px, 4vw, 44px) 52px; }
+      .screen { display: none; animation: screen-in .24s ease both; }
+      .screen.active { display: block; }
+      @keyframes screen-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+      .page-header { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
+      .eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; color: var(--brand-700); font-size: 10px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+      .eyebrow::before { content: ""; width: 18px; height: 2px; border-radius: 4px; background: var(--brand-500); }
+      h1 { margin: 0; color: var(--ink-900); font-size: clamp(27px, 3vw, 36px); line-height: 1.08; letter-spacing: -.055em; }
+      h2 { margin: 0; font-size: 17px; letter-spacing: -.035em; }
+      h3 { margin: 0; font-size: 14px; letter-spacing: -.02em; }
+      p { margin: 0; }
+      .lede { max-width: 55ch; margin-top: 9px; color: var(--ink-500); font-size: 13px; line-height: 1.6; }
+      .page-action { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 9px 13px; border: 1px solid var(--brand-500); border-radius: 10px; background: var(--brand-500); color: #fff; font-size: 12px; font-weight: 800; box-shadow: 0 5px 14px rgba(52,101,224,.17); }
+      .page-action:hover { background: var(--brand-600); }
+      .secondary-action { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 9px 13px; border: 1px solid var(--paper-200); border-radius: 10px; background: var(--paper-0); color: var(--ink-700); font-size: 12px; font-weight: 800; }
+      .secondary-action:hover { border-color: var(--brand-300); background: var(--brand-50); color: var(--brand-700); }
+      .text-button { border: 0; padding: 0; background: transparent; color: var(--brand-600); font-size: 12px; font-weight: 800; }
+      .text-button:hover { text-decoration: underline; }
+      .card { border: 1px solid var(--paper-200); border-radius: 15px; background: var(--paper-0); box-shadow: 0 7px 22px rgba(11,27,73,.035); }
+
+      .filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-bottom: 22px; }
+      .field { display: grid; gap: 6px; }
+      .field label { color: var(--ink-700); font-size: 11px; font-weight: 800; }
+      .input, .select { min-height: 39px; padding: 9px 11px; border: 1px solid var(--paper-200); border-radius: 10px; background: var(--paper-0); color: var(--ink-900); outline: 0; font-size: 12px; }
+      .input { min-width: 245px; }
+      .input:focus, .select:focus { border-color: var(--brand-400); box-shadow: 0 0 0 3px var(--brand-100); }
+      .filter-pills { display: flex; gap: 5px; padding: 4px; border: 1px solid var(--paper-200); border-radius: 999px; background: var(--paper-0); }
+      .filter-pill { min-height: 29px; padding: 5px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-600); font-size: 11px; font-weight: 750; }
+      .filter-pill.active { background: var(--brand-500); color: #fff; }
+
+      .summary-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+      .summary { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border: 1px solid var(--paper-200); border-radius: 13px; background: var(--paper-0); }
+      .summary-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; }
+      .summary:nth-child(1) .summary-icon { background: var(--rose-100, #fce7f3); color: #be185d; }
+      .summary:nth-child(2) .summary-icon { background: var(--mint-100); color: var(--mint-700); }
+      .summary:nth-child(3) .summary-icon { background: var(--coral-100); color: var(--coral-700); }
+      .summary strong { display: block; font-size: 16px; letter-spacing: -.04em; }
+      .summary span { display: block; margin-top: 2px; color: var(--ink-500); font-size: 10px; }
+
+      .lecturer-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+      .lecturer-card { display: flex; flex-direction: column; gap: 15px; padding: 17px; }
+      .lecturer-top { display: flex; align-items: start; gap: 11px; }
+      .lecturer-avatar { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--brand-100); color: var(--brand-700); font-size: 13px; font-weight: 850; }
+      .lecturer-title { min-width: 0; }
+      .lecturer-title strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+      .lecturer-title span { display: block; margin-top: 4px; color: var(--ink-500); font-size: 11px; }
+      .availability-line { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--paper-100); }
+      .availability-line span { color: var(--ink-500); font-size: 11px; }
+      .availability-line strong { color: var(--success-700); font-size: 11px; }
+      .mini-days { display: flex; gap: 4px; }
+      .mini-day { width: 24px; height: 5px; border-radius: 99px; background: var(--paper-200); }
+      .mini-day.on { background: var(--brand-400); }
+      .card-link { align-self: start; border: 0; padding: 0; background: transparent; color: var(--brand-600); font-size: 12px; font-weight: 800; }
+
+      .back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; border: 0; padding: 0; background: transparent; color: var(--ink-600); font-size: 12px; font-weight: 800; }
+      .back-link:hover { color: var(--brand-700); }
+      .slot-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+      .person { display: flex; align-items: center; gap: 12px; }
+      .person .lecturer-avatar { width: 50px; height: 50px; font-size: 15px; }
+      .person p { margin-top: 5px; color: var(--ink-500); font-size: 12px; }
+      .week-switch { display: flex; align-items: center; gap: 8px; }
+      .round-button { display: grid; place-items: center; width: 33px; height: 33px; border: 1px solid var(--paper-200); border-radius: 50%; background: var(--paper-0); color: var(--ink-600); }
+      .round-button:hover { border-color: var(--brand-300); color: var(--brand-700); }
+      .week-label { color: var(--ink-700); font-size: 12px; font-weight: 800; }
+      .fit-layout { display: grid; grid-template-columns: minmax(0, 1fr) 255px; gap: 16px; align-items: start; }
+      .week-card { padding: 15px; }
+      .week-grid { display: grid; grid-template-columns: repeat(5, minmax(92px, 1fr)); gap: 7px; overflow-x: auto; padding-bottom: 2px; }
+      .day-column { min-width: 92px; }
+      .day-label { padding: 5px 8px 10px; color: var(--ink-500); font-size: 10px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+      .day-label strong { display: block; margin-top: 3px; color: var(--ink-900); font-size: 13px; letter-spacing: -.02em; text-transform: none; }
+      .slot-list { display: grid; gap: 7px; }
+      .slot { width: 100%; padding: 10px 8px; border: 1px solid var(--brand-200); border-radius: 10px; background: var(--brand-50); color: var(--brand-700); text-align: left; }
+      .slot:hover { border-color: var(--brand-500); background: var(--brand-100); transform: translateY(-1px); }
+      .slot strong { display: block; font-size: 12px; }
+      .slot span { display: block; margin-top: 3px; color: var(--ink-600); font-size: 10px; }
+      .slot.busy { border-color: var(--paper-200); background: var(--paper-100); color: var(--ink-400); cursor: default; }
+      .fit-card { padding: 17px; }
+      .fit-card h3 { display: flex; align-items: center; gap: 8px; }
+      .fit-status { display: flex; align-items: center; gap: 8px; margin: 15px 0; padding: 10px; border-radius: 10px; background: var(--success-100); color: var(--success-700); font-size: 11px; font-weight: 800; }
+      .fit-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-500); }
+      .fit-card ul { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+      .fit-card li { display: flex; gap: 8px; color: var(--ink-600); font-size: 11px; line-height: 1.45; }
+      .fit-card li::before { content: "✓"; color: var(--success-700); font-weight: 900; }
+      .note { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--paper-100); color: var(--ink-500); font-size: 10px; line-height: 1.5; }
+
+      .booking-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+      .booking-list { display: grid; gap: 10px; }
+      .booking-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 15px 17px; }
+      .booking-main { display: flex; align-items: center; gap: 11px; min-width: 0; }
+      .booking-date { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; background: var(--brand-50); color: var(--brand-700); }
+      .booking-date strong { font-size: 15px; line-height: 1; }
+      .booking-date span { margin-top: 3px; font-size: 9px; font-weight: 850; text-transform: uppercase; }
+      .booking-copy { min-width: 0; }
+      .booking-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+      .booking-copy span { display: block; margin-top: 4px; color: var(--ink-500); font-size: 11px; }
+      .status { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; font-size: 10px; font-weight: 850; white-space: nowrap; }
+      .status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+      .status.pending { background: var(--warning-100); color: var(--warning-700); }
+      .status.confirmed { background: var(--success-100); color: var(--success-700); }
+      .status.offered { background: var(--info-100); color: var(--info-700); }
+      .status.expired { background: var(--paper-100); color: var(--ink-500); }
+      .next-card { padding: 17px; }
+      .next-card .next-label { color: var(--ink-400); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+      .next-card strong { display: block; margin-top: 9px; font-size: 17px; letter-spacing: -.04em; }
+      .next-card p { margin-top: 5px; color: var(--ink-500); font-size: 11px; line-height: 1.5; }
+      .next-rule { display: flex; align-items: center; gap: 7px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--paper-100); color: var(--ink-600); font-size: 11px; }
+
+      .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+      .detail-card { padding: 20px; }
+      .detail-title { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--paper-200); }
+      .detail-title h2 { font-size: 22px; }
+      .detail-title p { margin-top: 6px; color: var(--ink-500); font-size: 12px; }
+      .detail-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--paper-200); }
+      .meta-label { color: var(--ink-400); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+      .meta-value { margin-top: 5px; color: var(--ink-800); font-size: 13px; font-weight: 750; }
+      .timeline { display: grid; gap: 16px; margin: 20px 0; }
+      .timeline-item { position: relative; display: grid; grid-template-columns: 17px minmax(0, 1fr); gap: 10px; }
+      .timeline-item::before { content: ""; position: absolute; top: 17px; bottom: -16px; left: 7px; width: 1px; background: var(--paper-200); }
+      .timeline-item:last-child::before { display: none; }
+      .timeline-dot { position: relative; z-index: 1; width: 15px; height: 15px; border: 3px solid var(--brand-100); border-radius: 50%; background: var(--brand-500); }
+      .timeline-dot.muted { background: var(--paper-200); border-color: var(--paper-100); }
+      .timeline-copy strong { display: block; font-size: 12px; }
+      .timeline-copy span { display: block; margin-top: 3px; color: var(--ink-500); font-size: 11px; line-height: 1.4; }
+      .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 17px; border-top: 1px solid var(--paper-200); }
+      .side-note { padding: 17px; }
+      .side-note h3 { display: flex; align-items: center; gap: 7px; }
+      .side-note p { margin-top: 11px; color: var(--ink-600); font-size: 11px; line-height: 1.55; }
+      .side-note .status { margin-top: 14px; }
+
+      .waitlist-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+      .waitlist-stat { padding: 14px 16px; }
+      .waitlist-stat span { display: block; color: var(--ink-500); font-size: 10px; font-weight: 750; }
+      .waitlist-stat strong { display: block; margin-top: 5px; font-size: 22px; letter-spacing: -.06em; }
+      .waitlist-stack { display: grid; gap: 11px; max-width: 720px; }
+      .offer-card { padding: 18px; border-color: var(--info-500); box-shadow: 0 8px 24px rgba(124,92,255,.1); }
+      .offer-top { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+      .offer-top p { margin-top: 5px; color: var(--ink-500); font-size: 11px; }
+      .countdown { display: grid; justify-items: end; gap: 5px; color: var(--warning-700); font-size: 11px; font-weight: 850; }
+      .countdown strong { color: var(--ink-900); font-size: 18px; letter-spacing: -.04em; }
+      .offer-details { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 16px 0; padding: 13px 0; border-top: 1px solid var(--paper-100); border-bottom: 1px solid var(--paper-100); color: var(--ink-700); font-size: 11px; }
+      .offer-actions { display: flex; gap: 8px; }
+      .queue-card { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 15px 17px; }
+      .queue-card p { margin-top: 4px; color: var(--ink-500); font-size: 11px; }
+      .queue-position { color: var(--brand-700); font-size: 12px; font-weight: 850; white-space: nowrap; }
+
+      .empty-state { padding: 34px; text-align: center; }
+      .empty-state strong { display: block; font-size: 14px; }
+      .empty-state p { max-width: 38ch; margin: 7px auto 15px; color: var(--ink-500); font-size: 12px; line-height: 1.5; }
+
+      .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(11,13,20,.48); backdrop-filter: blur(5px); }
+      .modal-backdrop.open { display: flex; }
+      .modal { width: min(440px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 22px; border: 1px solid var(--paper-200); border-radius: 18px; background: var(--paper-0); box-shadow: 0 25px 80px rgba(11,27,73,.24); }
+      .modal-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+      .modal-head p { margin-top: 5px; color: var(--ink-500); font-size: 11px; }
+      .close { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--paper-200); border-radius: 50%; background: var(--paper-0); color: var(--ink-600); }
+      .request-summary { display: grid; gap: 9px; margin-bottom: 17px; padding: 13px; border: 1px solid var(--brand-100); border-radius: 12px; background: var(--brand-50); }
+      .request-summary div { display: flex; justify-content: space-between; gap: 15px; font-size: 11px; }
+      .request-summary span:first-child { color: var(--ink-500); }
+      .request-summary span:last-child { color: var(--ink-900); font-weight: 800; text-align: right; }
+      .modal .field { margin-bottom: 14px; }
+      .modal textarea { min-height: 80px; resize: vertical; }
+      .modal-footer { display: flex; justify-content: end; gap: 8px; margin-top: 19px; }
+      .confirm-state { padding: 15px 2px 2px; text-align: center; }
+      .confirm-icon { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 12px; border-radius: 16px; background: var(--success-100); color: var(--success-700); }
+      .confirm-state p { max-width: 32ch; margin: 8px auto 18px; color: var(--ink-500); font-size: 12px; line-height: 1.5; }
+
+      .mobile-only { display: none; }
+      @media (max-width: 940px) {
+        .lecturer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .fit-layout, .booking-layout, .detail-layout { grid-template-columns: 1fr; }
+        .fit-card, .next-card, .side-note { order: -1; }
+      }
+      @media (max-width: 720px) {
+        .preview-bar { align-items: start; }
+        .preview-brand span, .control-label { display: none; }
+        .frame { padding: 10px; }
+        .shell { display: block; min-height: calc(100vh - 96px); border-radius: 16px; }
+        .sidebar { display: none; }
+        .mobile-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 15px; border-bottom: 1px solid var(--paper-200); background: var(--paper-0); }
+        .mobile-menu { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--brand-700); font-weight: 850; }
+        .mobile-menu small { color: var(--ink-500); font-size: 10px; font-weight: 700; }
+        .topbar { display: none; }
+        .content { padding: 23px 15px 36px; }
+        .page-header { display: block; }
+        .page-header .page-action { margin-top: 16px; }
+        .summary-strip { grid-template-columns: 1fr; }
+        .lecturer-grid { grid-template-columns: 1fr; }
+        .slot-head { align-items: start; flex-direction: column; }
+        .week-switch { align-self: stretch; justify-content: space-between; }
+        .week-grid { margin-right: -2px; }
+        .booking-row { grid-template-columns: 1fr; gap: 12px; }
+        .booking-row .status { justify-self: start; }
+        .detail-meta { grid-template-columns: 1fr; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="preview-bar">
+      <div class="preview-brand">
+        <div class="mark">OH</div>
+        <div><strong>Booking flow preview</strong><span>Student journey · planning prototype</span></div>
+      </div>
+      <div class="preview-controls" aria-label="Preview controls">
+        <span class="control-label">Viewport</span>
+        <button class="control-button active" type="button" data-viewport="desktop">Desktop</button>
+        <button class="control-button" type="button" data-viewport="mobile">Mobile</button>
+        <button class="control-button" type="button" id="resetPreview">Reset</button>
+      </div>
+    </header>
+
+    <div class="frame" id="previewFrame">
+      <div class="shell">
+        <aside class="sidebar" aria-label="Student navigation">
+          <div class="logo"><span class="logo-dot">OH</span> OfficeHours</div>
+          <div class="workspace-label">Workspace</div>
+          <nav class="nav">
+            <button class="nav-button active" type="button" data-screen="discover"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span>Find a Lecturer</button>
+            <button class="nav-button" type="button" data-screen="bookings"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/></svg></span>My Bookings</button>
+            <button class="nav-button" type="button" data-screen="waitlist"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></span>My Waitlist</button>
+            <button class="nav-button" type="button" data-screen="bookings"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v17h5.5A2.5 2.5 0 0 1 20 22V5.5Z"/></svg></span>My Schedule</button>
+          </nav>
+          <div class="sidebar-bottom">
+            <div class="quick-card"><span class="quick-label">Quick access</span><strong>Find a time that fits</strong><span>Browse lecturer openings</span></div>
+            <div class="profile"><div class="avatar">MN</div><div class="profile-text"><strong>Minh Nguyen</strong><span>Student · Computer Science</span></div></div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <div class="mobile-header"><button class="mobile-menu" type="button" id="mobileMenu"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>OfficeHours <small>Student workspace</small></button><button class="bell" type="button" aria-label="Notifications"><span class="icon"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span></button></div>
+          <div class="topbar"><span class="crumb">Student workspace / Booking</span><div class="top-actions"><label class="top-search"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input aria-label="Search lecturers" placeholder="Search lecturers…" /></label><button class="bell" type="button" aria-label="Notifications"><span class="icon"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span></button></div></div>
+
+          <div class="content">
+            <section class="screen active" id="screen-discover" aria-labelledby="discover-title">
+              <div class="page-header"><div><p class="eyebrow">Find time that fits</p><h1 id="discover-title">Find a lecturer</h1><p class="lede">Start with your schedule. Browse openings that leave room for the classes you already have.</p></div><button class="page-action" type="button" data-screen="bookings">View my bookings <span aria-hidden="true">→</span></button></div>
+              <div class="summary-strip"><div class="summary"><span class="summary-icon icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 3v4M16 3v4M4 9h16"/></svg></span><div><strong>18</strong><span>Lecturers</span></div></div><div class="summary"><span class="summary-icon icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><div><strong>42</strong><span>Open slots this week</span></div></div><div class="summary"><span class="summary-icon icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span><div><strong>100%</strong><span>Conflict checked</span></div></div></div>
+              <div class="filters"><div class="field"><label for="search">Search by name or department</label><input class="input" id="search" value="" placeholder="e.g. Computer Science" /></div><div class="field"><label for="department">Department</label><select class="select" id="department"><option>All departments</option><option>Computer Science</option><option>Mathematics</option></select></div><div class="filter-pills" aria-label="Availability filter"><button class="filter-pill active" type="button">Any day</button><button class="filter-pill" type="button">This week</button></div></div>
+              <div class="lecturer-grid">
+                <article class="card lecturer-card"><div class="lecturer-top"><div class="lecturer-avatar">AC</div><div class="lecturer-title"><strong>Dr. Amara Chen</strong><span>Computer Science · Algorithms</span></div></div><div class="mini-days" aria-label="Availability Monday through Friday"><span class="mini-day on"></span><span class="mini-day on"></span><span class="mini-day"></span><span class="mini-day on"></span><span class="mini-day on"></span></div><div class="availability-line"><span>Next open</span><strong>Tue · 10:00 AM</strong></div><button class="card-link" type="button" data-screen="slots" data-lecturer="Dr. Amara Chen">See available times →</button></article>
+                <article class="card lecturer-card"><div class="lecturer-top"><div class="lecturer-avatar" style="background:var(--coral-100);color:var(--coral-700)">NR</div><div class="lecturer-title"><strong>Prof. Nia Reyes</strong><span>Mathematics · Discrete math</span></div></div><div class="mini-days"><span class="mini-day"></span><span class="mini-day on"></span><span class="mini-day on"></span><span class="mini-day on"></span><span class="mini-day"></span></div><div class="availability-line"><span>Next open</span><strong>Wed · 2:30 PM</strong></div><button class="card-link" type="button" data-screen="slots" data-lecturer="Prof. Nia Reyes">See available times →</button></article>
+                <article class="card lecturer-card"><div class="lecturer-top"><div class="lecturer-avatar" style="background:var(--mint-100);color:var(--mint-700)">KN</div><div class="lecturer-title"><strong>Dr. Kofi Nair</strong><span>Engineering · Capstone studio</span></div></div><div class="mini-days"><span class="mini-day on"></span><span class="mini-day"></span><span class="mini-day on"></span><span class="mini-day"></span><span class="mini-day on"></span></div><div class="availability-line"><span>Next open</span><strong>Fri · 9:00 AM</strong></div><button class="card-link" type="button" data-screen="slots" data-lecturer="Dr. Kofi Nair">See available times →</button></article>
+              </div>
+            </section>
+
+            <section class="screen" id="screen-slots" aria-labelledby="slots-title">
+              <button class="back-link" type="button" data-screen="discover"><span aria-hidden="true">←</span> Back to lecturers</button>
+              <div class="slot-head"><div class="person"><div class="lecturer-avatar">AC</div><div><h1 id="slots-title">Dr. Amara Chen</h1><p>Computer Science · Algorithms</p></div></div><div class="week-switch"><button class="round-button" type="button" aria-label="Previous week">‹</button><span class="week-label">Oct 5–11, 2026</span><button class="round-button" type="button" aria-label="Next week">›</button></div></div>
+              <div class="fit-layout"><div class="card week-card"><div class="week-grid"><div class="day-column"><div class="day-label">Mon<strong>Oct 5</strong></div><div class="slot-list"><button class="slot busy" type="button" disabled><strong>9:00 AM</strong><span>Class conflict</span></button><button class="slot" type="button" data-open-modal="true"><strong>11:00 AM</strong><span>30 min · Room 304</span></button></div></div><div class="day-column"><div class="day-label">Tue<strong>Oct 6</strong></div><div class="slot-list"><button class="slot" type="button" data-open-modal="true"><strong>10:00 AM</strong><span>30 min · Room 304</span></button><button class="slot" type="button" data-open-modal="true"><strong>10:30 AM</strong><span>30 min · Room 304</span></button></div></div><div class="day-column"><div class="day-label">Wed<strong>Oct 7</strong></div><div class="slot-list"><button class="slot busy" type="button" disabled><strong>2:00 PM</strong><span>Teaching block</span></button><button class="slot" type="button" data-open-modal="true"><strong>3:30 PM</strong><span>30 min · Online</span></button></div></div><div class="day-column"><div class="day-label">Thu<strong>Oct 8</strong></div><div class="slot-list"><button class="slot" type="button" data-open-modal="true"><strong>9:30 AM</strong><span>30 min · Room 304</span></button><button class="slot busy" type="button" disabled><strong>1:00 PM</strong><span>Class conflict</span></button></div></div><div class="day-column"><div class="day-label">Fri<strong>Oct 9</strong></div><div class="slot-list"><button class="slot" type="button" data-open-modal="true"><strong>11:00 AM</strong><span>30 min · Online</span></button></div></div></div></div><aside class="card fit-card"><h3><span class="icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>Your time fit</h3><div class="fit-status"><span class="dot"></span> Schedule checked</div><ul><li>Classes are hidden from the picker.</li><li>Room 304 is available for this slot.</li><li>Request stays pending until confirmed.</li></ul><p class="note">A slot can still be taken by another student before you submit. We check again when you request it.</p></aside></div>
+            </section>
+
+            <section class="screen" id="screen-bookings" aria-labelledby="bookings-title">
+              <div class="page-header"><div><p class="eyebrow">Follow the request</p><h1 id="bookings-title">My bookings</h1><p class="lede">See what needs a response, what is confirmed, and what happened next.</p></div><button class="page-action" type="button" data-screen="discover">Find another time <span aria-hidden="true">→</span></button></div>
+              <div class="booking-layout"><div class="booking-list"><article class="card booking-row"><div class="booking-main"><div class="booking-date"><strong>06</strong><span>Oct</span></div><div class="booking-copy"><strong>Algorithms consultation</strong><span>Dr. Amara Chen · Tue, 10:00–10:30 AM · Room 304</span></div></div><span class="status pending">Pending confirmation</span></article><article class="card booking-row"><div class="booking-main"><div class="booking-date" style="background:var(--success-100);color:var(--success-700)"><strong>08</strong><span>Oct</span></div><div class="booking-copy"><strong>Capstone review</strong><span>Dr. Kofi Nair · Thu, 3:00–3:30 PM · Online</span></div></div><span class="status confirmed">Confirmed</span></article><article class="card booking-row"><div class="booking-main"><div class="booking-date" style="background:var(--paper-100);color:var(--ink-600)"><strong>01</strong><span>Oct</span></div><div class="booking-copy"><strong>Research methods</strong><span>Prof. Nia Reyes · Thu, 2:00–2:30 PM · Room 112</span></div></div><span class="status expired">Completed</span></article></div><aside class="card next-card"><span class="next-label">Next up</span><strong>Algorithms consultation</strong><p>Tue, October 6<br />10:00–10:30 AM · Room 304</p><div class="next-rule"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span> Waiting for lecturer response</div><button class="text-button" type="button" data-screen="detail" style="margin-top:15px">Open booking details →</button></aside></div>
+            </section>
+
+            <section class="screen" id="screen-detail" aria-labelledby="detail-title-heading">
+              <button class="back-link" type="button" data-screen="bookings"><span aria-hidden="true">←</span> Back to my bookings</button>
+              <div class="detail-layout"><div class="card detail-card"><div class="detail-title"><div><p class="eyebrow">Booking request</p><h2 id="detail-title-heading">Algorithms consultation</h2><p>Dr. Amara Chen · Computer Science</p></div><span class="status pending">Pending confirmation</span></div><div class="detail-meta"><div><span class="meta-label">When</span><p class="meta-value">Tuesday, October 6 · 10:00–10:30 AM</p></div><div><span class="meta-label">Where</span><p class="meta-value">Room 304 · Engineering building</p></div><div><span class="meta-label">Topic</span><p class="meta-value">Sorting project review</p></div><div><span class="meta-label">Submitted</span><p class="meta-value">Today at 8:42 AM</p></div></div><div class="timeline"><div class="timeline-item"><span class="timeline-dot"></span><div class="timeline-copy"><strong>Request sent</strong><span>Your request is with Dr. Chen. We will notify you when she responds.</span></div></div><div class="timeline-item"><span class="timeline-dot muted"></span><div class="timeline-copy"><strong>Lecturer response</strong><span>Usually within one business day.</span></div></div><div class="timeline-item"><span class="timeline-dot muted"></span><div class="timeline-copy"><strong>Session</strong><span>Bring your topic and any files you want to discuss.</span></div></div></div><div class="detail-actions"><button class="secondary-action" type="button">Cancel request</button><button class="secondary-action" type="button" data-screen="discover">Choose another slot</button></div></div><aside class="card side-note"><h3><span class="icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span>What happens next?</h3><p>This slot is held as a pending request. It is not confirmed until Dr. Chen accepts it.</p><span class="status pending">No action needed yet</span></aside></div>
+            </section>
+
+            <section class="screen" id="screen-waitlist" aria-labelledby="waitlist-title">
+              <div class="page-header"><div><p class="eyebrow">Scarce times, visible rules</p><h1 id="waitlist-title">My waitlist</h1><p class="lede">See your place in line and act before an offered slot expires.</p></div><button class="secondary-action" type="button" data-screen="discover">Browse open slots</button></div>
+              <div class="waitlist-stats"><div class="card waitlist-stat"><span>In queue</span><strong>2</strong></div><div class="card waitlist-stat"><span>Offers waiting</span><strong style="color:var(--info-700)">1</strong></div></div>
+              <div class="waitlist-stack"><article class="card offer-card"><div class="offer-top"><div><span class="status offered">Offer waiting</span><h3 style="margin-top:11px">Prof. Nia Reyes</h3><p>Mathematics · Discrete math</p></div><div class="countdown"><span>Expires in</span><strong id="countdown">18:42</strong></div></div><div class="offer-details"><span>Wed, October 7</span><span>2:30–3:00 PM</span><span>Room 112</span></div><div class="offer-actions"><button class="page-action" type="button" id="acceptOffer">Accept offer</button><button class="secondary-action" type="button" id="declineOffer">Decline</button></div></article><article class="card queue-card"><div><h3>Dr. Amara Chen</h3><p>Algorithms · Thursday mornings</p></div><span class="queue-position">Position #2</span></article><article class="card queue-card"><div><h3>Dr. Kofi Nair</h3><p>Capstone studio · Friday afternoons</p></div><span class="queue-position">Position #4</span></article></div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="bookingModal" role="presentation">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription">
+        <div id="requestFormState">
+          <div class="modal-head"><div><h2 id="modalTitle">Request this slot</h2><p id="modalDescription">Your request will be pending until the lecturer responds.</p></div><button class="close" type="button" id="closeModal" aria-label="Close booking request"><span class="icon"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></span></button></div>
+          <div class="request-summary"><div><span>Lecturer</span><span>Dr. Amara Chen</span></div><div><span>When</span><span>Tuesday · 10:00–10:30 AM</span></div><div><span>Where</span><span>Room 304</span></div><div><span>Schedule check</span><span style="color:var(--success-700)">Clear</span></div></div>
+          <div class="field"><label for="topic">Topic <span style="color:var(--ink-400);font-weight:600">(optional)</span></label><textarea class="input" id="topic" placeholder="What do you want to discuss?"></textarea></div>
+          <div class="field"><label for="participants">Group participants <span style="color:var(--ink-400);font-weight:600">(optional)</span></label><input class="input" id="participants" placeholder="Add student email" /></div>
+          <div class="modal-footer"><button class="secondary-action" type="button" id="cancelModal">Cancel</button><button class="page-action" type="button" id="sendRequest">Request booking</button></div>
+        </div>
+        <div class="confirm-state" id="requestConfirmState" hidden><div class="confirm-icon"><span class="icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></div><h2>Request sent</h2><p>Your request is pending with Dr. Amara Chen. We’ll show the response in My Bookings.</p><button class="page-action" type="button" id="viewBooking">View booking details</button></div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const frame = document.getElementById('previewFrame');
+        const modal = document.getElementById('bookingModal');
+        const formState = document.getElementById('requestFormState');
+        const confirmState = document.getElementById('requestConfirmState');
+        const countdown = document.getElementById('countdown');
+        let activeScreen = 'discover';
+        let modalReturnFocus = null;
+        let secondsLeft = 1122;
+
+        function showScreen(name) {
+          activeScreen = name;
+          document.querySelectorAll('.screen').forEach((screen) => screen.classList.toggle('active', screen.id === `screen-${name}`));
+          document.querySelectorAll('[data-screen]').forEach((button) => button.classList.toggle('active', button.dataset.screen === name));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeModal() {
+          modal.classList.remove('open');
+          formState.hidden = false;
+          confirmState.hidden = true;
+          if (modalReturnFocus) modalReturnFocus.focus();
+        }
+
+        function openModal(button) {
+          modalReturnFocus = button;
+          modal.classList.add('open');
+          document.getElementById('topic').focus();
+        }
+
+        document.querySelectorAll('[data-screen]').forEach((button) => button.addEventListener('click', () => showScreen(button.dataset.screen)));
+        document.querySelectorAll('[data-open-modal="true"]').forEach((button) => button.addEventListener('click', () => openModal(button)));
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('cancelModal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+        document.getElementById('sendRequest').addEventListener('click', () => { formState.hidden = true; confirmState.hidden = false; confirmState.querySelector('button').focus(); });
+        document.getElementById('viewBooking').addEventListener('click', () => { closeModal(); showScreen('detail'); });
+        document.getElementById('resetPreview').addEventListener('click', () => { closeModal(); showScreen('discover'); document.getElementById('topic').value = ''; document.getElementById('participants').value = ''; });
+        document.querySelectorAll('[data-viewport]').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('[data-viewport]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); frame.classList.toggle('is-mobile', button.dataset.viewport === 'mobile'); }));
+        document.getElementById('mobileMenu').addEventListener('click', () => showScreen(activeScreen === 'discover' ? 'bookings' : 'discover'));
+        document.getElementById('acceptOffer').addEventListener('click', (event) => { event.target.textContent = 'Accepted'; event.target.disabled = true; event.target.style.opacity = '.6'; document.querySelector('.offer-card .status').textContent = 'Accepted'; document.querySelector('.offer-card .status').className = 'status confirmed'; document.getElementById('countdown').textContent = 'Confirmed'; });
+        document.getElementById('declineOffer').addEventListener('click', (event) => { event.target.textContent = 'Declined'; event.target.disabled = true; event.target.style.opacity = '.6'; document.querySelector('.offer-card .status').textContent = 'Offer declined'; document.querySelector('.offer-card .status').className = 'status expired'; });
+        setInterval(() => { if (secondsLeft <= 0) return; secondsLeft -= 1; const min = Math.floor(secondsLeft / 60); const sec = String(secondsLeft % 60).padStart(2, '0'); if (countdown.textContent !== 'Confirmed') countdown.textContent = `${min}:${sec}`; }, 1000);
+      })();
+    </script>
+  </body>
+</html>
