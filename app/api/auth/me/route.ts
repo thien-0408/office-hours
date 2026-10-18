@@ -7,13 +7,7 @@ import {
   setSessionCookies,
 } from "@/lib/auth/session";
 import { decodeMockToken } from "@/lib/auth/mock-accounts";
-import type { AuthUser } from "@/lib/auth/types";
-
-interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
+import type { AuthUser, RefreshResponse } from "@/lib/auth/types";
 
 export async function GET() {
   let accessToken = await getAccessToken();

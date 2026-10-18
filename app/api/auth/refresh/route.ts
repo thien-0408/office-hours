@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiFetch, ApiError } from "@/lib/api-server";
 import { clearSessionCookies, getRefreshToken, setSessionCookies } from "@/lib/auth/session";
-
-interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
+import type { RefreshResponse } from "@/lib/auth/types";
 
 export async function POST() {
   const refreshToken = await getRefreshToken();

@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/auth/types";
+export type { NotificationPrefs } from "@/lib/auth/types";
 
 export interface PublicSlot {
   lecturerName: string;
@@ -96,13 +97,6 @@ export interface Notification {
   createdAt: string; // ISO-8601
   read: boolean;
   bookingId?: number;
-}
-
-export interface NotificationPrefs {
-  bookingConfirmed: boolean;
-  bookingDeclined: boolean;
-  waitlistOffer: boolean;
-  reminders: boolean;
 }
 
 // A slot picker's week grid — thinner than PublicSlot/MockPublicSlot since it's

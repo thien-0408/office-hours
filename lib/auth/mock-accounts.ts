@@ -16,7 +16,7 @@ export const MOCK_ACCOUNTS: MockAccount[] = [
     email: "student@officehours.dev",
     password: "password123",
     user: {
-      id: 1001,
+      id: "00000000-0000-4000-8000-000000001001",
       email: "student@officehours.dev",
       fullName: "Minh Nguyen",
       role: "STUDENT",
@@ -27,7 +27,7 @@ export const MOCK_ACCOUNTS: MockAccount[] = [
     email: "lecturer@officehours.dev",
     password: "password123",
     user: {
-      id: 2001,
+      id: "00000000-0000-4000-8000-000000002001",
       email: "lecturer@officehours.dev",
       fullName: "Dr. Amara Chen",
       role: "LECTURER",
@@ -38,7 +38,7 @@ export const MOCK_ACCOUNTS: MockAccount[] = [
     email: "admin@officehours.dev",
     password: "password123",
     user: {
-      id: 3001,
+      id: "00000000-0000-4000-8000-000000003001",
       email: "admin@officehours.dev",
       fullName: "Huong Tran",
       role: "ADMIN",
