@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cẩm Nang Toàn Diện: Luồng Hoạt Động Docker & Docker Compose (Dev vs Prod)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent-dev: #10b981;
+      --accent-prod: #f59e0b;
+      --accent-purple: #a855f7;
+      --code-bg: #090d16;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #fff 40%, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Tabs Navigation */
+    .nav-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 0.75rem;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.65rem 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+
+    .tab-btn.active.dev-tab {
+      color: var(--accent-dev);
+      border-color: var(--accent-dev);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .tab-btn.active.prod-tab {
+      color: var(--accent-prod);
+      border-color: var(--accent-prod);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Tab Contents */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Flowchart & Diagram Boxes */
+    .diagram-container {
+      background: #080c14;
+      border: 1px solid #1e293b;
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+
+    .flow-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 720px;
+      position: relative;
+    }
+
+    .flow-step {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      width: 200px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    .flow-step.dev-step {
+      border-color: var(--accent-dev);
+    }
+
+    .flow-step.prod-step {
+      border-color: var(--accent-prod);
+    }
+
+    .flow-step-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .flow-step h4 {
+      font-size: 1.05rem;
+      margin-bottom: 0.35rem;
+      color: #fff;
+    }
+
+    .flow-step p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .flow-arrow {
+      flex: 1;
+      height: 3px;
+      background: linear-gradient(90deg, #334155, var(--primary));
+      position: relative;
+      margin: 0 10px;
+    }
+
+    .flow-arrow.dev-arrow {
+      background: linear-gradient(90deg, #334155, var(--accent-dev));
+    }
+
+    .flow-arrow.prod-arrow {
+      background: linear-gradient(90deg, #334155, var(--accent-prod));
+    }
+
+    .flow-arrow::after {
+      content: '';
+      position: absolute;
+      right: -2px;
+      top: -5px;
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 8px solid var(--primary);
+    }
+
+    .flow-arrow.dev-arrow::after { border-left-color: var(--accent-dev); }
+    .flow-arrow.prod-arrow::after { border-left-color: var(--accent-prod); }
+
+    .arrow-label {
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Code styling */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      margin-top: 0.75rem;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: #38bdf8;
+    }
+
+    /* Comparison Table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    .compare-table th, .compare-table td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .compare-table th {
+      background: rgba(0, 0, 0, 0.35);
+      font-size: 0.95rem;
+      color: #fff;
+    }
+
+    .compare-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tag-dev {
+      color: var(--accent-dev);
+      font-weight: 600;
+    }
+
+    .tag-prod {
+      color: var(--accent-prod);
+      font-weight: 600;
+    }
+
+    /* Alert callouts */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+      padding: 1rem 1.25rem;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 1rem 0;
+    }
+
+    .callout-success {
+      border-left-color: var(--accent-dev);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout-warning {
+      border-left-color: var(--accent-prod);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout h5 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+      color: #fff;
+    }
+
+    ul, ol {
+      padding-left: 1.25rem;
+      margin: 0.5rem 0;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Kiến Trúc &amp; Vận Hành Hệ Thống</div>
+      <h1>Docker &amp; Docker Compose Visual Guide</h1>
+      <p>Bản đồ trực quan giải thích cặn kẽ flow hoạt động của Docker, Docker Compose và sự khác biệt mấu chốt giữa môi trường <strong>Development (Dev)</strong> và <strong>Production (Prod)</strong>.</p>
+    </header>
+
+    <!-- Nav Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-overview')">📦 1. Bản Chất Docker</button>
+      <button class="tab-btn" onclick="switchTab('tab-compose')">🐙 2. Docker Compose</button>
+      <button class="tab-btn dev-tab" onclick="switchTab('tab-dev')">💻 3. Flow DEV (Hot Reload)</button>
+      <button class="tab-btn prod-tab" onclick="switchTab('tab-prod')">🚀 4. Flow PROD (Immutable)</button>
+      <button class="tab-btn" onclick="switchTab('tab-compare')">⚖️ 5. So Sánh &amp; Quy Tắc</button>
+    </div>
+
+    <!-- TAB 1: DOCKER OVERVIEW -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🧩 4 Khái Niệm Nền Tảng Cốt Lõi</div>
+          <p>Mọi hoạt động trong Docker đều xoay quanh vòng tuần hoàn 4 thành phần sau:</p>
+          <div style="margin-top: 1rem;">
+            <div style="margin-bottom: 0.75rem;">
+              <strong>1. Dockerfile (Công thức):</strong> File văn bản chứa các chỉ thị từng bước (cài OS, cài runtime, copy code, lệnh khởi chạy).
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+              <strong>2. Image (Bản đóng gói tĩnh):</strong> Kết quả sau khi <code>docker build</code>. Image là <em>Read-Only</em>, không bao giờ thay đổi sau khi tạo.
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+              <strong>3. Container (Thực thể sống):</strong> Bản thể đang chạy được sinh ra từ Image. Một Image có thể khởi chạy nhiều container giống hệt nhau.
+            </div>
+            <div>
+              <strong>4. Registry (Kho lưu trữ):</strong> Nơi lưu và chia sẻ Image (như Docker Hub, AWS ECR, GitHub Packages).
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💾 Volume &amp; Network (Mở Rộng Sức Mạnh)</div>
+          <div class="callout callout-warning">
+            <h5>⚠️ Đặc tính Ephemeral (Tạm thời) của Container</h5>
+            Container sinh ra và chết đi rất nhanh. Mặc định mọi file sinh ra trong container sẽ <strong>biến mất vĩnh viễn</strong> khi container bị xóa!
+          </div>
+          <ul>
+            <li><strong>Volume / Bind Mount:</strong> Gắn ổ đĩa máy host vào container. Giúp dữ liệu Database tồn tại vĩnh viễn, hoặc giúp Container đọc code sống trực tiếp từ máy Dev.</li>
+            <li><strong>Network:</strong> Tạo mạng LAN ảo nội bộ. Các container có thể "nói chuyện" với nhau trực tiếp qua tên định danh (DNS nội bộ) thay vì phải gán IP tĩnh.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- General Flow Diagram -->
+      <div class="card">
+        <div class="card-title">🔄 Vòng Đời Tiêu Chuẩn Của Docker (Standard Lifecycle)</div>
+        <div class="diagram-container">
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-icon">📝</div>
+              <h4>Dockerfile</h4>
+              <p>Mã nguồn + Hướng dẫn cài đặt môi trường</p>
+            </div>
+            <div class="flow-arrow"><span class="arrow-label">docker build</span></div>
+            <div class="flow-step">
+              <div class="flow-step-icon">💿</div>
+              <h4>Docker Image</h4>
+              <p>Ảnh tĩnh đóng băng hệ thống (Read-Only Snapshot)</p>
+            </div>
+            <div class="flow-arrow"><span class="arrow-label">docker run</span></div>
+            <div class="flow-step">
+              <div class="flow-step-icon">📦</div>
+              <h4>Container</h4>
+              <p>Tiến trình đang chạy độc lập (Isolated Process)</p>
+            </div>
+            <div class="flow-arrow"><span class="arrow-label">docker push</span></div>
+            <div class="flow-step">
+              <div class="flow-step-icon">☁️</div>
+              <h4>Docker Hub / Registry</h4>
+              <p>Kho chia sẻ cho cả team hoặc server</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: DOCKER COMPOSE -->
+    <div id="tab-compose" class="tab-content">
+      <div class="card">
+        <div class="card-title">🐙 Docker Compose: Nhạc Trưởng Cho Ứng Dụng Đa Dịch Vụ</div>
+        <p>Nếu không có Docker Compose, một dự án gồm <em>Next.js + Backend API + Postgres + Nginx</em> sẽ bắt bạn phải gõ hàng chục câu lệnh <code>docker run -p ... -v ... --network ...</code> cực kỳ dễ nhầm lẫn. Docker Compose gom toàn bộ cấu hình vào 1 file <code>docker-compose.yml</code> duy nhất.</p>
+
+        <div class="diagram-container" style="margin-top: 1.5rem;">
+          <h4 style="text-align: center; margin-bottom: 1.25rem; color: var(--primary);">🌐 Kiến Trúc Mạng Nội Bộ (Internal Bridge Network)</h4>
+          <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="background: #1e293b; border: 2px dashed #0284c7; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
+              <div style="font-size: 1.5rem;">🌐</div>
+              <strong>Nginx (Proxy)</strong>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Port: 80 / 443</div>
+            </div>
+            <div style="color: var(--primary); font-size: 1.5rem;">⇄</div>
+            <div style="background: #1e293b; border: 2px solid #38bdf8; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
+              <div style="font-size: 1.5rem;">⚡</div>
+              <strong>Next.js (Web)</strong>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Gọi DB qua: <code>db:5432</code></div>
+            </div>
+            <div style="color: var(--primary); font-size: 1.5rem;">⇄</div>
+            <div style="background: #1e293b; border: 2px solid #10b981; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
+              <div style="font-size: 1.5rem;">🗄️</div>
+              <strong>Postgres (DB)</strong>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Gắn Volume vĩnh viễn</div>
+            </div>
+          </div>
+          <p style="text-align: center; font-size: 0.85rem; color: #94a3b8; margin-top: 1.25rem;">
+            *Các container nói chuyện với nhau bằng <strong>tên service</strong> (ví dụ: Nginx proxy tới <code>http://web:3000</code>). Không cần quan tâm IP thay đổi!
+          </p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1.5rem;">
+        <div class="card">
+          <div class="card-title">📄 Ví dụ file <code>docker-compose.yml</code></div>
+          <pre><code>services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: secretpassword
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:</code></pre>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ Các Lệnh "Thần Thánh" Hàng Ngày</div>
+          <ul>
+            <li><code>docker compose up -d</code>: Bật toàn bộ dịch vụ dưới nền (Background).</li>
+            <li><code>docker compose down</code>: Tắt toàn bộ hệ thống sạch sẽ.</li>
+            <li><code>docker compose down -v</code>: Tắt và xóa luôn cả database volume (làm mới hoàn toàn).</li>
+            <li><code>docker compose logs -f web</code>: Theo dõi log trực tiếp của dịch vụ web.</li>
+            <li><code>docker compose exec web sh</code>: Mở terminal bên trong container để debug.</li>
+            <li><code>docker compose restart nginx</code>: Khởi động lại riêng 1 service.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DEV FLOW -->
+    <div id="tab-dev" class="tab-content">
+      <div class="card" style="border-top: 4px solid var(--accent-dev);">
+        <div class="card-title" style="color: var(--accent-dev);">💻 Luồng Hoạt Động Ở Môi Trường DEVELOPMENT (Lập Trình)</div>
+        <p><strong>Mục tiêu:</strong> Dev sửa code hoặc <code>git pull</code> code mới về là thấy thay đổi ngay lập tức (Hot Reload / Fast Refresh), <strong>KHÔNG CẦN BUILD LẠI IMAGE</strong>.</p>
+
+        <div class="diagram-container">
+          <div class="flow-steps">
+            <div class="flow-step dev-step">
+              <div class="flow-step-icon">👨‍💻</div>
+              <h4>Máy Của Bạn</h4>
+              <p>Thư mục code gốc<br><code>git pull</code> / Sửa file</p>
+            </div>
+            <div class="flow-arrow dev-arrow"><span class="arrow-label">Bind Mount (- .:/app)</span></div>
+            <div class="flow-step dev-step">
+              <div class="flow-step-icon">🪟</div>
+              <h4>Container /app</h4>
+              <p>Đọc trực tiếp file máy thật qua "cửa kính" Mount</p>
+            </div>
+            <div class="flow-arrow dev-arrow"><span class="arrow-label">Watch Event</span></div>
+            <div class="flow-step dev-step">
+              <div class="flow-step-icon">⚡</div>
+              <h4>Next.js / Bun Dev</h4>
+              <p>Hot Module Replacement (HMR) kích hoạt tức thì</p>
+            </div>
+            <div class="flow-arrow dev-arrow"><span class="arrow-label">WebSocket Push</span></div>
+            <div class="flow-step dev-step">
+              <div class="flow-step-icon">🌐</div>
+              <h4>Trình Duyệt</h4>
+              <p>Giao diện tự động cập nhật ngay trên màn hình!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 1.5rem;">
+          <div>
+            <h4>🛠️ Cấu hình Compose chuẩn cho Dev:</h4>
+            <pre><code>services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # 1. Mount code từ máy thật vào container:
+      - .:/app
+      # 2. KHÔNG ghi đè node_modules của container bằng máy host:
+      - /app/node_modules
+    command: bun dev</code></pre>
+          </div>
+          <div>
+            <div class="callout callout-success">
+              <h5>✅ Khi nào KHÔNG cần build lại?</h5>
+              <ul>
+                <li>Sửa file <code>.tsx</code>, <code>.css</code>, <code>.js</code>, <code>.json</code>.</li>
+                <li>Thêm ảnh, font, asset mới vào thư mục <code>public/</code>.</li>
+                <li>Đồng nghiệp <code>git pull</code> code mới về máy.</li>
+              </ul>
+            </div>
+            <div class="callout callout-warning">
+              <h5>⚠️ Khi nào BẮT BUỘC phải build lại ở Dev?</h5>
+              <ul>
+                <li>Cài thêm thư viện mới (sửa <code>package.json</code>) ➔ Chạy <code>docker compose build</code> hoặc <code>docker compose up --build</code>.</li>
+                <li>Thay đổi nội dung file <code>Dockerfile</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PROD FLOW -->
+    <div id="tab-prod" class="tab-content">
+      <div class="card" style="border-top: 4px solid var(--accent-prod);">
+        <div class="card-title" style="color: var(--accent-prod);">🚀 Luồng Hoạt Động Ở Môi Trường PRODUCTION (Triển Khai Thật)</div>
+        <p><strong>Mục tiêu:</strong> Ổn định, bảo mật cao nhất, hiệu năng tối đa. <strong>Tất cả code đã được nén và đóng băng vĩnh viễn (Immutable Image)</strong>. Server không bao giờ cài Git, không clone code, không mount ổ đĩa máy host!</p>
+
+        <div class="diagram-container">
+          <div class="flow-steps">
+            <div class="flow-step prod-step">
+              <div class="flow-step-icon">🌿</div>
+              <h4>Git Push / Merge</h4>
+              <p>Code mới được đẩy lên nhánh <code>main</code></p>
+            </div>
+            <div class="flow-arrow prod-arrow"><span class="arrow-label">Webhook Trigger</span></div>
+            <div class="flow-step prod-step">
+              <div class="flow-step-icon">🤖</div>
+              <h4>CI/CD Pipeline</h4>
+              <p>GitHub Actions / GitLab CI chạy <code>docker build</code> &amp; test</p>
+            </div>
+            <div class="flow-arrow prod-arrow"><span class="arrow-label">docker push</span></div>
+            <div class="flow-step prod-step">
+              <div class="flow-step-icon">🏷️</div>
+              <h4>Image Registry</h4>
+              <p>Lưu Image có gắn tag phiên bản: <code>v1.2.4</code></p>
+            </div>
+            <div class="flow-arrow prod-arrow"><span class="arrow-label">Deploy / Pull</span></div>
+            <div class="flow-step prod-step">
+              <div class="flow-step-icon">🛡️</div>
+              <h4>Production Server</h4>
+              <p>Kéo image và khởi chạy độc lập hoàn toàn</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 1.5rem;">
+          <div>
+            <h4>🏭 Dockerfile Multi-Stage Tối Ưu Cho Prod:</h4>
+            <pre><code># GIAI ĐOẠN 1: BUILD CHUẨN BỊ
+FROM oven/bun:latest AS builder
+WORKDIR /app
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun run build   # Đóng gói HTML/CSS/JS nén gọn
+
+# GIAI ĐOẠN 2: CHẠY PRODUCTION SIÊU NHẸ
+FROM oven/bun:alpine AS runner
+WORKDIR /app
+# Chỉ copy thành phẩm đã build, bỏ qua toàn bộ source thừa
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE 3000
+CMD ["bun", "start"]</code></pre>
+          </div>
+          <div>
+            <div class="callout callout-warning">
+              <h5>🛡️ Tại sao Prod KHÔNG ĐƯỢC dùng Bind Mount?</h5>
+              <ul>
+                <li><strong>Tính nhất quán tuyệt đối (Hermetic Build):</strong> Đảm bảo hình ảnh được test ở CI chạy giống 100% khi lên server thật.</li>
+                <li><strong>Bảo mật:</strong> Nếu server bị tấn công vào container, hacker không thể ghi đè làm thay đổi file mã nguồn trên máy chủ host.</li>
+                <li><strong>Khả năng Scale ngang:</strong> Khi có hàng triệu người dùng, ta có thể scale ra 10 server khác nhau chỉ bằng việc kéo cùng 1 Docker Image về chạy.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: COMPARISON & SUMMARY -->
+    <div id="tab-compare" class="tab-content">
+      <div class="card">
+        <div class="card-title">⚖️ Bảng So Sánh Toàn Diện: DEV vs PROD</div>
+        <p>Bảng tổng kết giúp bạn và team đưa ra quyết định kiến trúc chính xác cho từng môi trường:</p>
+
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí</th>
+              <th>💻 Môi Trường DEV (Lập trình)</th>
+              <th>🚀 Môi Trường PROD (Triển khai thật)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cơ chế nạp Code</strong></td>
+              <td><span class="tag-dev">Bind Mount</span> (<code>volumes: - .:/app</code>)</td>
+              <td><span class="tag-prod">COPY thẳng vào Image</span> (Bake vĩnh viễn)</td>
+            </tr>
+            <tr>
+              <td><strong>Khi Dev sửa code</strong></td>
+              <td><span class="tag-dev">Tự động nhận ngay</span> qua Hot-Reload</td>
+              <td><span class="tag-prod">Bắt buộc phải build lại Image mới</span></td>
+            </tr>
+            <tr>
+              <td><strong>Khi `git pull` code mới</strong></td>
+              <td><span class="tag-dev">Tự động nhận ngay</span> (do folder đã mount)</td>
+              <td><span class="tag-prod">CI/CD build ra Image mới rồi mới deploy</span></td>
+            </tr>
+            <tr>
+              <td><strong>Lệnh chạy chính</strong></td>
+              <td><code>bun dev</code> / <code>next dev</code> (Có Turbopack, source map)</td>
+              <td><code>bun start</code> / <code>next start</code> (Đã minified, tối ưu tốc độ)</td>
+            </tr>
+            <tr>
+              <td><strong>Dung lượng Image</strong></td>
+              <td>Có thể lớn (chứa đầy đủ tool debug, node_modules dev)</td>
+              <td>Siêu nhỏ gọn (Chỉ giữ lại artifact build, dùng Alpine)</td>
+            </tr>
+            <tr>
+              <td><strong>Bảo mật &amp; Cách ly</strong></td>
+              <td>Thấp (cho phép chỉnh sửa trực tiếp)</td>
+              <td>Cực cao (Read-only filesystem, chạy quyền non-root)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card-title" style="margin-top: 2rem;">💡 Tóm Tắt Trong 1 Phút (Mental Model)</div>
+        <div class="grid-2">
+          <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid var(--accent-dev); padding: 1.25rem; border-radius: 8px;">
+            <strong style="color: var(--accent-dev); font-size: 1.1rem;">Khi làm việc hàng ngày (Dev):</strong>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+              Cứ code thoải mái, pull code thoải mái. Đừng bận tâm về việc build image! Chỉ khi nào thêm thư viện mới (<code>package.json</code>) hoặc đổi cấu hình cổng/Dockerfile thì mới cần gõ <code>docker compose up --build</code>.
+            </p>
+          </div>
+          <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid var(--accent-prod); padding: 1.25rem; border-radius: 8px;">
+            <strong style="color: var(--accent-prod); font-size: 1.1rem;">Khi phát hành sản phẩm (Prod):</strong>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+              Mỗi bản cập nhật là một "chiếc hộp sắt kín" hoàn toàn mới mang số hiệu phiên bản riêng (tag). Không bao giờ vào server sửa code dạo trực tiếp!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      // Ẩn tất cả tab content
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(el => el.classList.remove('active'));
+
+      // Bỏ active ở tất cả các button
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      // Kích hoạt tab được chọn
+      document.getElementById(tabId).classList.add('active');
+
+      // Đánh dấu active cho button tương ứng
+      const targetBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(tabId));
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+      }
+    }
+  </script>
+</body>
+</html>
