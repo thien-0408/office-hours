@@ -7,6 +7,8 @@
 > **Trạng thái:** backend **chưa tồn tại**. Mọi thứ dưới đây là *hợp đồng* đã được đội thống nhất (các mâu thuẫn ở mục 3 **đã chốt và đã áp dụng** vào 4 file thiết kế gốc và vào FE). Frontend hiện chạy bằng mock data
 > (chỉ `/auth/*` đã được gọi thật, có fallback sang tài khoản mock khi backend không reachable).
 >
+> **Baseline 15/10/2026:** `capstone-api-endpoints.md` quyết định wire DTO; `capstone-db-schema.md` quyết định storage. Guide này và các sơ đồ là bản dẫn xuất; audit/report cũ không ghi đè baseline.
+>
 > Thuật ngữ kỹ thuật (endpoint, enum, tên cột…) giữ nguyên tiếng Anh để khớp code.
 
 ---
@@ -19,7 +21,7 @@
 | **Base URL (dev)** | `http://localhost:8080/api/v1` (biến môi trường FE: `API_BASE_URL`) |
 | **Auth** | JWT bearer: `Authorization: Bearer <accessToken>` (trừ endpoint `Public`) |
 | **Vai trò** | `STUDENT`, `LECTURER`, `ADMIN`, `SYSTEM` (job nội bộ, không gọi từ ngoài) |
-| **Định dạng** | JSON; thời gian **ISO-8601 UTC** (`timestamptz`) |
+| **Định dạng** | JSON; thời gian **ISO-8601 UTC** (`timestamptz`); mọi `id` là **UUID** (chuỗi trong JSON, `uuid` trong DB) |
 | **Mục tiêu nghiệp vụ** | Đặt lịch office hours **không trùng lịch**, và **phân bổ công bằng** khi slot bị quá tải (waitlist + allocation policy) |
 
 ### 1.1 Cách FE gọi backend (quan trọng để thiết kế CORS/cookie/SSE)
@@ -28,7 +30,7 @@
   → Backend **không cần mở CORS cho trình duyệt** ở giai đoạn này, nhưng nên cho phép cấu hình.
 - Token **không** nằm trong JS: `accessToken` lưu cookie httpOnly `oh_access_token`; `refreshToken` lưu cookie httpOnly `oh_refresh_token` (path `/api/auth`, 30 ngày).
   `proxy.ts` (middleware) chỉ kiểm tra *có cookie hay không* để chặn route; **không verify JWT** → backend phải verify mọi request.
-- Lỗi phải trả **RFC 7807-style**: `{ status, error, message, path, timestamp, details? }` (FE đọc `message` để hiển thị — `ApiError` trong `lib/api-server.ts`).
+- Lỗi phải trả **RFC 7807-style**: `{ status, code, error, message, path, timestamp, details? }` — `code` là mã số tuyệt đối (base của error domain + mã tương đối, mỗi module một dải), `error` là key ổn định (vd `INVALID_CREDENTIALS`); response thành công trả thẳng DTO, không bọc envelope. Lỗi được **gom và báo một lần**: validation liệt kê mọi field sai/thiếu (`VALIDATION_FAILED`, `details.errors[{ field, code, error, message }]`); nhiều lỗi nghiệp vụ độc lập → `MULTIPLE_ERRORS` (400), chỉ một lỗi thì giữ status/key riêng (FE đọc `message` để hiển thị — `ApiError` trong `lib/api-server.ts`).
 - Các route BFF hiện có: `login`, `logout`, `me`, `refresh`, `register`, `forgot-password`, `reset-password`.
   Các module còn lại (bookings, slots…) FE chưa có route BFF — khi nối API thật sẽ thêm route proxy tương tự.
 - **SSE (`/notifications/stream`)**: `EventSource` trình duyệt không gửi được header `Authorization`, nên **BFF của Next.js proxy luồng SSE** (đọc cookie rồi forward kèm bearer token). Giữ thêm `GET /notifications?since=` làm fallback polling.
@@ -57,7 +59,7 @@ Mỗi mục: quyết định + nơi đã áp dụng. “Tài liệu” = 4 file 
 |---|---|---|---|
 | 1 | `dayOfWeek` lệch (`0–6` và `1–7`) | **ISO 1–7 (1 = Thứ Hai … 7 = Chủ Nhật)** ở DB, API, FE | Tài liệu: `availability_rules` và `recurring_bookings` đổi `CHECK` sang 1–7, ERD sửa; FE: comment `RecurringSeries` + `nextOccurrences` chuyển ISO↔`Date#getDay()` |
 | 2 | Reschedule: API `{newSlotId}` vs FE nhập tay ngày/giờ | **Giữ API** — người dùng *chọn slot trống* của cùng lecturer | FE: `RescheduleModal` viết lại thành slot picker, `onConfirm({ newSlotId, startAt, endAt })`; tài liệu ghi rõ không nhận ngày giờ tự do |
-| 3 | Chỉ `CONFIRMED` bị exclusion constraint → nhiều `PENDING` cùng slot | Giữ thiết kế; `/confirm` bắt `exclusion_violation` → **`409` `SLOT_ALREADY_CONFIRMED`** và tự `DECLINE` các `PENDING` còn lại của slot trong cùng transaction | Tài liệu (API §5, schema §3.2) |
+| 3 | Chỉ `CONFIRMED` bị exclusion constraint → nhiều `PENDING` cùng slot | Confirm đầu tiên tự DECLINE đối thủ cùng transaction; confirm đối thủ trả `409 SLOT_ALREADY_CONFIRMED`. Exclusion violation phải rollback trước khi ghi tiếp | API §5/§12, schema §3.2 |
 | 4 | `Booking` ở FE thiếu id | Thêm **`slotId`, `lecturerId`, `studentId`** (bắt buộc trong type) | FE: `types.ts` + toàn bộ mock booking; tài liệu API §5 |
 | 5 | Waitlist theo slot (DB) vs theo "mẫu mong muốn" (FE) | Waitlist **gắn một slot cụ thể**; `desiredSlotLabel` dựng từ slot (vd `"Tue 10:00-10:30"`), `position` tính khi đọc; job quét hết hạn offer | FE: `WaitlistEntry.slotId`, mock + trang waitlist; tài liệu API §6, schema §4.1 |
 | 6 | Lecturer directory cần `slug/photoUrl/blurb` mà `users` không có | Bảng mới **`lecturer_profiles`** (1–1 với lecturer) | Tài liệu: schema §1.1b + inventory, API §5.0 |
@@ -67,8 +69,8 @@ Mỗi mục: quyết định + nơi đã áp dụng. “Tài liệu” = 4 file 
 | 10 | Quyền override | **Mọi Admin** (quyết định có chủ đích cho MVP), luôn ghi `allocation_events` `OVERRIDDEN` | Giữ nguyên tài liệu; ghi nhận ở đây |
 | 11 | Import lại cùng học kỳ | Mặc định **`REPLACE`** (giữ block `MANUAL`), `MERGE` là tùy chọn | Tài liệu schema §8 #7, API §4 |
 | 12 | SSE với cookie httpOnly | BFF proxy SSE + polling fallback | Mục 1.1 + API §8 |
-| 13 | `citext` | Dùng nếu khả dụng; fallback `LOWER(email)` unique index | Schema §1.1 (không đổi) |
-| 14 | Capacity group booking | Trigger `AFTER INSERT` hoặc kiểm tra ở service + test | Schema §3.3 (không đổi) |
+| 13 | `citext` | Bật trong V1 cùng btree_gist | Schema §0/§1.1 |
+| 14 | Capacity group booking | Service lock slot row trong transaction; requester tính là một người, participants chỉ chứa người bổ sung; vượt capacity → `409` | Schema §8 |
 | 15 | Retention `allocation_events`/`notifications` | Quyết định partition/archive trước pilot nếu chạy stress | Schema §8 #5 (không đổi) |
 | 16 | `allocate()` viết bằng TS, backend phải cài lại | Backend cài lại theo mục 8, kiểm bằng test vector sinh từ bản TS | Mục 8 |
 | 17 | `ON CONFLICT` ở lệnh commit import cần **unique** index nhưng schema chỉ có index thường | `uq_schedule_entries_dedup` là **UNIQUE ... NULLS NOT DISTINCT** (PostgreSQL 15+) | Tài liệu: schema §2.3 |
@@ -93,12 +95,12 @@ DDL đầy đủ nằm ở `capstone-db-schema.md`; phần này là bản đồ 
 
 | Nhóm | Bảng | Ghi chú |
 |---|---|---|
-| Danh tính | `users`, `lecturer_profiles`, `password_reset_tokens`, `semesters` | `email` unique (citext hoặc `LOWER`), `semesters` chỉ **một** `is_active` (partial unique index) |
+| Danh tính | `users`, `lecturer_profiles`, `password_reset_tokens`, `refresh_tokens`, `semesters` | email unique citext; notification_prefs lưu bốn boolean; semesters chỉ một is_active |
 | Availability | `availability_rules`, `availability_exceptions` | Rule sinh ra `slots`; exception `BLOCK`/`ADD` áp khi sinh slot |
 | Nguồn xung đột | `schedule_entries`, `schedule_imports` (staging: hoãn, không tạo ở MVP) | `schedule_entries` **dùng chung** cho student & lecturer → query xung đột thống nhất |
 | Đặt lịch | `slots`, `bookings`, `booking_participants`, `meeting_records`, `recurring_bookings` | `slots` được **materialize** (có id để waitlist/allocation tham chiếu) |
 | Phân bổ | `waitlist_entries`, `allocation_policies`, `allocation_events` | Phục vụ nghiên cứu: log đủ cả ứng viên `SKIPPED` |
-| Nghiên cứu | `synthetic_demand_runs`, `experiments` | Chỉ cho tool nghiên cứu, không phải dữ liệu sản phẩm |
+| Nghiên cứu | `synthetic_demand_runs`, `experiment_groups`, `experiments` | Group là identity API; một child result mỗi policy theo policy_order |
 | Thông báo | `notifications` | Vừa phục vụ SSE vừa trigger email |
 
 ### 5.2 Ràng buộc "sống còn" (phải có test)
@@ -118,7 +120,7 @@ DDL đầy đủ nằm ở `capstone-db-schema.md`; phần này là bản đồ 
 
 ### 5.3 Thứ tự migration (Flyway) — chú ý FK vòng
 
-`V1 extensions (btree_gist, citext)` → `users` → `lecturer_profiles` → `password_reset_tokens` → `semesters` → `availability_*` → **`schedule_imports` (trước)** → `schedule_entries` → `slots` → `bookings` (+ trigger + exclusion) → `booking_participants` → `meeting_records` → `recurring_bookings` (+ `ALTER bookings ADD recurring_booking_id`) → `waitlist_entries` → `allocation_policies` → `allocation_events` → `synthetic_demand_runs`, `experiments` → `notifications`.
+`V1 extensions (btree_gist, citext)` → `users` → `lecturer_profiles` → `password_reset_tokens` → `refresh_tokens` → `semesters` → `availability_*` → **`schedule_imports` (trước)** → `schedule_entries` → `slots` → `bookings` (+ trigger + exclusion) → `booking_participants` → `meeting_records` → `recurring_bookings` (+ `ALTER bookings ADD recurring_booking_id`) → `waitlist_entries` → `allocation_policies` → `allocation_events` → `synthetic_demand_runs` → `experiment_groups` → `experiments` → `notifications`.
 
 > `schedule_entries.import_batch_id` tham chiếu `schedule_imports` nên `schedule_imports` phải tạo **trước** (doc schema chỉ xếp sau cho dễ đọc).
 
@@ -138,14 +140,14 @@ Ký hiệu **Role**: `P` = Public, `A` = mọi user đã đăng nhập, `S` = St
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| POST | `/auth/register` | P | `{ email, password, fullName, role, department? }`. `role` tự chọn chỉ `STUDENT`/`LECTURER`; `ADMIN` chỉ do seed/admin tạo. |
+| POST | `/auth/register` | P | `{ email, password, fullName, role, department? }` → `201 AuthUser`, không cấp token. `role` tự chọn chỉ `STUDENT`/`LECTURER`; `ADMIN` chỉ do seed/admin tạo. |
 | POST | `/auth/login` | P | `{ email, password }` → `{ accessToken, refreshToken, expiresIn, user }` (`expiresIn` tính bằng **giây**). |
-| POST | `/auth/refresh` | P | `{ refreshToken }` → access token mới. |
-| POST | `/auth/logout` | A | Vô hiệu refresh token (blacklist trong Redis). |
+| POST | `/auth/refresh` | P | `{ refreshToken }` → `200 { accessToken, refreshToken, expiresIn }` (`RefreshResponse`, giây). Rotate và thu hồi token cũ (lưu hash trong bảng `refresh_tokens`; dùng lại token đã thu hồi → thu hồi mọi session của user); BFF cần đủ ba field. |
+| POST | `/auth/logout` | A | Bearer token, không body → `204` rỗng. Thu hồi mọi refresh session của user (bảng `refresh_tokens`). BFF luôn xóa cookie cục bộ. |
 | POST | `/auth/forgot-password` | P | `{ email }` → **luôn `202`** (không lộ email có tồn tại hay không). Nếu có: tạo token dùng một lần, TTL **30 phút**, lưu **hash** (không lưu token thô), gửi mail `{FRONTEND_URL}/reset-password?token=...`. |
 | POST | `/auth/reset-password` | P | `{ token, newPassword }`. Kiểm tra token (chưa hết hạn, chưa dùng, khớp hash) → đổi `password_hash`, đánh dấu đã dùng, **thu hồi mọi refresh token** của user. `400` nếu token sai/hết hạn/đã dùng. |
-| GET | `/users/me` | A | Hồ sơ hiện tại → `AuthUser { id, email, fullName, role, department? }`. |
-| PATCH | `/users/me` | A | Sửa `fullName`, `department`, notification prefs. |
+| GET | `/users/me` | A | `UserProfile`: các field của `AuthUser` và đủ bốn boolean `notificationPrefs`. |
+| PATCH | `/users/me` | A | Partial `{ fullName?, department?, notificationPrefs? }` → `UserProfile`. Merge key prefs được gửi, giữ các key còn lại. |
 | POST | `/users/me/change-password` | A | `{ oldPassword, newPassword }`. |
 | GET | `/users` | AD | Danh sách/tìm kiếm, lọc `role`, `department`. |
 | GET | `/users/{id}` | AD | Chi tiết user. |
@@ -181,6 +183,8 @@ DTO FE: `Semester { id, name, startDate, endDate, active }`.
 
 DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo|null, active }`; `AvailabilityException { id, date, type, startTime, endTime, reason|null }`.
 
+`effectiveTo: null` nghĩa là tới `semesters.end_date`; DB `effective_to` nullable. API dùng `active`, DB dùng `is_active`. List calendar trả array; admin import history phân trang theo baseline API §0.1.
+
 > **Lưu ý khi sinh slot:** áp dụng rule → trừ `BLOCK` → cộng `ADD` → trừ lịch dạy của chính lecturer (`schedule_entries`). Sửa/xóa rule **không được** động vào slot đã có booking.
 
 ### 6.4 Import lịch học/dạy — nguồn xung đột (FR-5, FR-5a)
@@ -190,10 +194,10 @@ DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes
 **Mô hình tin cậy.** Backend không còn kiểm chứng được file có phải export AAO thật, và không cần: user chỉ ghi được vào lịch **của chính họ** (Admin: của user được chỉ định), nên rủi ro tối đa là user tự khai sai lịch của mình. Vì vậy backend **phải coi payload là input không tin cậy**:
 
 - validate từng dòng theo schema bên dưới (kiểu, enum, `dayOfWeek` 1–7, giờ `HH:mm`, `startTime < endTime`, giới hạn độ dài chuỗi);
-- giới hạn kích thước (gợi ý ≤ 2.000 dòng và ≤ 1 MB mỗi request) → `413`/`422` nếu vượt;
+- giới hạn 1–2.000 dòng và ≤ 1 MiB = 1.048.576 byte mỗi request; body quá lớn → `413`, số dòng/schema sai → `422`;
 - chủ sở hữu lấy từ **token** (`/users/me/...`) hoặc từ path (Admin) — **không bao giờ** từ `userId` trong body;
 - `mode` và khử trùng lặp thực hiện **phía server**;
-- có dòng lỗi thì **từ chối cả batch** (all-or-nothing) và trả `errors[] = { rowIndex, field, message }`.
+- có dòng lỗi thì **từ chối cả batch** và trả `details.errors[] = { rowIndex, field, message }` (index từ 0). Auth/schema/size sai không ghi audit; lỗi persistence rollback lịch và có thể ghi FAILED riêng với ba mutation count bằng 0.
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
@@ -204,8 +208,8 @@ DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes
 | POST | `/users/me/schedule-entries` | S/L | Thêm tay **một** block của mình (modal "Add schedule event", `source: MANUAL`). |
 | POST | `/users/{userId}/schedule-entries` | AD | Thêm tay một block hộ user. |
 | DELETE | `/schedule-entries/{id}` | O/AD | Xóa một block. |
-| GET | `/users/me/schedule-imports` | S/L | Lịch sử import của mình: `{ id, importedAt, mode, sourceFiles[], addedCount, skippedCount, status }[]` (FE `ScheduleImportHistoryEntry`; `rowCount` = `addedCount`). |
-| GET | `/schedule-imports` | AD | Lịch sử toàn hệ thống. |
+| GET | `/users/me/schedule-imports` | S/L | `ScheduleImportHistoryEntry[]`: `{ id, importedAt, mode, sourceFiles[], addedCount, skippedCount, replacedCount, status: SUCCESS\|FAILED }`. Một record cho cả batch; DB COMPLETED → API SUCCESS, created_at → importedAt; không `fileName`/`rowCount`. |
+| GET | `/schedule-imports` | AD | Lịch sử toàn hệ thống, phân trang; cùng batch DTO cộng `uploadedBy`, `targetUserId` (owner đã resolve). |
 
 **Schema payload** (FE type `ScheduleBatchPayload`, `lib/office-hours/types.ts`):
 ```json
@@ -223,15 +227,16 @@ DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes
 
 | Trường | Kiểu / luật |
 |---|---|
-| `semesterId` | bắt buộc, phải tồn tại (mặc định: semester active) |
-| `mode` | `REPLACE` hoặc `MERGE` |
-| `sourceFiles` | tùy chọn, ≤ 20 tên, mỗi tên ≤ 255 ký tự (chỉ để audit) |
-| `rows[].day` | `"Thứ 2"`…`"Thứ 7"`, `"Chủ Nhật"` → server map sang `dayOfWeek` 1…7 (cũng chấp nhận số 1–7) |
-| `rows[].date` | tùy chọn `dd/MM` hoặc `dd/MM/yyyy`, ≤ 20 ký tự — chỉ mang tính thông tin (import dạng lịch lặp hằng tuần) |
+| `semesterId` | bắt buộc, phải tồn tại; FE gửi active semester id, backend không tự mặc định |
+| `mode` | bắt buộc `REPLACE` hoặc `MERGE`; FE mặc định chọn REPLACE |
+| `sourceFiles` | bắt buộc array (có thể rỗng), ≤ 20 tên, mỗi tên ≤ 255 ký tự (chỉ để audit) |
+| `rows` | bắt buộc array, 1–2.000 dòng |
+| `rows[].day` | bắt buộc `"Thứ 2"`…`"Thứ 7"`, `"Chủ Nhật"` → server map sang 1…7; không gửi thêm field `dayOfWeek` |
+| `rows[].date` | bắt buộc nullable: `null`, `dd/MM` hoặc `dd/MM/yyyy`, ≤ 20 ký tự; chỉ thông tin, import lịch lặp hằng tuần |
 | `rows[].startTime`, `endTime` | `HH:mm` 24h, `startTime < endTime` |
-| `subjectCode`, `subjectName`, `group`, `room`, `lecturerName` | chuỗi, giới hạn theo cột của `schedule_entries`; `locationType` suy ra từ `room`/tên môn (`LAB`/`ROOM`/`ONLINE`/`OTHER`) nếu không gửi |
+| `subjectCode`, `subjectName`, `group`, `room`, `lecturerName` | chuỗi bắt buộc (cho phép rỗng), tối đa 30/150/20/100/150 ký tự. subjectCode rỗng → DB NULL trước dedup; title suy từ tên/mã môn, tối đa 200. locationType do server suy ra, không nhận trong ParsedTimetableRow. |
 
-- **`REPLACE`**: xóa các dòng `IMPORTED` cũ của user trong semester, **giữ** dòng `MANUAL`. **`MERGE`**: thêm mới và bỏ qua dòng trùng, dựa trên `(user_id, semester_id, day_of_week, start_time, end_time, subject_code)` — index **unique** `uq_schedule_entries_dedup` (`NULLS NOT DISTINCT`, PostgreSQL 15+).
+- **Cả hai mode** bỏ trùng trong payload theo `(user_id, semester_id, day_of_week, start_time, end_time, subject_code)` — `uq_schedule_entries_dedup` (`NULLS NOT DISTINCT`). **REPLACE** xóa imported cũ, giữ MANUAL và bỏ dòng trùng MANUAL còn lại. **MERGE** thêm mới, bỏ dòng đã tồn tại. `addedCount` = số insert; `skippedCount` = số input không insert; `replacedCount` = số imported cũ bị xóa.
 - **Hoãn / không làm ở MVP:** pipeline phía server (upload `multipart`, job, bảng staging, SSE tiến độ, preview, commit). Chỉ cân nhắc nếu Admin cần nạp file toàn khoa mà không thể parse ở trình duyệt.
 
 **DTO `ScheduleBlock`** (response): `{ id, title, dayOfWeek(1–7), date?("13/07"), startTime, endTime, source("IMPORTED"|"MANUAL"), subjectCode?, subjectName?, group?, room?, lecturerName?, locationType?, colorHue?, notes? }`.
@@ -261,10 +266,10 @@ EXISTS (SELECT 1 FROM schedule_entries
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| POST | `/bookings` | S | `{ slotId, topic?, participantIds? }`. Validate lại xung đột. `201` + `status: PENDING`; `409` (thua race) kèm `{ waitlistAvailable: true }`; `422` (xung đột lịch). |
+| POST | `/bookings` | S | `{ slotId, topic?, participantEmails? }`. Validate lại xung đột. `201 Booking` + `status: PENDING`; `409` kèm `details: { waitlistAvailable: true }`; `422` xung đột. Nhiều PENDING có thể cùng slot; constraint bảo vệ CONFIRMED. |
 | GET | `/bookings` | A | Student: booking của mình. Lecturer: booking cần duyệt. Admin lọc theo user. Lọc `?status=`. |
 | GET | `/bookings/{id}` | O/AD | Chi tiết + `participants`. |
-| POST | `/bookings/{id}/confirm` | L(chủ slot) | `PENDING → CONFIRMED`; thông báo student. Bắt `exclusion_violation` → **`409` `SLOT_ALREADY_CONFIRMED`**; sau lần confirm đầu tiên, tự `DECLINE` (kèm thông báo) các `PENDING` còn lại của slot trong cùng transaction (mục 3 #3). |
+| POST | `/bookings/{id}/confirm` | L(chủ slot) | Confirm đầu tiên → CONFIRMED, tự DECLINE đối thủ và thông báo cùng transaction. Confirm đối thủ sau đó → `409 SLOT_ALREADY_CONFIRMED`; rollback exclusion violation trước khi ghi tiếp (API §12). |
 | POST | `/bookings/{id}/decline` | L(chủ slot) | `{ reason? }` → `DECLINED`; có thể kích hoạt allocation nếu có waitlist. |
 | POST | `/bookings/{id}/cancel` | S/L (thành viên) | FR-9: áp **notice period** cấu hình được (từ chối nếu nằm trong cửa sổ, trừ Admin). → `CANCELLED`; kích hoạt allocation nếu slot có hàng đợi. |
 | POST | `/bookings/{id}/reschedule` | S | `{ newSlotId }` — tương đương cancel+create **trong một transaction**, cùng luật xung đột & notice period. FE cho người dùng chọn slot từ `GET /lecturers/{id}/slots`; **không** nhận ngày giờ tự do (mục 3 #2). |
@@ -325,14 +330,14 @@ Mỗi entry thuộc **một slot cụ thể**. `GET /waitlist/me` trả `{ id, s
 
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
-| GET | `/allocation-policies` | AD | Danh sách policy + `config` JSON + `isActive`. |
-| POST | `/allocation-policies` | AD | Tạo cấu hình mới (vd HYBRID tinh chỉnh). |
+| GET | `/allocation-policies` | AD | `AllocationPolicy[]`: `{ id, name, config, active }`; DB `is_active` map sang API `active`. |
+| POST | `/allocation-policies` | AD | `{ name, config }` tạo policy còn thiếu trong 4 tên cố định, `active: false`; trùng tên → `409`. Tinh chỉnh bằng PATCH. |
 | PATCH | `/allocation-policies/{id}` | AD | Sửa `config` (trọng số…). |
 | POST | `/allocation-policies/{id}/activate` | AD | Đặt active (**toàn cục, một policy duy nhất**; không có policy theo khoa — đã loại khỏi scope). |
 | POST | `/slots/{id}/run-allocation` | SYSTEM / AD (demo) | Chạy `allocate(slot, candidates, activePolicy)`, ghi `allocation_events`, gửi offer. Tự động khi cancel/decline/expired; Admin gọi tay để demo so sánh policy. |
 | POST | `/slots/{id}/override` | AD | `{ studentId, reason }`. Gán slot trống **bỏ qua policy**: hủy mọi `OFFERED` còn lại của slot, tạo booking `CONFIRMED` cho `studentId`, ghi `allocation_events` với `decision: OVERRIDDEN` (vẫn audit được). |
 | GET | `/allocation-events` | AD | Log đầy đủ, lọc `slotId`, `policyId`, `decision`, `dateRange`. |
-| GET | `/allocation-events/{id}` | AD | Chi tiết: `computedScore`, `decision`, `randomSeed`, `allocatedAt`; với `OVERRIDDEN`: `overriddenBy`, `overrideReason`. FE hiện cần `overriddenByName` (tên hiển thị) — trả cả id lẫn tên. |
+| GET | `/allocation-events/{id}` | AD | `AllocationEvent`: policyName/computedScore/randomSeed null khi override; overriddenByName/overrideReason null khi chạy policy. Actor FK lưu DB, DTO chỉ trả tên hiển thị. |
 
 **Quy ước metric:** các dòng `OVERRIDDEN` **loại trừ mặc định** khỏi tính Gini/variance (là can thiệp của người, không phải đầu ra của policy) nhưng vẫn giữ trong log.
 
@@ -341,8 +346,8 @@ Mỗi entry thuộc **một slot cụ thể**. `GET /waitlist/me` trả `{ id, s
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
 | POST | `/research/synthetic-demand` | AD | `{ seed, popularitySkew, arrivalPattern, numStudents, numLecturers }`. Có thể là batch job. |
-| POST | `/research/experiments` | AD | `{ demandRunId, policyNames[], seed }`. Phát lại **cùng một** demand stream qua từng policy. |
-| GET | `/research/experiments/{id}` | AD | Metric: Gini, max–min ratio, utilization, time-to-fill, variance chờ… theo policy. |
+| POST | `/research/experiments` | AD | `{ demandRunId, policyNames[], seed }` → `201 Experiment`. 1–4 tên policy khác nhau; tạo parent experiment_groups và child experiments atomically; lưu policy_order theo thứ tự request. |
+| GET | `/research/experiments/{id}` | AD | id là experiment_groups.id; trả metadata parent và results[] theo policy_order. Không suy nhóm bằng seed/timestamp. |
 | GET | `/research/experiments/{id}/export` | AD | Xuất CSV/JSON. |
 
 Cân nhắc **tạm cắt** research API nếu thiếu thời gian (đánh dấu stretch/dev-only trong `Pages.txt` #31).
@@ -368,10 +373,10 @@ Cân nhắc **tạm cắt** research API nếu thiếu thời gian (đánh dấu
 | `waitlist.expired` | `WAITLIST_EXPIRED` | Student hết hạn offer |
 | `reminder.upcoming` | `REMINDER` | Cả hai bên (vd. trước 24 giờ) |
 
-Response: `{ id, type, title, body, createdAt, read, bookingId? }`; `title`/`body` render theo locale (en/vi) của user, hoặc FE tự map `type`+`payload` sang chuỗi i18n.
+Response: `{ id, type, title, body, createdAt, read, bookingId? }`; `type` REST là enum FE viết HOA. DB type/SSE `event:` dùng dotted name; SSE `data:` là cùng DTO REST. Backend render title/body theo `Accept-Language: en|vi` (mặc định en); payload giữ nội bộ.
 
 Kèm theo: gửi **email SMTP** cho cùng tập sự kiện (không có REST riêng) song song với SSE và ghi dòng `notifications`. Chốt danh mục event theo mục 3 #7.
-`NotificationPrefs` (FE): `{ bookingConfirmed, bookingDeclined, waitlistOffer, reminders }` — lưu theo user, thuộc `PATCH /users/me`.
+`NotificationPrefs`: `{ bookingConfirmed, bookingDeclined, waitlistOffer, reminders }` — lưu `users.notification_prefs`, mặc định true; đọc/ghi `/users/me`. Prefs điều khiển email; vẫn giữ in-app record và SSE cho mọi sự kiện.
 
 ### 6.10 Admin analytics (FR-17, Stretch)
 
@@ -404,7 +409,7 @@ Chỉ cho phép các chuyển trạng thái trên; mọi chuyển khác → `409
 1. FE: `GET /lecturers/{id}/slots?week=…` → backend trả slot **đã lọc xung đột** (cache Redis nếu có).
 2. FE: `POST /bookings`.
 3. Backend: validate lại xung đột phía server → `INSERT booking` (exclusion constraint chống race).
-   - Thua race → `409` + `{ waitlistAvailable: true }`.
+   - Slot không còn khả dụng → `409` + `details: { waitlistAvailable: true }`. Nhiều PENDING có thể cùng slot; chỉ một CONFIRMED.
    - Thành công → `PENDING`, thông báo lecturer, `201`.
 
 ### 7.3 Phân bổ khi slot trống (đường nghiên cứu)
@@ -465,7 +470,7 @@ FE type nằm ở `lib/office-hours/types.ts` và `lib/auth/types.ts`. Backend *
 
 | FE type | Endpoint nguồn | Ghi chú map từ DB |
 |---|---|---|
-| `AuthUser`, `LoginResponse` | `/auth/login`, `/users/me` | `expiresIn` giây |
+| `AuthUser`, `UserProfile`, `LoginResponse`, `RefreshResponse` | `/auth/login`, `/users/me`, `/auth/refresh` | `expiresIn` giây; UserProfile có notificationPrefs |
 | `ProblemDetail` | mọi lỗi | RFC 7807 |
 | `PublicSlot`, `PublicOfficeHoursResponse` | `/public/office-hours` | phân trang Spring |
 | `TodayAvailabilitySlot` | (widget dashboard) | thêm `lecturerId`; chưa có endpoint riêng → dùng `/slots` hoặc thêm `/slots/today` |
@@ -478,7 +483,7 @@ FE type nằm ở `lib/office-hours/types.ts` và `lib/auth/types.ts`. Backend *
 | `AvailabilityRule`, `AvailabilityException` | `/availability-*` | `slot_minutes`→`slotLengthMinutes`, `exception_date`→`date`, `active` suy từ effective range |
 | `ScheduleBlock`, `AdminScheduleEntry` | `/users/me/schedule-entries`, `/users/{id}/schedule-entries` | `group_code`→`group`, `date_label`→`date`, `AAO_IMPORT`→`IMPORTED`; admin thêm `ownerName`, `ownerRole` |
 | `ParsedTimetableRow`, `ScheduleBatchPayload`, `ScheduleImportMode` | body `POST /users/me/schedule-entries/batch` | `day` là chuỗi "Thứ 2".."Chủ Nhật" → map sang `dayOfWeek` |
-| `ScheduleImportHistoryEntry` | `/users/me/schedule-imports` | `rowCount` = `addedCount` |
+| `ScheduleImportHistoryEntry` | `/users/me/schedule-imports` | Một record/batch; mode, sourceFiles và ba mutation count; DB COMPLETED → API SUCCESS |
 | `AdminUserRow` | `/users` | `is_active`→`active` |
 | `Semester` | `/semesters*` | `is_active`→`active` |
 | `AllocationPolicy`, `AllocationEvent` | `/allocation-*` | `AllocationEvent.overriddenByName` = tên admin |
@@ -496,7 +501,7 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 | Mốc | Nội dung | DoD |
 |---|---|---|
 | **M0 — Nền tảng** | Project Spring Boot, Flyway, Docker compose (Postgres+Redis), RFC 7807 handler, security filter JWT, cấu hình timezone, seed | `docker compose up` chạy; `/actuator/health` OK; migration chạy từ DB trống |
-| **M1 — Auth & user** | §6.1; refresh/logout (Redis blacklist); forgot/reset | FE đăng nhập thật được (bỏ nhánh fallback mock); token reset dùng một lần, thu hồi refresh token |
+| **M1 — Auth & user** | §6.1; refresh/logout (bảng `refresh_tokens`); forgot/reset | FE đăng nhập thật được (bỏ nhánh fallback mock); token reset dùng một lần, thu hồi refresh token |
 | **M2 — Semester & availability** | §6.2, §6.3; **sinh slot** từ rule+exception | Test: sửa rule không đụng slot đã book; BLOCK/ADD đúng |
 | **M3 — Schedule entries** | §6.4 (batch JSON, CRUD, REPLACE/MERGE, validate payload) | `MERGE` khử trùng lặp; `REPLACE` giữ block `MANUAL`; payload sai/quá lớn bị từ chối, không ghi dở dang |
 | **M4 — Slot & booking lõi** | §6.5, §6.6 + exclusion constraint + trigger denormalize | **Test đồng thời** (N request song song cùng slot → đúng 1 `CONFIRMED`, còn lại `409`); slot query p95 < 300 ms ở dữ liệu pilot |
@@ -523,21 +528,21 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 ### 10.2 Bảo mật & vận hành (NFR-4, NFR-6, NFR-7)
 
 - Băm mật khẩu bcrypt/argon2; không log mật khẩu/token; rate-limit auth.
-- Validate file import (MIME + chữ ký + schema); giới hạn kích thước.
+- Validate JSON batch import và giới hạn 1 MiB/2.000 dòng; backend không nhận file PDF để kiểm MIME/chữ ký.
 - Log có cấu trúc + metric cơ bản (số booking, số lần allocation, tỷ lệ gửi notification).
 - Một lệnh `docker compose up` dựng toàn bộ stack dev; triển khai pilot một VM.
 
 ---
 
-## 11. Câu hỏi còn mở (cần đội chốt)
+## 11. Baseline đã chốt và phần còn hoãn
 
-1. Slot listing có cần auth để tính xung đột theo từng student, hay có chế độ "raw availability" công khai? (Hiện: cần auth; `/public/office-hours` là bản tổng hợp công khai.)
-2. `POST /slots/{id}/run-allocation` có bị gọi bởi thứ gì ngoài job hệ thống không? Nếu không, chỉ giữ cho demo admin (nguyên tắc "không endpoint đầu cơ").
-3. ~~Reschedule atomic hay hai lời gọi~~ — **đã chốt:** một endpoint `POST /bookings/{id}/reschedule`, một transaction.
-4. ~~Fallback polling~~ — **đã chốt:** giữ `GET /notifications?since=` làm fallback; còn cần xác nhận hành vi PWA khi chạy nền.
-5. Override: đã chốt **mọi Admin** cho MVP; còn mở: có dùng mẫu thông báo riêng ("quản trị viên đã gán lại slot") để không gây hiểu lầm không?
-6. Chiến lược retention/partition cho `allocation_events`, `notifications`.
-7. ~~Định dạng AAO~~ — **đã chốt:** chỉ PDF, parse ở trình duyệt.
+1. Slot listing và availability cần auth; `/public/office-hours` là aggregate công khai riêng.
+2. Allocation tự chạy qua service nội bộ; REST trigger chỉ Admin cho demo, không có JWT role SYSTEM bên ngoài.
+3. Reschedule atomic bằng `{ newSlotId }`, cùng lecturer; lỗi tạo mới rollback hủy booking cũ.
+4. SSE qua BFF và polling fallback; override dùng event hiện có với nội dung nói rõ admin gán lại slot.
+5. Mọi Admin có quyền override toàn cục; vẫn kiểm tra conflict/capacity và audit. Nếu chưa có waitlist entry thì tạo trong cùng transaction để giữ FK NOT NULL.
+6. Confirm đầu tiên tự DECLINE đối thủ; confirm đối thủ sau đó trả `409 SLOT_ALREADY_CONFIRMED`. Exclusion violation cần rollback trước khi ghi tiếp; xem API §12.
+7. Research identity đã chốt: API Experiment.id = experiment_groups.id; child experiments có unique(group, policy) và policy_order. Research vẫn stretch; retention và PWA chạy nền là follow-up vận hành.
 
 ---
 

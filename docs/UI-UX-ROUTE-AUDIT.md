@@ -1,5 +1,7 @@
 # OfficeHours UI/UX route audit and implementation plan
 
+> **Contract update (15 October 2026):** findings below are historical. Use [the API baseline](capstone-api-endpoints.md#01-resolved-field-and-response-contracts) and [storage baseline](capstone-db-schema.md) for implementation. Rescheduling is atomic; imports use synchronous client-parsed JSON, with no MVP staging/jobs; group members resolve by email; any Admin may override globally.
+
 **Date:** 30 September 2026  
 **Status:** Planning only. No application changes are part of this audit.  
 **Coverage:** Every page route under `app/` (23 routes), all seven local auth API routes, the dashboard shell, shared interactions, and the written API contract.

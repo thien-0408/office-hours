@@ -2,6 +2,7 @@
 
 Sơ đồ ERD dạng Mermaid, rút ra từ `capstone-db-schema.md` (nguồn chính xác, có đầy đủ DDL, index và constraint).
 File này là bản nhìn nhanh để dev backend định hình entity và quan hệ trước khi viết migration.
+Baseline 15/10/2026: API DTO theo `capstone-api-endpoints.md`; sơ đồ/Word theo tên cột DDL. Các sơ đồ nhỏ là bản tóm tắt; constraint đầy đủ nằm ở schema gốc.
 Xem trên GitHub, VS Code (Markdown Preview Mermaid) hoặc dán vào <https://mermaid.live>.
 
 Quy ước: `PK` khóa chính, `FK` khóa ngoại, `UK` unique. Kiểu `numeric`/`varchar` bỏ độ dài cho gọn.
@@ -15,6 +16,7 @@ Quy ước: `PK` khóa chính, `FK` khóa ngoại, `UK` unique. Kiểu `numeric`
 erDiagram
     USERS ||--o| LECTURER_PROFILES : "has (lecturers)"
     USERS ||--o{ PASSWORD_RESET_TOKENS : requests
+    USERS ||--o{ REFRESH_TOKENS : "signs in"
     USERS ||--o{ NOTIFICATIONS : receives
 
     SEMESTERS ||--o{ AVAILABILITY_RULES : scopes
@@ -42,7 +44,8 @@ erDiagram
     WAITLIST_ENTRIES ||--o{ ALLOCATION_EVENTS : audited
     ALLOCATION_POLICIES ||--o{ ALLOCATION_EVENTS : decides
     ALLOCATION_POLICIES ||--o{ EXPERIMENTS : evaluated
-    SYNTHETIC_DEMAND_RUNS ||--o{ EXPERIMENTS : feeds
+    SYNTHETIC_DEMAND_RUNS ||--o{ EXPERIMENT_GROUPS : feeds
+    EXPERIMENT_GROUPS ||--o{ EXPERIMENTS : results
 ```
 
 ---
@@ -52,41 +55,50 @@ erDiagram
 ```mermaid
 erDiagram
     USERS {
-        bigserial id PK
+        uuid id PK
         citext email UK
         text password_hash
         varchar full_name
         user_role role "STUDENT | LECTURER | ADMIN"
         varchar department
         boolean is_active "soft delete"
+        jsonb notification_prefs "4 email flags, default true"
         timestamptz created_at
         timestamptz updated_at
     }
     LECTURER_PROFILES {
-        bigint user_id PK, FK "must be role=LECTURER (app guard)"
+        uuid user_id PK, FK "must be role=LECTURER (app guard)"
         varchar slug UK "amara-chen"
         text photo_url
         varchar blurb
         varchar specialty
     }
     PASSWORD_RESET_TOKENS {
-        bigserial id PK
-        bigint user_id FK
+        uuid id PK
+        uuid user_id FK
         text token_hash UK "SHA-256, raw token only in email"
         timestamptz expires_at "created_at + 30 min"
         timestamptz used_at "NULL = still redeemable"
         timestamptz created_at
     }
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        text token_hash UK "SHA-256, raw token only in httpOnly cookie"
+        timestamptz expires_at "created_at + 30 days"
+        timestamptz revoked_at "NULL = active session"
+        timestamptz created_at
+    }
     SEMESTERS {
-        bigserial id PK
+        uuid id PK
         varchar name
         date start_date
         date end_date "CHECK end > start"
         boolean is_active
     }
     NOTIFICATIONS {
-        bigserial id PK
-        bigint user_id FK
+        uuid id PK
+        uuid user_id FK
         varchar type "booking.pending | booking.confirmed | booking.declined | booking.cancelled | waitlist.offered | waitlist.expired | reminder.upcoming"
         jsonb payload
         timestamptz read_at
@@ -94,6 +106,7 @@ erDiagram
     }
     USERS ||--o| LECTURER_PROFILES : has
     USERS ||--o{ PASSWORD_RESET_TOKENS : requests
+    USERS ||--o{ REFRESH_TOKENS : "signs in"
     USERS ||--o{ NOTIFICATIONS : receives
 ```
 
@@ -104,20 +117,20 @@ erDiagram
 ```mermaid
 erDiagram
     AVAILABILITY_RULES {
-        bigserial id PK
-        bigint lecturer_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid lecturer_id FK
+        uuid semester_id FK
         smallint day_of_week "ISO 1-7"
         time start_time
         time end_time "CHECK end > start"
         int slot_minutes "CHECK window fits one slot"
         date effective_from
-        date effective_to
+        date effective_to "NULL = semester end"
         timestamptz created_at
     }
     AVAILABILITY_EXCEPTIONS {
-        bigserial id PK
-        bigint lecturer_id FK
+        uuid id PK
+        uuid lecturer_id FK
         date exception_date
         exception_type type "BLOCK | ADD"
         time start_time
@@ -126,9 +139,9 @@ erDiagram
         timestamptz created_at
     }
     SLOTS {
-        bigserial id PK
-        bigint lecturer_id FK
-        bigint rule_id FK "NULL for ad-hoc ADD slots"
+        uuid id PK
+        uuid lecturer_id FK
+        uuid rule_id FK "NULL for ad-hoc ADD slots"
         timestamptz start_at
         timestamptz end_at "CHECK end > start"
         int capacity "default 1"
@@ -150,9 +163,9 @@ erDiagram
 ```mermaid
 erDiagram
     SCHEDULE_ENTRIES {
-        bigserial id PK
-        bigint user_id FK "owner, from token"
-        bigint semester_id FK
+        uuid id PK
+        uuid user_id FK "owner, from token"
+        uuid semester_id FK
         varchar title
         varchar subject_code
         varchar subject_name
@@ -167,13 +180,13 @@ erDiagram
         varchar color_hue
         text notes
         varchar source "AAO_IMPORT | MANUAL"
-        bigint import_batch_id FK "SET NULL on delete"
+        uuid import_batch_id FK "SET NULL on delete"
     }
     SCHEDULE_IMPORTS {
-        bigserial id PK
-        bigint semester_id FK
-        bigint uploaded_by FK
-        bigint target_user_id FK "NULL = self-service"
+        uuid id PK
+        uuid semester_id FK
+        uuid uploaded_by FK
+        uuid target_user_id FK "NULL = self-service"
         text_array source_files "original PDF names"
         import_mode mode "REPLACE | MERGE"
         import_status status "QUEUED | PROCESSING | COMPLETED | FAILED"
@@ -187,11 +200,11 @@ erDiagram
         timestamptz completed_at
     }
     SCHEDULE_IMPORT_STAGING {
-        bigserial id PK "DEFERRED - not in MVP"
-        bigint import_batch_id FK
+        uuid id PK "DEFERRED - not in MVP"
+        uuid import_batch_id FK
         int temp_row_num
-        bigint user_id FK
-        bigint semester_id FK
+        uuid user_id FK
+        uuid semester_id FK
         varchar title
         smallint day_of_week
         time start_time
@@ -216,10 +229,10 @@ erDiagram
 ```mermaid
 erDiagram
     BOOKINGS {
-        bigserial id PK
-        bigint slot_id FK "RESTRICT"
-        bigint student_id FK "RESTRICT"
-        bigint semester_id FK
+        uuid id PK
+        uuid slot_id FK "RESTRICT"
+        uuid student_id FK "RESTRICT"
+        uuid semester_id FK
         booking_status status "PENDING | CONFIRMED | DECLINED | CANCELLED | COMPLETED | NO_SHOW"
         boolean is_group
         varchar topic
@@ -228,25 +241,25 @@ erDiagram
         timestamptz created_at
         timestamptz confirmed_at
         timestamptz cancelled_at
-        bigint cancelled_by FK
+        uuid cancelled_by FK
     }
     BOOKING_PARTICIPANTS {
-        bigint booking_id PK, FK
-        bigint student_id PK, FK "added by email"
+        uuid booking_id PK, FK
+        uuid student_id PK, FK "added by email"
         timestamptz joined_at
     }
     MEETING_RECORDS {
-        bigserial id PK
-        bigint booking_id UK, FK
+        uuid id PK
+        uuid booking_id UK, FK
         boolean attended
         text notes "not an LMS field"
         timestamptz recorded_at
     }
     RECURRING_BOOKINGS {
-        bigserial id PK
-        bigint student_id FK
-        bigint lecturer_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid student_id FK
+        uuid lecturer_id FK
+        uuid semester_id FK
         smallint day_of_week "ISO 1-7"
         time start_time
         time end_time
@@ -254,9 +267,9 @@ erDiagram
         timestamptz created_at
     }
     WAITLIST_ENTRIES {
-        bigserial id PK
-        bigint slot_id FK "per-slot waitlist"
-        bigint student_id FK
+        uuid id PK
+        uuid slot_id FK "per-slot waitlist"
+        uuid student_id FK
         timestamptz requested_at
         numeric priority_score
         waitlist_status status "WAITING | OFFERED | EXPIRED | FULFILLED | CANCELLED"
@@ -291,22 +304,24 @@ erDiagram
 ```mermaid
 erDiagram
     ALLOCATION_POLICIES {
-        bigserial id PK
+        uuid id PK
         varchar name UK "FCFS | NEED | ROUND_ROBIN | HYBRID"
         jsonb config
         boolean is_active
     }
     ALLOCATION_EVENTS {
-        bigserial id PK
-        bigint waitlist_entry_id FK
-        bigint policy_id FK
+        uuid id PK
+        uuid waitlist_entry_id FK
+        uuid policy_id FK
         numeric computed_score
         allocation_decision decision "SELECTED | SKIPPED | OVERRIDDEN"
         int random_seed "mulberry32 seed, reproducible"
-        bigint overridden_by FK "admin who overrode"
+        uuid overridden_by FK "admin who overrode"
+        varchar override_reason
+        timestamptz allocated_at
     }
     SYNTHETIC_DEMAND_RUNS {
-        bigserial id PK
+        uuid id PK
         int seed
         numeric popularity_skew
         varchar arrival_pattern
@@ -315,11 +330,17 @@ erDiagram
         timestamptz generated_at
         jsonb dataset
     }
-    EXPERIMENTS {
-        bigserial id PK
-        bigint demand_run_id FK
-        bigint policy_id FK
+    EXPERIMENT_GROUPS {
+        uuid id PK
+        uuid demand_run_id FK
         int seed
+        timestamptz run_at
+    }
+    EXPERIMENTS {
+        uuid id PK
+        uuid experiment_group_id FK
+        uuid policy_id FK
+        smallint policy_order "0-based request order"
         numeric gini_slots_per_student
         numeric gini_lecturer_access
         numeric max_min_ratio
@@ -329,12 +350,12 @@ erDiagram
         numeric offer_rejection_rate_pct
         int avg_wait_time_seconds
         numeric wait_time_variance
-        timestamptz run_at
     }
     WAITLIST_ENTRIES ||--o{ ALLOCATION_EVENTS : audited
     ALLOCATION_POLICIES ||--o{ ALLOCATION_EVENTS : decides
     ALLOCATION_POLICIES ||--o{ EXPERIMENTS : evaluated
-    SYNTHETIC_DEMAND_RUNS ||--o{ EXPERIMENTS : feeds
+    SYNTHETIC_DEMAND_RUNS ||--o{ EXPERIMENT_GROUPS : feeds
+    EXPERIMENT_GROUPS ||--o{ EXPERIMENTS : results
     USERS ||--o{ ALLOCATION_EVENTS : overrides
 ```
 

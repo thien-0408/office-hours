@@ -1,6 +1,8 @@
 # OfficeHours — Capstone Report Writing Guide
 ### Source-of-truth reference for writing the thesis/capstone report
 
+> **Contract update (15 October 2026):** API/schema discussions below describe an earlier snapshot. For implementation and current report claims, use [the API baseline](capstone-api-endpoints.md#01-resolved-field-and-response-contracts) and [storage baseline](capstone-db-schema.md). Imports are client-parsed JSON, group participants resolve by email, and research now has an `experiment_groups` parent for multi-policy results. There are 20 planned tables plus one deferred staging table.
+
 > **Read this first, then read the code.** Every claim below is traceable to a file in this repo
 > or an existing doc in `docs/`. Where something is planned-but-not-built, it says so plainly.
 > Where a fact could not be verified, it is prefixed `verify:`. Do not let the report claim more
@@ -217,7 +219,7 @@ migration — no database exists in this repo.** Present it in the report as the
 model backing the (future) backend. It is nonetheless detailed and defensible.
 
 **Engine/conventions:** PostgreSQL 15+, `btree_gist` extension required, `snake_case`, plural
-tables, `timestamptz` throughout, `bigserial` PKs.
+tables, `timestamptz` throughout, `uuid` PKs (`gen_random_uuid()`).
 
 **19 tables**, grouped:
 

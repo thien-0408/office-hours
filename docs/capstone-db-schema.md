@@ -4,12 +4,12 @@
 | | |
 |---|---|
 | **Engine** | PostgreSQL 15+ |
-| **Required extensions** | `btree_gist` (exclusion constraints on scalar+range), `pgcrypto` or `pg_uuid_ossp` (if UUIDs preferred over bigserial — this doc uses `bigserial` per the ERD) |
+| **Required extensions** | `btree_gist` (exclusion constraints on scalar+range), `citext`; primary keys are `uuid DEFAULT gen_random_uuid()` (built into PostgreSQL 13+, no `pgcrypto` needed) |
 | **Naming** | `snake_case`, singular column names, plural table names |
 | **Timestamps** | `timestamptz` throughout — never naive `timestamp` (multi-timezone-safe even for a single-institution deploy) |
 | **Source mapping** | Every table cites the FR / entity it implements from the plan |
 
-> This is a proposed DDL contract, not yet applied via migration. Written as sequential Flyway/Liquibase-style migrations. Adjust once Dev 1 (backend lead, schema owner per §15) reviews.
+> **Storage baseline — 15 October 2026.** This proposed DDL has not been applied via migration. It owns column names, nullability and constraints; the API baseline in `capstone-api-endpoints.md` owns JSON DTO names. `DB-SCHEMA-PROTOTYPE.md`, Word tables and draw.io are derived views, not competing schemas. Use `id` for entity PKs except shared `lecturer_profiles.user_id` and composite `booking_participants` keys.
 
 ---
 
@@ -18,6 +18,7 @@
 ```sql
 -- migration: V1__extensions.sql
 CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION IF NOT EXISTS citext;
 ```
 
 `btree_gist` is required because the double-booking guard (§4.4) is a GiST exclusion constraint mixing an equality column (`lecturer_id`) with a range overlap (`time_range`) — plain `gist` alone doesn't index scalar equality efficiently, `btree_gist` bridges that. This is the single most defense-relevant line in the schema (NFR-2).
@@ -32,12 +33,13 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 CREATE TYPE user_role AS ENUM ('STUDENT', 'LECTURER', 'ADMIN');
 
 CREATE TABLE users (
-    id              bigserial PRIMARY KEY,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     email           citext NOT NULL UNIQUE,      -- requires citext extension; else use LOWER(email) unique index
     password_hash   text NOT NULL,                -- bcrypt/argon2, never plaintext (NFR-4)
     full_name       varchar(150) NOT NULL,
     role            user_role NOT NULL,
     department      varchar(100),
+    notification_prefs jsonb NOT NULL DEFAULT '{"bookingConfirmed":true,"bookingDeclined":true,"waitlistOffer":true,"reminders":true}',
     is_active       boolean NOT NULL DEFAULT true, -- soft-delete flag
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now()
@@ -47,14 +49,14 @@ CREATE INDEX idx_users_role ON users (role);
 CREATE INDEX idx_users_department ON users (department) WHERE department IS NOT NULL;
 ```
 
-> If `citext` is unavailable/undesired, replace with `varchar(255) NOT NULL` + `CREATE UNIQUE INDEX idx_users_email_lower ON users (LOWER(email));` and enforce lowercasing at the application layer.
+> Enable `citext` in the initial migration. `notification_prefs` contains the four boolean keys from `NotificationPrefs`; partial profile updates merge supplied keys and preserve others. JSON `active` maps from `is_active`.
 
 ### 1.1a `password_reset_tokens` (FR-1; backs `POST /auth/forgot-password` / `/auth/reset-password`)
 
 ```sql
 CREATE TABLE password_reset_tokens (
-    id          bigserial PRIMARY KEY,
-    user_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     token_hash  text NOT NULL UNIQUE,          -- SHA-256 of the raw token; raw value only ever exists in the emailed link
     expires_at  timestamptz NOT NULL,          -- created_at + 30 min
     used_at     timestamptz,                   -- set on successful reset; NULL = still redeemable
@@ -66,11 +68,28 @@ CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens (user_id);
 
 > One-time use, short TTL. On successful reset, all rows for the user (or at least all their refresh tokens) should be invalidated so a leaked old session can't survive a password change.
 
+### 1.1c `refresh_tokens` (FR-1; backs `POST /auth/refresh` / `/auth/logout`)
+
+```sql
+CREATE TABLE refresh_tokens (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash  text NOT NULL UNIQUE,          -- SHA-256 of the raw 256-bit token; the raw value lives only in the BFF's httpOnly cookie
+    expires_at  timestamptz NOT NULL,          -- created_at + 30 days (matches the BFF cookie)
+    revoked_at  timestamptz,                   -- set on rotation, logout, password change/reset, deactivation
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id);
+```
+
+> Server-side session registry (Postgres instead of Redis). `/auth/refresh` rotates: revokes the submitted row and inserts a new one. Presenting an already-revoked token revokes every token of that user (reuse detection). Logout, password change/reset and soft delete revoke all rows of the user.
+
 ### 1.1b `lecturer_profiles` (FR-6 support; backs `GET /lecturers`, `GET /lecturers/{id}`)
 
 ```sql
 CREATE TABLE lecturer_profiles (
-    user_id     bigint PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    user_id     uuid PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
     slug        varchar(80)  NOT NULL UNIQUE,   -- derived from full_name, e.g. 'amara-chen'; used in URLs
     photo_url   text,
     blurb       varchar(280),                   -- short description shown on the directory card
@@ -84,7 +103,7 @@ CREATE TABLE lecturer_profiles (
 
 ```sql
 CREATE TABLE semesters (
-    id          bigserial PRIMARY KEY,
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(100) NOT NULL,
     start_date  date NOT NULL,
     end_date    date NOT NULL,
@@ -104,18 +123,18 @@ CREATE UNIQUE INDEX uq_semesters_one_active ON semesters (is_active) WHERE is_ac
 
 ```sql
 CREATE TABLE availability_rules (
-    id              bigserial PRIMARY KEY,
-    lecturer_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    lecturer_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    semester_id     uuid NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
     day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- ISO: 1=Monday .. 7=Sunday (same as schedule_entries and the API/FE)
     start_time      time NOT NULL,
     end_time        time NOT NULL,
     slot_minutes    int NOT NULL CHECK (slot_minutes > 0),
     effective_from  date NOT NULL,
-    effective_to    date NOT NULL,
+    effective_to    date,                       -- NULL = semester.end_date
     created_at      timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT chk_rule_time_order CHECK (end_time > start_time),
-    CONSTRAINT chk_rule_effective_range CHECK (effective_to >= effective_from),
+    CONSTRAINT chk_rule_effective_range CHECK (effective_to IS NULL OR effective_to >= effective_from),
     CONSTRAINT chk_rule_slot_fits CHECK (
         EXTRACT(EPOCH FROM (end_time - start_time)) / 60 >= slot_minutes
     )
@@ -123,6 +142,8 @@ CREATE TABLE availability_rules (
 
 -- app-level guard: lecturer_id in this table must resolve to a user with role = LECTURER
 -- (enforced in application/service layer or via trigger — Postgres CHECK cannot cross-reference another table)
+-- Effective dates must be within the semester. Slot generation uses COALESCE(effective_to, semester.end_date).
+-- The API's derived active flag compares the institution-local date to that effective interval.
 
 CREATE INDEX idx_avail_rules_lecturer_semester ON availability_rules (lecturer_id, semester_id);
 ```
@@ -133,8 +154,8 @@ CREATE INDEX idx_avail_rules_lecturer_semester ON availability_rules (lecturer_i
 CREATE TYPE exception_type AS ENUM ('BLOCK', 'ADD');
 
 CREATE TABLE availability_exceptions (
-    id              bigserial PRIMARY KEY,
-    lecturer_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    lecturer_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     exception_date  date NOT NULL,
     type            exception_type NOT NULL,
     start_time      time NOT NULL,
@@ -153,9 +174,9 @@ CREATE INDEX idx_avail_exceptions_lecturer_date ON availability_exceptions (lect
 CREATE TYPE schedule_location_type AS ENUM ('LAB', 'ROOM', 'ONLINE', 'OTHER');
 
 CREATE TABLE schedule_entries (
-    id              bigserial PRIMARY KEY,
-    user_id         bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    semester_id     uuid NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
     title           varchar(200) NOT NULL,      -- e.g. "Thiết kế trải nghiệm người dùng (CSW 437)"
     subject_code    varchar(30),                -- e.g. "CSW 437", "CSE 422"
     subject_name    varchar(150),               -- e.g. "Thiết kế trải nghiệm người dùng"
@@ -170,7 +191,7 @@ CREATE TABLE schedule_entries (
     color_hue       varchar(20),                -- 'brand' | 'coral' | 'rose' | 'mint' | 'info' | 'warning'
     notes           text,                       -- optional user/import notes
     source          varchar(20) NOT NULL DEFAULT 'AAO_IMPORT', -- 'AAO_IMPORT' | 'MANUAL'
-    import_batch_id bigint REFERENCES schedule_imports (id) ON DELETE SET NULL,
+    import_batch_id uuid REFERENCES schedule_imports (id) ON DELETE SET NULL,
     CONSTRAINT chk_schedule_time_order CHECK (end_time > start_time)
 );
 
@@ -188,25 +209,25 @@ CREATE UNIQUE INDEX uq_schedule_entries_dedup ON schedule_entries (user_id, seme
 >    - **Ca Tối (Evening Shift):** `16:30` – `20:30`
 > 2. **7-Day Support:** `day_of_week` spans 1 (Mon) to 7 (Sun) to fully support Saturday/Sunday lab sessions, capstone studios, and weekend seminars.
 > 3. **Specific Date Association:** `date_label` preserves scanned calendar dates (e.g. `13/07`) directly from PDF headers.
-> 4. **Batch Ingestion Modes:** Supports both `REPLACE` (wipes previous imported rows while keeping `MANUAL` blocks) and `MERGE` (merges multiple PDF files, skipping identical sessions based on `idx_schedule_entries_dedup`) — matches the `import_mode` enum in §2.4 and the shipped FE's `ImportMode` type (`components/dashboard/TimetableImport.tsx`), which is `'REPLACE' | 'MERGE'`, not `MERGE_DEDUPLICATE` as earlier drafts of this doc called it. Note also that the multi-file batch loop and REPLACE/MERGE mode handling live in `TimetableImport.tsx`, not in `lib/timetable/parse-pdf.ts` — the latter remains a single-file, PDF-only parser.
+> 4. **Batch Ingestion Modes:** `REPLACE` removes prior imported rows for the owner/semester and preserves `MANUAL`; `MERGE` appends. Both modes skip duplicate input and existing retained keys using `uq_schedule_entries_dedup`; normalize empty `subject_code` to NULL first. The browser parses PDFs; JSON batch validation and database deduplication remain server responsibilities.
 > 5. **Uniform Conflict Detection:** Storing both student enrolled classes and lecturer teaching in one generic table keeps conflict queries uniform: `EXISTS (SELECT 1 FROM schedule_entries WHERE user_id = ? AND day_of_week = ? AND (start_time, end_time) OVERLAPS (?, ?))`.
 
 ### 2.4 `schedule_imports` — audit trail for timetable batches (supports FR-5 `POST /users/me/schedule-entries/batch`, FR-5a `POST /users/{userId}/schedule-entries/batch` and the history endpoints)
 
-> **Import is client-parsed.** The browser parses the AAO PDF(s) and posts one JSON array of rows; the backend validates it and writes `schedule_entries` inside one transaction, plus one row here. So there is no upload/queue lifecycle in the MVP: a row is created as `COMPLETED` (or `FAILED` if the batch is rejected after validation started). `QUEUED`/`PROCESSING` are kept in the enum only for the deferred server-side pipeline (§2.5).
+> **Import is client-parsed.** Validate first, then write `schedule_entries` and one `COMPLETED` batch audit in one transaction. No queue lifecycle in the MVP. Auth/schema/size rejection writes no audit; persistence failure rolls back all schedule changes and may record one `FAILED` audit in a separate transaction with mutation counts zero. Map `COMPLETED` to API `SUCCESS`, `created_at` to `importedAt`, and `rows_added/rows_skipped/rows_replaced` to the DTO counts. `QUEUED`/`PROCESSING` remain reserved for the deferred pipeline (§2.5).
 
 ```sql
 CREATE TYPE import_status AS ENUM ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED');
 CREATE TYPE import_mode AS ENUM ('REPLACE', 'MERGE');
 
 CREATE TABLE schedule_imports (
-    id              bigserial PRIMARY KEY,
-    semester_id     bigint NOT NULL REFERENCES semesters (id),
-    uploaded_by     bigint NOT NULL REFERENCES users (id),  -- who performed the upload
-    target_user_id  bigint REFERENCES users (id),           -- whose schedule this import populates (NULL = self)
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    semester_id     uuid NOT NULL REFERENCES semesters (id),
+    uploaded_by     uuid NOT NULL REFERENCES users (id),  -- who performed the upload
+    target_user_id  uuid REFERENCES users (id),           -- whose schedule this import populates (NULL = self)
     source_files    text[] NOT NULL DEFAULT '{}',            -- original PDF names sent by the client (audit only)
     mode            import_mode NOT NULL DEFAULT 'REPLACE', -- 'REPLACE' or 'MERGE'
-    status          import_status NOT NULL DEFAULT 'QUEUED',
+    status          import_status NOT NULL DEFAULT 'COMPLETED',
     rows_processed  int NOT NULL DEFAULT 0,                 -- rows received in the payload
     rows_added      int NOT NULL DEFAULT 0,                 -- rows inserted into schedule_entries
     rows_replaced   int NOT NULL DEFAULT 0,                 -- previously imported rows removed by REPLACE
@@ -220,7 +241,7 @@ CREATE TABLE schedule_imports (
 
 > `schedule_entries.import_batch_id` forward-references this table — in a real migration, create `schedule_imports` **before** `schedule_entries`, or add the FK in a later `ALTER TABLE`. Order noted here for readability only.
 >
-> `uploaded_by` records **who performed the upload** — the self-serving user themselves, or an admin uploading on their behalf. Recommend adding a nullable `target_user_id bigint REFERENCES users(id)`: NULL means "uploaded_by is also the owner" (self-service), non-NULL means admin uploaded for that target. See §8 open question.
+> `uploaded_by` records who sent the batch. `target_user_id` is already part of this schema: NULL for self-service, the named owner when an Admin imports on their behalf. One audit row covers all `source_files`; do not split it into per-file records.
 
 ### 2.5 `schedule_import_staging` — **DEFERRED / not planned for the MVP.** Temporary buffer for server-side massive ingestion
 
@@ -230,11 +251,11 @@ CREATE TABLE schedule_imports (
 CREATE TYPE staging_row_status AS ENUM ('VALID', 'DUPLICATE', 'CONFLICT', 'INVALID');
 
 CREATE TABLE schedule_import_staging (
-    id              bigserial PRIMARY KEY,
-    import_batch_id bigint NOT NULL REFERENCES schedule_imports (id) ON DELETE CASCADE,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    import_batch_id uuid NOT NULL REFERENCES schedule_imports (id) ON DELETE CASCADE,
     temp_row_num    int NOT NULL,
-    user_id         bigint REFERENCES users (id) ON DELETE CASCADE,
-    semester_id     bigint NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
+    user_id         uuid REFERENCES users (id) ON DELETE CASCADE,
+    semester_id     uuid NOT NULL REFERENCES semesters (id) ON DELETE CASCADE,
     title           varchar(200) NOT NULL,
     subject_code    varchar(30),
     subject_name    varchar(150),
@@ -277,9 +298,9 @@ CREATE INDEX idx_staging_batch_status ON schedule_import_staging (import_batch_i
 CREATE TYPE slot_status AS ENUM ('OPEN', 'FULL', 'CLOSED');
 
 CREATE TABLE slots (
-    id          bigserial PRIMARY KEY,
-    lecturer_id bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    rule_id     bigint REFERENCES availability_rules (id) ON DELETE SET NULL, -- null if generated from an exception
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    lecturer_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    rule_id     uuid REFERENCES availability_rules (id) ON DELETE SET NULL, -- null if generated from an exception
     start_at    timestamptz NOT NULL,
     end_at      timestamptz NOT NULL,
     capacity    int NOT NULL DEFAULT 1 CHECK (capacity >= 1), -- 1 = single booking, N = group
@@ -306,10 +327,10 @@ CREATE TYPE booking_status AS ENUM (
 );
 
 CREATE TABLE bookings (
-    id              bigserial PRIMARY KEY,
-    slot_id         bigint NOT NULL REFERENCES slots (id) ON DELETE RESTRICT,
-    student_id      bigint NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
-    semester_id     bigint NOT NULL REFERENCES semesters (id),
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    slot_id         uuid NOT NULL REFERENCES slots (id) ON DELETE RESTRICT,
+    student_id      uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    semester_id     uuid NOT NULL REFERENCES semesters (id),
     status          booking_status NOT NULL DEFAULT 'PENDING',
     is_group        boolean NOT NULL DEFAULT false,
     topic           varchar(255),
@@ -318,7 +339,7 @@ CREATE TABLE bookings (
     created_at      timestamptz NOT NULL DEFAULT now(),
     confirmed_at    timestamptz,
     cancelled_at    timestamptz,
-    cancelled_by    bigint REFERENCES users (id)
+    cancelled_by    uuid REFERENCES users (id)
 );
 
 CREATE INDEX idx_bookings_student ON bookings (student_id, status);
@@ -329,7 +350,7 @@ CREATE INDEX idx_bookings_semester ON bookings (semester_id);
 -- No two CONFIRMED bookings for the same lecturer may have overlapping time ranges,
 -- enforced at the storage layer — survives concurrent requests, not just app-level checks.
 -- Requires a lecturer_id column reachable without a join; denormalize it onto bookings.
-ALTER TABLE bookings ADD COLUMN lecturer_id bigint NOT NULL REFERENCES users (id);
+ALTER TABLE bookings ADD COLUMN lecturer_id uuid NOT NULL REFERENCES users (id);
 
 ALTER TABLE bookings ADD CONSTRAINT excl_bookings_no_double_booking
     EXCLUDE USING gist (
@@ -338,9 +359,9 @@ ALTER TABLE bookings ADD CONSTRAINT excl_bookings_no_double_booking
     ) WHERE (status = 'CONFIRMED');
 ```
 
-> **Only `CONFIRMED` rows are constrained.** Several `PENDING` bookings may target the same slot; the second `confirm` therefore violates `excl_bookings_no_double_booking`. The service must catch that violation, answer `409`, and decline the remaining `PENDING` bookings of the slot in the same transaction (see `POST /bookings/{id}/confirm`).
+> **Only `CONFIRMED` rows are constrained.** Several `PENDING` bookings may target the same slot. The first successful confirm also declines its competing PENDING rows atomically; a later confirm of a loser returns `409 SLOT_ALREADY_CONFIRMED`. An exclusion violation aborts the PostgreSQL transaction: roll back/retry before any further writes, or serialize transitions on the slot row. The constraint remains the final overlap guard.
 
-> **Why denormalize `lecturer_id` and `time_range` onto `bookings`** instead of deriving them via a join to `slots`: PostgreSQL `EXCLUDE` constraints cannot reference columns through a join — the constrained columns must live on the table itself. A `BEFORE INSERT/UPDATE` trigger (or application-layer population) copies `slots.lecturer_id` / `tstzrange(slots.start_at, slots.end_at)` onto the new booking row at creation time. This is the concrete mechanism behind the sequence diagram in §9.1 ("INSERT booking (EXCLUDE constraint guards overlap)").
+> **Why denormalize `lecturer_id` and `time_range` onto `bookings`** instead of deriving them via a join to `slots`: PostgreSQL `EXCLUDE` constraints cannot reference columns through a join. The `BEFORE INSERT` trigger below copies the slot's lecturer and interval. A booking's slot reference and a booked slot's lecturer/interval are immutable; reschedule cancels and creates a new booking atomically rather than changing `slot_id` on the old row.
 
 ```sql
 -- Populate denormalized fields automatically
@@ -363,14 +384,14 @@ CREATE TRIGGER trg_bookings_denormalize_slot
 
 ```sql
 CREATE TABLE booking_participants (
-    booking_id  bigint NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
-    student_id  bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    booking_id  uuid NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    student_id  uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     joined_at   timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (booking_id, student_id)
 );
 ```
 
-> Capacity enforcement (`COUNT(participants) <= slots.capacity`) is application-layer or a trigger — not expressible as a plain CHECK across tables.
+> Capacity is `1 + COUNT(booking_participants) <= slots.capacity` because the requester is the first attendee. Enforce it in a service transaction holding the slot-row lock before participant changes (§8); a plain cross-table CHECK cannot express it. The requester must not also be inserted as an additional participant.
 >
 > **Decided — add by email.** The API takes `participantEmails[]` (what `ParticipantManager` collects) and the backend resolves each to an existing `users.id` before inserting into this table. An unresolvable email fails the request with `422` (no account auto-provisioning, no invite table in the MVP).
 
@@ -378,8 +399,8 @@ CREATE TABLE booking_participants (
 
 ```sql
 CREATE TABLE meeting_records (
-    id          bigserial PRIMARY KEY,
-    booking_id  bigint NOT NULL UNIQUE REFERENCES bookings (id) ON DELETE CASCADE,
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id  uuid NOT NULL UNIQUE REFERENCES bookings (id) ON DELETE CASCADE,
     attended    boolean NOT NULL,
     notes       text,          -- optional free text; explicitly NOT an LMS field (scope guard §5.3)
     recorded_at timestamptz NOT NULL DEFAULT now()
@@ -390,10 +411,10 @@ CREATE TABLE meeting_records (
 
 ```sql
 CREATE TABLE recurring_bookings (
-    id              bigserial PRIMARY KEY,
-    student_id      bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    lecturer_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    semester_id     bigint NOT NULL REFERENCES semesters (id),
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id      uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    lecturer_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    semester_id     uuid NOT NULL REFERENCES semesters (id),
     day_of_week     smallint NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- ISO: 1=Monday .. 7=Sunday
     start_time      time NOT NULL,
     end_time        time NOT NULL,
@@ -403,7 +424,7 @@ CREATE TABLE recurring_bookings (
 );
 
 -- Links each concrete weekly occurrence back to its series
-ALTER TABLE bookings ADD COLUMN recurring_booking_id bigint REFERENCES recurring_bookings (id) ON DELETE SET NULL;
+ALTER TABLE bookings ADD COLUMN recurring_booking_id uuid REFERENCES recurring_bookings (id) ON DELETE SET NULL;
 ```
 
 ---
@@ -416,9 +437,9 @@ ALTER TABLE bookings ADD COLUMN recurring_booking_id bigint REFERENCES recurring
 CREATE TYPE waitlist_status AS ENUM ('WAITING', 'OFFERED', 'EXPIRED', 'FULFILLED', 'CANCELLED');
 
 CREATE TABLE waitlist_entries (
-    id              bigserial PRIMARY KEY,
-    slot_id         bigint NOT NULL REFERENCES slots (id) ON DELETE CASCADE,
-    student_id      bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    slot_id         uuid NOT NULL REFERENCES slots (id) ON DELETE CASCADE,
+    student_id      uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     requested_at    timestamptz NOT NULL DEFAULT now(),
     priority_score  numeric(10,4),          -- last-computed score for this entry, written whenever allocation runs against it (see note below)
     status          waitlist_status NOT NULL DEFAULT 'WAITING',
@@ -433,13 +454,13 @@ CREATE INDEX idx_waitlist_student ON waitlist_entries (student_id, status);
 
 > A waitlist entry belongs to one concrete slot (`slot_id`); the UI's "position" and slot label are **derived on read** (rank by `requested_at`/`priority_score` among `WAITING` entries of that slot) — there is no `position` column. A scheduled job moves `OFFERED` entries past `offer_expires_at` to `EXPIRED` and re-runs allocation.
 >
-> **Open question — `priority_score` vs. `allocation_events.computed_score` (§4.3).** These are two different columns and their relationship isn't specified yet. Recommended resolution: `priority_score` is a **cache** — every time an allocation run evaluates this entry (whether it wins or is skipped), the engine writes that run's `computed_score` into both `waitlist_entries.priority_score` (so `GET /waitlist/me` can show current standing without joining `allocation_events`) and a new `allocation_events` row (the permanent, run-scoped log). So `priority_score` always reflects the *most recent* evaluation, while `allocation_events` retains every evaluation over the entry's lifetime. Confirm this before implementing — the alternative (a continuously-updated running score independent of discrete allocation runs) would need a different trigger design entirely.
+> **Resolved:** `priority_score` caches the most recent policy evaluation. Every SELECTED/SKIPPED event writes the same score to this cache and the permanent `allocation_events` row in one transaction. It is not a continuously changing independent score; a new entry has NULL until evaluated.
 
 ### 4.2 `allocation_policies` (FR-13; UC12)
 
 ```sql
 CREATE TABLE allocation_policies (
-    id          bigserial PRIMARY KEY,
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(30) NOT NULL UNIQUE CHECK (name IN ('FCFS', 'NEED', 'ROUND_ROBIN', 'HYBRID')),
     config      jsonb NOT NULL DEFAULT '{}', -- HYBRID: {"needWeight":0.5,"waitTimeWeight":0.3,"fairnessWeight":0.2} (matches the FE's getMockAllocationPolicies()/admin allocation page field names — NOT "waitWeight"/"randomWeight", an earlier naming this doc used that the FE didn't follow)
     is_active   boolean NOT NULL DEFAULT false
@@ -454,13 +475,13 @@ CREATE UNIQUE INDEX uq_allocation_policies_one_active ON allocation_policies (is
 CREATE TYPE allocation_decision AS ENUM ('SELECTED', 'SKIPPED', 'OVERRIDDEN');
 
 CREATE TABLE allocation_events (
-    id                  bigserial PRIMARY KEY,
-    waitlist_entry_id   bigint NOT NULL REFERENCES waitlist_entries (id) ON DELETE CASCADE,
-    policy_id           bigint REFERENCES allocation_policies (id),   -- NULL when decision = OVERRIDDEN (no policy ran)
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    waitlist_entry_id   uuid NOT NULL REFERENCES waitlist_entries (id) ON DELETE CASCADE,
+    policy_id           uuid REFERENCES allocation_policies (id),   -- NULL when decision = OVERRIDDEN (no policy ran)
     computed_score      numeric(10,4),                                -- NULL when decision = OVERRIDDEN
     decision            allocation_decision NOT NULL,
     random_seed         int,                                          -- NULL when decision = OVERRIDDEN. One seed per allocation RUN (i.e. per slot free-up event), shared by every SELECTED/SKIPPED row that run produces — not a fresh seed per candidate. This is what makes a run replayable: re-running allocate(slot, sameCandidates, config, seed) must reproduce the same winner. Distinct from experiments.seed/synthetic_demand_runs.seed (§4.4), which seed an entire synthetic demand stream, not a single allocation decision.
-    overridden_by        bigint REFERENCES users (id),                -- admin who issued the override; set only when decision = OVERRIDDEN
+    overridden_by        uuid REFERENCES users (id),                -- admin who issued the override; set only when decision = OVERRIDDEN
     override_reason       varchar(255),                                -- set only when decision = OVERRIDDEN
     allocated_at        timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT chk_allocation_event_policy_fields CHECK (
@@ -479,13 +500,15 @@ CREATE INDEX idx_allocation_events_overridden ON allocation_events (overridden_b
 
 > Every waitlist evaluation — winner *and* every candidate considered but skipped — gets a row here (`decision = SELECTED` vs `SKIPPED`), because the fairness study (§11.4) needs the full candidate set per run to compute Gini/variance, not just the winner.
 >
+> An override for a student not previously waitlisted must create/reuse that student's slot-specific waitlist entry before inserting the event; `waitlist_entry_id` remains NOT NULL. Any Admin has global override authority for the MVP, while normal conflict/capacity checks still apply.
+>
 > **`OVERRIDDEN` rows** are written when an Admin uses `POST /slots/{id}/override` to bypass the active policy (e.g., the policy misbehaves, or a lecturer objects to the algorithmic pick — Risk #1 mitigation). They carry no `policy_id`/`computed_score`/`random_seed` since no policy actually ran; the `chk_allocation_event_policy_fields` constraint enforces that the two field sets are mutually exclusive so a row can never claim both an algorithmic score and a human override. **Exclude `OVERRIDDEN` rows from `/research/experiments` metric computations by default** (`WHERE decision <> 'OVERRIDDEN'`) — they represent a human intervention, not policy output, and mixing them into Gini/variance calculations would silently bias the fairness comparison you're defending.
 
 ### 4.4 Research support tables (backing §11.4/§7.1 experiment endpoints — not core product data)
 
 ```sql
 CREATE TABLE synthetic_demand_runs (
-    id                  bigserial PRIMARY KEY,
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     seed                int NOT NULL,
     popularity_skew     numeric(5,2),
     arrival_pattern     varchar(30),          -- e.g. 'POISSON', 'BURST_BEFORE_DEADLINE'
@@ -495,11 +518,18 @@ CREATE TABLE synthetic_demand_runs (
     dataset             jsonb NOT NULL         -- generated demand stream, or a pointer/URI to an external blob if large
 );
 
-CREATE TABLE experiments (
-    id                  bigserial PRIMARY KEY,
-    demand_run_id       bigint REFERENCES synthetic_demand_runs (id),
-    policy_id           bigint NOT NULL REFERENCES allocation_policies (id),
+CREATE TABLE experiment_groups (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    demand_run_id       uuid NOT NULL REFERENCES synthetic_demand_runs (id),
     seed                int NOT NULL,
+    run_at              timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE experiments (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    experiment_group_id uuid NOT NULL REFERENCES experiment_groups (id) ON DELETE CASCADE,
+    policy_id           uuid NOT NULL REFERENCES allocation_policies (id),
+    policy_order        smallint NOT NULL CHECK (policy_order BETWEEN 0 AND 3),
     gini_slots_per_student      numeric(6,4),
     gini_lecturer_access        numeric(6,4),
     max_min_ratio               numeric(10,4),
@@ -509,13 +539,16 @@ CREATE TABLE experiments (
     offer_rejection_rate_pct    numeric(5,2),
     avg_wait_time_seconds       int,
     wait_time_variance          numeric(14,4),
-    run_at              timestamptz NOT NULL DEFAULT now()
+    UNIQUE (experiment_group_id, policy_id),
+    UNIQUE (experiment_group_id, policy_order)
 );
 
 CREATE INDEX idx_experiments_policy ON experiments (policy_id);
 ```
 
 > `dataset jsonb` is fine at pilot scale (§11.4 "small but genuine" real data + synthetic stress runs); if synthetic runs grow large (the NFR-1 target is 10k lecturers / 100k students), swap for an external object store reference (`dataset_uri text`) rather than inflating Postgres rows.
+>
+> **Experiment identity:** API `Experiment.id` is `experiment_groups.id`; `demandRunId`, `seed` and `runAt` come from that parent. `policyNames` and `results[]` come from its `experiments` rows joined to policies, ordered by zero-based `policy_order`. Create the parent and all requested results atomically; never infer groups from equal seeds/timestamps. Child uniqueness prevents duplicate policy results/orders. Research remains a stretch module.
 
 ---
 
@@ -523,8 +556,8 @@ CREATE INDEX idx_experiments_policy ON experiments (policy_id);
 
 ```sql
 CREATE TABLE notifications (
-    id          bigserial PRIMARY KEY,
-    user_id     bigint NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     type        varchar(50) NOT NULL,   -- catalogue: booking.pending | booking.confirmed | booking.declined | booking.cancelled | waitlist.offered | waitlist.expired | reminder.upcoming (see API doc §8)
     payload     jsonb NOT NULL DEFAULT '{}',
     read_at     timestamptz,
@@ -541,6 +574,8 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | Table | Source (FR / UC / ERD) | Notes |
 |---|---|---|
 | `users` | FR-1 | Root identity table; role enum drives RBAC |
+| `password_reset_tokens` | FR-1 | Hashed, expiring, single-use password-reset tokens |
+| `refresh_tokens` | FR-1 | Hashed refresh-token sessions; rotation + revoke-all on logout/password change |
 | `lecturer_profiles` | FR-6 | slug / photo / blurb for the lecturer directory (1-to-1 with a LECTURER user) |
 | `semesters` | FR-2 | Single active semester enforced by partial unique index |
 | `availability_rules` | FR-3, UC6 | Generates `slots` |
@@ -555,7 +590,7 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | `waitlist_entries` | FR-12, UC3 | Research demand queue |
 | `allocation_policies` | FR-13, UC12 | Pluggable, one active at a time |
 | `allocation_events` | FR-14, UC14; Risk #1 mitigation | Reproducibility backbone (NFR-3); `OVERRIDDEN` decision backs the admin override endpoint |
-| `synthetic_demand_runs`, `experiments` | §11.4 | Research-only, supports defense chapter |
+| `synthetic_demand_runs`, `experiment_groups`, `experiments` | §11.4 | Research-only; one parent group has one result per requested policy |
 | `notifications` | FR-11, UC15 | Backs both SSE stream and email trigger |
 
 ---
@@ -571,14 +606,14 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 
 ---
 
-## 8. Open Schema Questions (flag for Dev 1 before locking migrations)
+## 8. Resolved migration decisions and operational follow-ups
 
-1. **`citext` availability** — confirm the pilot Postgres install can enable `citext`, or fall back to the `LOWER(email)` unique-index pattern noted in §1.1.
-2. **Capacity enforcement for group bookings** — a `CHECK` can't count sibling rows in `booking_participants`; decide between an `AFTER INSERT` trigger raising an exception, or application-layer enforcement with periodic reconciliation.
-3. **`recurring_bookings` conflict semantics** — does a cancelled single occurrence of a recurring series get its own `bookings` row with `status = CANCELLED`, or is "skip this week" tracked separately from the `bookings` table? Current design assumes the former (simpler, consistent with the state machine in §9.3).
+1. **`citext` — resolved:** enable it in V1 alongside `btree_gist`.
+2. **Group capacity — resolved:** service transactions lock the slot row before participant changes and enforce total attendees ≤ capacity. The requester counts as one attendee and is not duplicated in `booking_participants`; that table stores additional students. A rejected addition returns `409`; no periodic reconciliation is the correctness mechanism.
+3. **Recurring cancellation — resolved:** cancelling one occurrence keeps its booking row with `status = CANCELLED`; cancelling a series cancels future occurrences only, preserving past records.
 4. **Migration ordering** — `schedule_entries.import_batch_id` references `schedule_imports`, which is defined later in this document for readability; the actual Flyway migration must create `schedule_imports` first or add the FK via a later `ALTER TABLE`.
 5. **Retention** — `allocation_events` and `notifications` grow unboundedly; decide a partitioning/archival strategy before the pilot's 4-week window if experiment volume is high (§11.4 synthetic stress runs could generate a lot of rows fast).
-6. **Override authorization scope — currently decided by omission, not on purpose.** Mirrors the open question in the API doc: should `overridden_by` be restricted to department-scoped admins at the query/service layer, or does the schema need an explicit `department` scoping column on `allocation_events` to enforce it at the data layer too? **Flag:** the built admin allocation UI (`app/(dashboard)/dashboard/admin/allocation/page.tsx`) already grants any authenticated Admin unrestricted override with no department check — so the permissive answer has been picked by default in the frontend, without anyone deciding it as a real requirement. Confirm this is actually the intended answer before the backend locks it in, rather than inheriting it accidentally from the FE mock.
+6. **Override authorization scope — resolved:** any Admin globally for the MVP, with actor/reason audit and ordinary conflict/capacity checks. No department scoping column is required.
 7. **Import ownership vs uploader** — resolved: `schedule_imports.target_user_id` (§2.4) is NULL for self-service and set when an Admin imports for a user. A fresh import defaults to `REPLACE` for that user and semester (keeps `MANUAL` blocks), which avoids stale duplicates; `MERGE` is opt-in.
 8. **AAO export file format** — resolved: **PDF only**, parsed in the browser (`lib/timetable/parse-pdf.ts`); the backend receives validated JSON rows (`capstone-api-endpoints.md` §4). The "CSV" wording in older drafts of the plan was stale.
 

@@ -303,6 +303,8 @@ stateDiagram-v2
 
 ## 10. Entity-Relationship Diagram
 
+The diagram below is a summary. The 15 October 2026 storage baseline in `capstone-db-schema.md` owns column details and research grouping (`experiment_groups` plus per-policy `experiments`); `capstone-api-endpoints.md` owns wire DTOs. Word/draw.io artifacts are derived from that schema.
+
 ```mermaid
 erDiagram
     USERS ||--o{ AVAILABILITY_RULES : defines
@@ -314,6 +316,7 @@ erDiagram
     USERS ||--o{ NOTIFICATIONS : receives
     USERS ||--o| LECTURER_PROFILES : "has (lecturers)"
     USERS ||--o{ PASSWORD_RESET_TOKENS : requests
+    USERS ||--o{ REFRESH_TOKENS : "signs in"
     USERS ||--o{ RECURRING_BOOKINGS : "student / lecturer"
     USERS ||--o{ SCHEDULE_IMPORTS : "uploads / target"
     SCHEDULE_IMPORTS ||--o{ SCHEDULE_ENTRIES : produces
@@ -330,49 +333,57 @@ erDiagram
     ALLOCATION_POLICIES ||--o{ ALLOCATION_EVENTS : applied_in
 
     USERS {
-        bigint id PK
+        uuid id PK
         string email UK
         string password_hash
         string full_name
         enum role "STUDENT|LECTURER|ADMIN"
         string department
+        jsonb notification_prefs "4 email-delivery flags, default true"
         timestamptz created_at
     }
     LECTURER_PROFILES {
-        bigint user_id PK "FK to USERS (role=LECTURER)"
+        uuid user_id PK "FK to USERS (role=LECTURER)"
         string slug UK "amara-chen"
         string photo_url
         string blurb
         string specialty
     }
     PASSWORD_RESET_TOKENS {
-        bigint id PK
-        bigint user_id FK
+        uuid id PK
+        uuid user_id FK
         string token_hash UK "SHA-256; raw token only in the email"
         timestamptz expires_at
         timestamptz used_at "NULL = redeemable"
     }
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        string token_hash UK "SHA-256; raw token only in the httpOnly cookie"
+        timestamptz expires_at
+        timestamptz revoked_at "NULL = active"
+    }
     SEMESTERS {
-        bigint id PK
+        uuid id PK
         string name
         date start_date
         date end_date
         boolean is_active
     }
     AVAILABILITY_RULES {
-        bigint id PK
-        bigint lecturer_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid lecturer_id FK
+        uuid semester_id FK
         smallint day_of_week "1=Mon .. 7=Sun"
         time start_time
         time end_time
         int slot_minutes
         date effective_from
-        date effective_to
+        date effective_to "NULL = semester end"
     }
     AVAILABILITY_EXCEPTIONS {
-        bigint id PK
-        bigint lecturer_id FK
+        uuid id PK
+        uuid lecturer_id FK
         date exception_date
         enum type "BLOCK|ADD"
         time start_time
@@ -380,9 +391,9 @@ erDiagram
         string reason
     }
     SCHEDULE_ENTRIES {
-        bigint id PK
-        bigint user_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid user_id FK
+        uuid semester_id FK
         string title "e.g. UX Design (CSW 437)"
         string subject_code "CSW 437"
         string subject_name "Thiết kế trải nghiệm"
@@ -395,13 +406,13 @@ erDiagram
         enum location_type "LAB|ROOM|ONLINE|OTHER"
         string lecturer_name "instructor"
         string source "AAO_IMPORT|MANUAL"
-        bigint import_batch_id FK "NULL for manual blocks"
+        uuid import_batch_id FK "NULL for manual blocks"
     }
     SCHEDULE_IMPORTS {
-        bigint id PK
-        bigint semester_id FK
-        bigint uploaded_by FK
-        bigint target_user_id FK "NULL = self-service"
+        uuid id PK
+        uuid semester_id FK
+        uuid uploaded_by FK
+        uuid target_user_id FK "NULL = self-service"
         string_array source_files "PDF names, audit only"
         enum mode "REPLACE|MERGE"
         enum status "COMPLETED|FAILED (QUEUED/PROCESSING reserved)"
@@ -410,19 +421,19 @@ erDiagram
         timestamptz created_at
     }
     SLOTS {
-        bigint id PK
-        bigint lecturer_id FK
-        bigint rule_id FK
+        uuid id PK
+        uuid lecturer_id FK
+        uuid rule_id FK
         timestamptz start_at
         timestamptz end_at
         int capacity "1 = single, N = group"
         enum status "OPEN|FULL|CLOSED"
     }
     BOOKINGS {
-        bigint id PK
-        bigint slot_id FK
-        bigint student_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid slot_id FK
+        uuid student_id FK
+        uuid semester_id FK
         enum status "PENDING|CONFIRMED|DECLINED|CANCELLED|COMPLETED|NO_SHOW"
         boolean is_group
         string topic
@@ -432,29 +443,29 @@ erDiagram
         tstzrange time_range "for EXCLUDE constraint"
     }
     BOOKING_PARTICIPANTS {
-        bigint booking_id FK
-        bigint student_id FK
+        uuid booking_id FK
+        uuid student_id FK
     }
     RECURRING_BOOKINGS {
-        bigint id PK
-        bigint student_id FK
-        bigint lecturer_id FK
-        bigint semester_id FK
+        uuid id PK
+        uuid student_id FK
+        uuid lecturer_id FK
+        uuid semester_id FK
         smallint day_of_week "1=Mon .. 7=Sun"
         time start_time
         time end_time
         boolean is_cancelled
     }
     MEETING_RECORDS {
-        bigint id PK
-        bigint booking_id FK
+        uuid id PK
+        uuid booking_id FK
         boolean attended
         text notes "optional; NOT an LMS"
     }
     WAITLIST_ENTRIES {
-        bigint id PK
-        bigint slot_id FK
-        bigint student_id FK
+        uuid id PK
+        uuid slot_id FK
+        uuid student_id FK
         timestamptz requested_at
         numeric priority_score
         enum status "WAITING|OFFERED|EXPIRED|FULFILLED|CANCELLED"
@@ -462,25 +473,25 @@ erDiagram
         timestamptz offer_expires_at
     }
     ALLOCATION_POLICIES {
-        bigint id PK
+        uuid id PK
         string name "FCFS|NEED|ROUND_ROBIN|HYBRID"
         jsonb config
         boolean is_active
     }
     ALLOCATION_EVENTS {
-        bigint id PK
-        bigint waitlist_entry_id FK
-        bigint policy_id FK "NULL when decision=OVERRIDDEN"
+        uuid id PK
+        uuid waitlist_entry_id FK
+        uuid policy_id FK "NULL when decision=OVERRIDDEN"
         numeric computed_score "NULL when decision=OVERRIDDEN"
         enum decision "SELECTED|SKIPPED|OVERRIDDEN"
         int random_seed "NULL when decision=OVERRIDDEN"
-        bigint overridden_by FK "set only when decision=OVERRIDDEN"
+        uuid overridden_by FK "set only when decision=OVERRIDDEN"
         string override_reason "set only when decision=OVERRIDDEN"
         timestamptz allocated_at
     }
     NOTIFICATIONS {
-        bigint id PK
-        bigint user_id FK
+        uuid id PK
+        uuid user_id FK
         string type
         jsonb payload
         timestamptz read_at

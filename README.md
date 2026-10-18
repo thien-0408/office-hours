@@ -34,7 +34,7 @@ Requires Node.js and a running backend.
 npm install
 
 # point the app at the Spring Boot backend
-echo "API_BASE_URL=http://localhost:8080" > .env.local
+echo "API_BASE_URL=http://localhost:8080/api/v1" > .env.local
 
 npm run dev          # http://localhost:3000
 ```
@@ -52,7 +52,7 @@ npm run dev          # http://localhost:3000
 
 | Variable | Required | Description |
 |---|---|---|
-| `API_BASE_URL` | yes | Base URL of the Spring Boot backend (e.g. `http://localhost:8080`) |
+| `API_BASE_URL` | yes | Full Spring Boot API prefix, without a trailing slash (e.g. `http://localhost:8080/api/v1`) |
 
 ## Project structure
 
