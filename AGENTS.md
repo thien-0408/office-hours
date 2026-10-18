@@ -1,3 +1,7 @@
+# Codex workflow
+
+Read and follow `CODEX.md` for task scope, tool use, and verification defaults.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
