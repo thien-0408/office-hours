@@ -8,18 +8,18 @@ import { MEMOJI_COUNT, hashToIndex } from "@/lib/avatar";
 // Real wiring point: PATCH /users/me { avatarIndex }, then drop localStorage.
 const OVERRIDE_EVENT = "office-hours:avatar-override";
 
-function overrideKey(userId: number): string {
+function overrideKey(userId: number | string): string {
   return `office-hours:avatar:${userId}`;
 }
 
-function readOverride(userId: number): number | null {
+function readOverride(userId: number | string): number | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(overrideKey(userId));
   const parsed = raw === null ? NaN : Number(raw);
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= MEMOJI_COUNT ? parsed : null;
 }
 
-export function setAvatarOverride(userId: number, memojiIndex: number): void {
+export function setAvatarOverride(userId: number | string, memojiIndex: number): void {
   window.localStorage.setItem(overrideKey(userId), String(memojiIndex));
   window.dispatchEvent(new Event(OVERRIDE_EVENT));
 }
@@ -37,7 +37,7 @@ function subscribe(callback: () => void): () => void {
 // immediately across every component that calls this hook (topbar, profile
 // card, picker), without prop drilling or lifting state into AuthContext for
 // what is still a client-only preference.
-export function useAvatarIndex(userId: number): number {
+export function useAvatarIndex(userId: number | string): number {
   return useSyncExternalStore(
     subscribe,
     () => readOverride(userId) ?? hashToIndex(userId),
@@ -45,6 +45,6 @@ export function useAvatarIndex(userId: number): number {
   );
 }
 
-export function useUserAvatarSrc(userId: number): string {
+export function useUserAvatarSrc(userId: number | string): string {
   return `/memoji/${useAvatarIndex(userId)}.png`;
 }
