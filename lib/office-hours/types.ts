@@ -205,8 +205,7 @@ export interface SlotWaitlistGroup {
 }
 
 // Admin User management (Pages.txt #22) — a platform-wide account row, not to
-// be confused with the seeded MOCK_ACCOUNTS (lib/auth/mock-accounts.ts) used
-// for login itself.
+// be confused with the backend's seeded demo login accounts.
 export interface AdminUserRow {
   id: number;
   fullName: string;

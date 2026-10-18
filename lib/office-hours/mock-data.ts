@@ -1329,9 +1329,9 @@ export function getMockSlotWaitlistGroups(): SlotWaitlistGroup[] {
 }
 
 // Stands in for GET /admin/users — a platform-wide account list (Pages.txt
-// #22), separate from mock-accounts.ts's 3 login-only seed accounts. Includes
-// rows matching those 3 seeded accounts so the data reads as consistent with
-// what you can actually log in as.
+// #22), separate from the backend's seeded demo accounts. Includes rows
+// matching those 3 accounts so the data reads as consistent with what you can
+// actually log in as.
 export function getMockAdminUsers(): AdminUserRow[] {
   return [
     { id: 1001, fullName: "Minh Nguyen", email: "student@officehours.dev", role: "STUDENT", department: "Computer Science", active: true },
