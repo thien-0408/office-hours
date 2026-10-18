@@ -84,14 +84,16 @@ Maps to `SEMESTERS` entity.
 | Method | Path | Role | Description |
 |---|---|---|---|
 | GET | `/lecturers/{lecturerId}/availability-rules` | Authenticated | List recurring weekly rules for a lecturer (scoped to active semester by default; `?semesterId=`). |
-| POST | `/lecturers/{lecturerId}/availability-rules` | Lecturer (self) / Admin | `{ semesterId, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo }`. Generates `SLOTS` rows per design note §10.1. (Field is `slotLengthMinutes`, not `slotMinutes` — matches the FE's `AvailabilityRule` type in `lib/office-hours/types.ts`, though that type doesn't carry `semesterId` client-side since it's scoped by the active-semester context instead.) |
+| POST | `/lecturers/{lecturerId}/availability-rules` | Lecturer (self) / Admin | `{ semesterId, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo, meetingUrl? }`. Generates `SLOTS` rows per design note §10.1. (Field is `slotLengthMinutes`, not `slotMinutes` — matches the FE's `AvailabilityRule` type in `lib/office-hours/types.ts`, though that type doesn't carry `semesterId` client-side since it's scoped by the active-semester context instead.) |
 | PATCH | `/availability-rules/{id}` | Lecturer (owner) / Admin | Edit a rule. Regenerates future, unbooked `SLOTS`. |
 | DELETE | `/availability-rules/{id}` | Lecturer (owner) / Admin | Removes rule; cancels/blocks future unbooked slots it generated. |
 | GET | `/lecturers/{lecturerId}/availability-exceptions` | Authenticated | List one-off exceptions (`BLOCK`/`ADD`). |
-| POST | `/lecturers/{lecturerId}/availability-exceptions` | Lecturer (self) / Admin | `{ date, type: BLOCK|ADD, startTime, endTime, reason }`. (Field is `date`, not `exceptionDate` — matches the FE's `AvailabilityException` type; the DB column itself is `exception_date` per `capstone-db-schema.md` §2.2, so the API layer is expected to rename on the way out.) |
+| POST | `/lecturers/{lecturerId}/availability-exceptions` | Lecturer (self) / Admin | `{ date, type: BLOCK|ADD, startTime, endTime, reason, meetingUrl? }` (`meetingUrl` only applies to `ADD`). (Field is `date`, not `exceptionDate` — matches the FE's `AvailabilityException` type; the DB column itself is `exception_date` per `capstone-db-schema.md` §2.2, so the API layer is expected to rename on the way out.) |
 | DELETE | `/availability-exceptions/{id}` | Lecturer (owner) / Admin | Remove an exception. |
 
 `dayOfWeek` is ISO `1`–`7` (Mon–Sun), not `0`–`6`. `effectiveTo: null` means the semester end (§0.1). When generating slots: apply the rule, subtract `BLOCK` exceptions, add `ADD` exceptions, then subtract the lecturer's own `schedule_entries` (teaching). Editing/deleting a rule must never touch slots that already have a booking.
+
+**Online meeting link (`meetingUrl`).** The platform does not host video; a lecturer pastes a Meet/Zoom/Teams link once per rule (or per `ADD` exception) and slot generation copies it to `slots.meeting_url`. It is optional (`null` = in person), must be an absolute `https://` URL of ≤ 500 chars, and is not restricted to specific domains. Editing a rule's link updates future unbooked slots only; a lecturer may override the link of a single booking via `PATCH /bookings/{id}` (§5). The booking DTO exposes the effective link `bookings.meeting_url ?? slots.meeting_url`, and only to the booking's participants, the slot's lecturer and Admin (never in the public slot listing before a booking is confirmed).
 
 Maps to `AVAILABILITY_RULES`, `AVAILABILITY_EXCEPTIONS`.
 
@@ -199,9 +201,10 @@ Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in �
 | POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }` — the FE reschedule dialog lists the lecturer's open, conflict-free slots (`GET /lecturers/{id}/slots`) and sends the chosen slot id; free-form date/time is not accepted. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule. |
 | POST | `/bookings/{id}/complete` | Lecturer | Marks a past `CONFIRMED` booking `COMPLETED` (or auto-job does this after `end_at`). |
 | POST | `/bookings/{id}/no-show` | Lecturer | FR-10. → `status: NO_SHOW`. |
+| PATCH | `/bookings/{id}` | Lecturer (owner of slot) | `{ meetingUrl: string \| null }` — override (or clear, falling back to the slot's link) the online-meeting link of one booking. `https://` only, ≤ 500 chars; `422` otherwise. |
 | PATCH | `/bookings/{id}/meeting-record` | Lecturer | `{ attended, notes? }`. Optional text field only — explicitly **not** an LMS field (§5.3 scope guard). |
 
-**Booking response (DTO).** Besides display names, every booking carries the ids the UI needs: `{ id, slotId, lecturerId, studentId, lecturerName, studentName, department, topic, startAt, endAt, status, participants? }` (FE type `Booking`, `lib/office-hours/types.ts`).
+**Booking response (DTO).** Besides display names, every booking carries the ids the UI needs: `{ id, slotId, lecturerId, studentId, lecturerName, studentName, department, topic, startAt, endAt, status, meetingUrl, participants? }` (`meetingUrl` is the effective link, `string | null`, see §3; FE type `Booking`, `lib/office-hours/types.ts`).
 
 Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
 

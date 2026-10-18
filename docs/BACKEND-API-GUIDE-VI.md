@@ -126,7 +126,7 @@ DDL đầy đủ nằm ở `capstone-db-schema.md`; phần này là bản đồ 
 
 ### 5.4 Seed tối thiểu cho dev
 
-- 1 semester active; tài khoản demo (student/lecturer/admin — xem `lib/auth/mock-accounts.ts`);
+- 1 semester active; tài khoản demo (student/lecturer/admin — do `DataSeeder` của backend tạo khi `SEED_DEMO_ACCOUNTS=true`: student@/lecturer@/admin@officehours.dev, mật khẩu `password123`);
 - 4 allocation policy: `FCFS`, `NEED`, `ROUND_ROBIN`, `HYBRID` (config mặc định ở mục 8), `HYBRID` hoặc `FCFS` active;
 - vài lecturer có availability rule + vài `schedule_entries` để test xung đột.
 
@@ -174,14 +174,16 @@ DTO FE: `Semester { id, name, startDate, endDate, active }`.
 | Method | Path | Role | Mô tả |
 |---|---|---|---|
 | GET | `/lecturers/{lecturerId}/availability-rules` | A | Rule lặp hằng tuần (mặc định theo semester active; `?semesterId=`). |
-| POST | `/lecturers/{lecturerId}/availability-rules` | L(self)/AD | `{ semesterId, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo }`. Sinh `slots`. |
+| POST | `/lecturers/{lecturerId}/availability-rules` | L(self)/AD | `{ semesterId, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo, meetingUrl? }`. Sinh `slots` (copy `meetingUrl` sang `slots.meeting_url`). |
 | PATCH | `/availability-rules/{id}` | L(owner)/AD | Sửa rule; **sinh lại các slot tương lai chưa có booking**. |
 | DELETE | `/availability-rules/{id}` | L(owner)/AD | Xóa rule; hủy/chặn slot tương lai chưa book. |
 | GET | `/lecturers/{lecturerId}/availability-exceptions` | A | Danh sách exception `BLOCK`/`ADD`. |
 | POST | `/lecturers/{lecturerId}/availability-exceptions` | L(self)/AD | `{ date, type: "BLOCK"\|"ADD", startTime, endTime, reason? }`. |
 | DELETE | `/availability-exceptions/{id}` | L(owner)/AD | Xóa exception. |
 
-DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo|null, active }`; `AvailabilityException { id, date, type, startTime, endTime, reason|null }`.
+DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes, effectiveFrom, effectiveTo|null, meetingUrl|null, active }`; `AvailabilityException { id, date, type, startTime, endTime, reason|null, meetingUrl|null }`.
+
+**Link họp online (`meetingUrl`).** Nền tảng không host video; giảng viên dán link Meet/Zoom/Teams một lần cho mỗi rule (hoặc exception `ADD`), khi sinh slot thì copy sang `slots.meeting_url`. Tùy chọn (`null` = gặp trực tiếp), phải là URL tuyệt đối `https://`, ≤ 500 ký tự, không giới hạn domain. `bookings.meeting_url` cho phép giảng viên đổi link riêng cho một buổi (`PATCH /bookings/{id}`); DTO booking trả link hiệu lực `bookings.meeting_url ?? slots.meeting_url`, chỉ cho người tham gia, giảng viên của slot và Admin — không lộ trong danh sách slot công khai.
 
 `effectiveTo: null` nghĩa là tới `semesters.end_date`; DB `effective_to` nullable. API dùng `active`, DB dùng `is_active`. List calendar trả array; admin import history phân trang theo baseline API §0.1.
 

@@ -58,6 +58,7 @@ ENTITIES = [
         ("slot_minutes", "int", "Length of each generated slot in minutes"),
         ("effective_from", "date", "First date the rule applies"),
         ("effective_to", "date", "NULL means through the semester end date"),
+        ("meeting_url", "varchar(500)", "Optional https meeting link copied to generated slots"),
         ("created_at", "timestamptz", "Creation time"),
     ]),
     ("availability_exceptions", "One-off changes to a lecturer's availability on a specific date.", [
@@ -68,6 +69,7 @@ ENTITIES = [
         ("start_time", "time", "Exception window start time"),
         ("end_time", "time", "Exception window end time"),
         ("reason", "varchar(255)", "Optional explanation"),
+        ("meeting_url", "varchar(500)", "Optional https meeting link (ADD only)"),
         ("created_at", "timestamptz", "Creation time"),
     ]),
     ("slots", "Concrete bookable time slots generated from availability rules.", [
@@ -78,6 +80,7 @@ ENTITIES = [
         ("end_at", "timestamptz", "Slot end time"),
         ("capacity", "int", "Maximum students allowed in the slot"),
         ("status", "enum", "OPEN, FULL or CLOSED"),
+        ("meeting_url", "varchar(500)", "Online meeting link copied from the rule; NULL means in person"),
     ]),
     ("schedule_entries", "Contains the schedule of busy slots of the students and lecturers.", [
         ("id", "uuid (PK)", "Unique entry identifier"),
@@ -149,6 +152,7 @@ ENTITIES = [
         ("topic", "varchar(255)", "What the student wants to discuss"),
         ("time_range", "tstzrange", "Copy of the slot interval, used by the double-booking constraint"),
         ("decline_reason", "varchar(255)", "Reason given by the lecturer when declining"),
+        ("meeting_url", "varchar(500)", "Per-booking override of the slot's meeting link"),
         ("created_at", "timestamptz", "Request time"),
         ("confirmed_at", "timestamptz", "Confirmation time"),
         ("cancelled_at", "timestamptz", "Cancellation time"),

@@ -132,8 +132,10 @@ CREATE TABLE availability_rules (
     slot_minutes    int NOT NULL CHECK (slot_minutes > 0),
     effective_from  date NOT NULL,
     effective_to    date,                       -- NULL = semester.end_date
+    meeting_url     varchar(500),               -- optional online-meeting link (Meet/Zoom/Teams...), copied to generated slots
     created_at      timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT chk_rule_time_order CHECK (end_time > start_time),
+    CONSTRAINT chk_rule_meeting_url CHECK (meeting_url IS NULL OR meeting_url ~ '^https://'),
     CONSTRAINT chk_rule_effective_range CHECK (effective_to IS NULL OR effective_to >= effective_from),
     CONSTRAINT chk_rule_slot_fits CHECK (
         EXTRACT(EPOCH FROM (end_time - start_time)) / 60 >= slot_minutes
@@ -161,8 +163,10 @@ CREATE TABLE availability_exceptions (
     start_time      time NOT NULL,
     end_time        time NOT NULL,
     reason          varchar(255),
+    meeting_url     varchar(500),               -- only meaningful for type = 'ADD'; copied to generated slots
     created_at      timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT chk_exception_time_order CHECK (end_time > start_time)
+    CONSTRAINT chk_exception_time_order CHECK (end_time > start_time),
+    CONSTRAINT chk_exception_meeting_url CHECK (meeting_url IS NULL OR meeting_url ~ '^https://')
 );
 
 CREATE INDEX idx_avail_exceptions_lecturer_date ON availability_exceptions (lecturer_id, exception_date);
@@ -305,7 +309,9 @@ CREATE TABLE slots (
     end_at      timestamptz NOT NULL,
     capacity    int NOT NULL DEFAULT 1 CHECK (capacity >= 1), -- 1 = single booking, N = group
     status      slot_status NOT NULL DEFAULT 'OPEN',
-    CONSTRAINT chk_slot_time_order CHECK (end_at > start_at)
+    meeting_url varchar(500),                   -- copied from the rule/ADD exception at generation time; null = in person
+    CONSTRAINT chk_slot_time_order CHECK (end_at > start_at),
+    CONSTRAINT chk_slot_meeting_url CHECK (meeting_url IS NULL OR meeting_url ~ '^https://')
 );
 
 CREATE INDEX idx_slots_lecturer_start ON slots (lecturer_id, start_at);
@@ -336,10 +342,12 @@ CREATE TABLE bookings (
     topic           varchar(255),
     time_range      tstzrange NOT NULL,     -- denormalized copy of the slot's [start_at, end_at) for the EXCLUDE constraint
     decline_reason  varchar(255),
+    meeting_url     varchar(500),           -- optional per-booking override of slots.meeting_url (effective link = COALESCE(bookings, slots))
     created_at      timestamptz NOT NULL DEFAULT now(),
     confirmed_at    timestamptz,
     cancelled_at    timestamptz,
-    cancelled_by    uuid REFERENCES users (id)
+    cancelled_by    uuid REFERENCES users (id),
+    CONSTRAINT chk_booking_meeting_url CHECK (meeting_url IS NULL OR meeting_url ~ '^https://')
 );
 
 CREATE INDEX idx_bookings_student ON bookings (student_id, status);

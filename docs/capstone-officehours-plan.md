@@ -94,7 +94,7 @@ Current office-hours coordination at most universities is manual and inefficient
 ### 5.3 Out of Scope (explicitly excluded — defend this on the wall)
 
 - ❌ Full LMS features (assignments, grading, course content, quizzes).
-- ❌ Built-in video conferencing — link to Zoom/Meet, don't build it.
+- ❌ Built-in video conferencing — link to Zoom/Meet, don't build it. (Lecturers paste an optional `https://` meeting link per availability rule / booking; the platform only stores and shows it.)
 - ❌ Payments / tutoring marketplace (this is not Calendly-for-tutors).
 - ❌ Physical room-booking / resource scheduling (different problem).
 - ❌ Native mobile apps — responsive PWA only.
@@ -380,6 +380,7 @@ erDiagram
         int slot_minutes
         date effective_from
         date effective_to "NULL = semester end"
+        string meeting_url "optional https link"
     }
     AVAILABILITY_EXCEPTIONS {
         uuid id PK
@@ -389,6 +390,7 @@ erDiagram
         time start_time
         time end_time
         string reason
+        string meeting_url "ADD only"
     }
     SCHEDULE_ENTRIES {
         uuid id PK
@@ -428,6 +430,7 @@ erDiagram
         timestamptz end_at
         int capacity "1 = single, N = group"
         enum status "OPEN|FULL|CLOSED"
+        string meeting_url "copied from rule"
     }
     BOOKINGS {
         uuid id PK
@@ -438,6 +441,7 @@ erDiagram
         boolean is_group
         string topic
         string decline_reason
+        string meeting_url "per-booking override"
         timestamptz created_at
         timestamptz confirmed_at
         tstzrange time_range "for EXCLUDE constraint"

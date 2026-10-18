@@ -126,6 +126,7 @@ erDiagram
         int slot_minutes "CHECK window fits one slot"
         date effective_from
         date effective_to "NULL = semester end"
+        varchar meeting_url "optional https link, copied to slots"
         timestamptz created_at
     }
     AVAILABILITY_EXCEPTIONS {
@@ -136,6 +137,7 @@ erDiagram
         time start_time
         time end_time
         varchar reason
+        varchar meeting_url "ADD only"
         timestamptz created_at
     }
     SLOTS {
@@ -146,6 +148,7 @@ erDiagram
         timestamptz end_at "CHECK end > start"
         int capacity "default 1"
         slot_status status "OPEN | FULL | CLOSED"
+        varchar meeting_url "copied from rule / ADD exception"
     }
     USERS ||--o{ AVAILABILITY_RULES : sets
     SEMESTERS ||--o{ AVAILABILITY_RULES : scopes
@@ -238,6 +241,7 @@ erDiagram
         varchar topic
         tstzrange time_range "denormalized from slot"
         varchar decline_reason
+        varchar meeting_url "per-booking override of slot link"
         timestamptz created_at
         timestamptz confirmed_at
         timestamptz cancelled_at

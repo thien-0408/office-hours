@@ -29,10 +29,9 @@ exist in this repository.** What exists is:
 
 - A complete **Next.js 16 frontend** (31/31 planned pages built — see §7), styled against a real
   design system.
-- A thin **Next.js API-route auth shim** that *tries* to call a Spring Boot backend at
-  `API_BASE_URL` and **falls back to seeded mock accounts** when it can't reach one (which is
-  always, because the backend isn't built). See `app/api/auth/login/route.ts`,
-  `lib/auth/mock-accounts.ts`.
+- A thin **Next.js API-route auth BFF** that calls the Spring Boot backend at `API_BASE_URL`
+  (auth and `/users/me` are real; the mock-account fallback was removed once real login worked).
+  See `app/api/auth/*/route.ts`.
 - All non-auth data comes from `lib/office-hours/mock-data.ts`, not a database.
 - One genuinely real, non-mocked piece of engineering: the **allocation engine + fairness
   simulation** (`lib/allocation/`, `lib/prng.ts`, `simulatePolicy()`/`giniCoefficient()` in
@@ -123,9 +122,8 @@ by grepping actual imports, not guessed.
 
 - **No backend framework, no DB driver, no ORM.** No Spring Boot, no `pg`, no Prisma/Drizzle, no
   Redis client. The Spring Boot / PostgreSQL / Redis stack in `plan.md` §12–13 is **design only**.
-- **No auth library.** No `bcrypt`/`argon2`, no `jsonwebtoken`. The "JWT" is a base64 mock token
-  (`encodeMockToken` in `lib/auth/mock-accounts.ts`); passwords are compared in plaintext against
-  seeded accounts. NFR-4's hashing is a *requirement*, not implemented.
+- **No auth library in the frontend.** Hashing and JWT signing live in the Spring Boot backend
+  (`auth` / `user` modules); the frontend only stores the tokens in httpOnly cookies.
 - **No test framework.** No Jest/Vitest/Playwright in `package.json`. The "11 checks" and Gini
   validation in `allocate-engine.md` §6 were run via *standalone scripts*, not a committed test
   suite — verify whether those scripts still exist before citing them as reproducible CI.
@@ -173,8 +171,8 @@ nav swaps by role (Student / Lecturer / Admin) rather than separate portals (`DE
 
 1. Client posts credentials to `app/api/auth/login/route.ts` (a Next.js Route Handler).
 2. The route calls `apiFetch("/auth/login")` (`lib/api-server.ts`) against `API_BASE_URL`.
-3. Because no backend answers, it **catches the error and falls back** to `findMockAccount()` over
-   the three seeded accounts (student/lecturer/admin, all password `password123`).
+3. The backend validates the credentials against the seeded/registered accounts (demo:
+   student/lecturer/admin@officehours.dev, password `password123`) and returns the JWT pair.
 4. On success it sets **httpOnly cookies** (`oh_access_token`, `oh_refresh_token`) via
    `lib/auth/session.ts`. Access token is app-wide; refresh token is path-scoped to `/api/auth`.
    `secure` only in production; `sameSite: lax`.
@@ -183,10 +181,9 @@ nav swaps by role (Student / Lecturer / Admin) rather than separate portals (`DE
    `/welcome`, `/login`, `/register`, `/public/office-hours`, `/forgot-password`,
    `/reset-password`, and `/api/auth/*`.
 
-> Honest caveat for the architecture chapter: this is **cookie-presence gating, not real
-> authorization.** The mock token is not verified/signed; RBAC (student vs lecturer vs admin) is
-> enforced only by which mock account you logged in as and client-side role checks, not by a
-> backend. NFR-4's "role-based authorization on every endpoint" is a design requirement.
+> Honest caveat for the architecture chapter: `proxy.ts` is **cookie-presence gating only**; the
+> real authorization is the backend's JWT verification and role checks on `/auth/*`, `/users/me`
+> and `/users`. Every other endpoint is still mock data until its module is built.
 
 ### 4.B Designed (not built): the production backend
 
@@ -319,7 +316,7 @@ handling. The distinctions below are about how much *real logic* sits behind eac
 |---|---|---|
 | Landing page | `app/page.tsx`, `components/landing/*` | Done (marketing surface, static content) |
 | Public office-hours listing | `app/public/office-hours/page.tsx` | Done; data from `getMockOfficeHours()` |
-| Register / Login | `app/(auth)/register`, `login` | Done; **auth is mock-account fallback** (§4.A) |
+| Register / Login | `app/(auth)/register`, `login` | Done; **auth is real** (Spring Boot backend, §4.A) |
 | Forgot / reset password | `app/(auth)/forgot-password`, `reset-password` | Done UI; token flow has API routes but no real mail/DB |
 | Profile | `dashboard/profile/page.tsx` | Done; mock profile + memoji avatar picker |
 | Notifications center | `dashboard/notifications/page.tsx` | UI done (list/mark-read/filter); **SSE is stubbed with a visible "soon" affordance, not faked** |
@@ -423,12 +420,11 @@ reproducible, but not an empirical field study.
 Compile this into the report's limitations/future-work chapter. Every item is pulled from the code
 or the docs' own admissions — quote them; they protect your credibility.
 
-1. **No backend exists.** Spring Boot, PostgreSQL, Redis, SMTP, Docker are *designed* (`plan.md`
-   §12–13, the schema/API docs) but not implemented. The app runs as a frontend over mock data.
-2. **Auth is a mock-account fallback**, not real authentication. `lib/auth/mock-accounts.ts` header:
-   *"the Spring Boot backend doesn't exist yet… Delete this file… once real auth is live."* No
-   password hashing, no signed JWT, no DB-backed sessions. RBAC is client-side + which mock you
-   logged in as.
+1. **The backend is only partly built.** Auth and user management run on Spring Boot +
+   PostgreSQL + Flyway (docker-compose); semesters, availability, booking, allocation etc. are
+   still *designed* (`plan.md` §12–13, the schema/API docs), so those pages run over mock data.
+2. **Only the auth/user slice is real.** Password hashing, signed JWT, refresh-token rotation and
+   RBAC exist for `/auth/*`, `/users/me` and Admin `/users`; nothing else is enforced server-side yet.
 3. **The database is a paper design.** The DDL in `capstone-db-schema.md` was never applied via
    migration. The headline correctness guarantee — the `EXCLUDE`/`btree_gist` double-booking
    constraint (NFR-2) — **does not run anywhere**; conflict detection in the UI is a JavaScript
