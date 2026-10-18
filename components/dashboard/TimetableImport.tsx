@@ -138,17 +138,19 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
 
     setEntries(finalEntries);
 
-    // Record to history
-    let nextHistId = history.length === 0 ? 1 : Math.max(...history.map((h) => h.id)) + 1;
-    const historyEntries: ScheduleImportHistoryEntry[] = parsedFiles.map((file) => ({
-      id: nextHistId++,
-      fileName: file.fileName,
+    // The API records one audit entry for the entire multi-file batch.
+    const historyEntry: ScheduleImportHistoryEntry = {
+      id: history.length === 0 ? 1 : Math.max(...history.map((h) => h.id)) + 1,
       importedAt: new Date().toISOString(),
-      rowCount: file.rows.length,
+      mode: importMode,
+      sourceFiles: parsedFiles.map((file) => file.fileName),
+      addedCount,
+      skippedCount,
+      replacedCount: importMode === "REPLACE" ? entries.filter((e) => e.source === "IMPORTED").length : 0,
       status: "SUCCESS",
-    }));
+    };
 
-    setHistory((prev) => [...historyEntries, ...prev]);
+    setHistory((prev) => [historyEntry, ...prev]);
     setImported(true);
 
     if (skippedCount > 0) {
@@ -358,12 +360,12 @@ export function TimetableImport<T extends { id: number; source?: "IMPORTED" | "M
                   className="border-b border-[var(--paper-100)] last:border-0">
                     <TableCell className="px-5 py-3 font-medium text-[var(--ink-900)] flex items-center gap-2">
                       <FileText className="w-3.5 h-3.5 text-[var(--brand-500)]" />
-                      {h.fileName}
+                      {h.sourceFiles.join(", ")}
                     </TableCell>
                     <TableCell className="px-5 py-3 tabular-nums text-[var(--ink-600)]">
                       {dateTimeFormatter.format(new Date(h.importedAt))}
                     </TableCell>
-                    <TableCell className="px-5 py-3 tabular-nums">{h.rowCount} classes</TableCell>
+                    <TableCell className="px-5 py-3 tabular-nums">{h.addedCount} classes</TableCell>
                     <TableCell className="px-5 py-3">
                       {h.status === "SUCCESS" ? (
                         <span className="inline-flex items-center gap-1.5 text-[var(--success-700)] font-semibold text-[12.5px]">

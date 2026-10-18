@@ -147,16 +147,15 @@ export interface WaitlistEntry {
   offeredExpiresAt?: string; // ISO-8601, set only when status === "OFFERED"
 }
 
-// Weekly recurring availability rule (Pages.txt #16). dayOfWeek follows the
-// same 1-5 Mon-Fri convention as RecurringBookingClient's DAY_OPTIONS.
+// Weekly recurring availability rule (Pages.txt #16), using ISO weekdays 1–7.
 export interface AvailabilityRule {
   id: number;
-  dayOfWeek: number; // 1 = Monday .. 5 = Friday
+  dayOfWeek: number; // 1 = Monday .. 7 = Sunday
   startTime: string; // "09:00"
   endTime: string; // "12:00"
   slotLengthMinutes: number;
   effectiveFrom: string; // ISO date, "2026-08-01"
-  effectiveTo: string | null;
+  effectiveTo: string | null; // null = through the semester's endDate
   active: boolean;
 }
 
@@ -264,11 +263,23 @@ export interface ScheduleBatchPayload {
   rows: ParsedTimetableRow[];
 }
 
+export interface ScheduleBatchResult {
+  importId: number;
+  mode: ScheduleImportMode;
+  addedCount: number;
+  skippedCount: number;
+  replacedCount: number;
+}
+
+// One audit record per batch, including every PDF in that request.
 export interface ScheduleImportHistoryEntry {
   id: number;
-  fileName: string;
   importedAt: string; // ISO-8601
-  rowCount: number;
+  mode: ScheduleImportMode;
+  sourceFiles: string[];
+  addedCount: number;
+  skippedCount: number;
+  replacedCount: number;
   status: "SUCCESS" | "FAILED";
 }
 
@@ -355,10 +366,8 @@ export interface ExperimentPolicyResult {
   waitTimeVariance: number;
 }
 
-// The DB's `experiments` table is one row per (demand_run, policy); this
-// groups those rows because POST /research/experiments (capstone-api-
-// endpoints.md §7.1) takes policyIds[] and GET /{id} returns metrics per
-// policy in one response.
+// Parent experiment_groups row plus its per-policy experiments results.
+// POST takes policyNames[]; GET /research/experiments/{id} uses the parent id.
 export interface Experiment {
   id: number;
   demandRunId: number;

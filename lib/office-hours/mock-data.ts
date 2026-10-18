@@ -1377,8 +1377,8 @@ export function getMockAdminScheduleEntries(): AdminScheduleEntry[] {
   ];
 }
 
-// Stands in for GET /admin/schedule-imports — past PDF import "jobs" (Pages.txt
-// #24's import history table). No real backend job to poll, so this is just
+// Stands in for GET /schedule-imports — past timetable batches (Pages.txt
+// #24's import history table). This is synchronous audit history, so this is just
 // the seed history; the Import tab appends session-added rows on top.
 export function getMockScheduleImportHistory(): ScheduleImportHistoryEntry[] {
   const now = new Date();
@@ -1389,9 +1389,9 @@ export function getMockScheduleImportHistory(): ScheduleImportHistoryEntry[] {
   }
 
   return [
-    { id: 1, fileName: "cs-department-fall2026.pdf", importedAt: daysAgo(12), rowCount: 24, status: "SUCCESS" },
-    { id: 2, fileName: "math-department-fall2026.pdf", importedAt: daysAgo(9), rowCount: 18, status: "SUCCESS" },
-    { id: 3, fileName: "physics-department-fall2026.pdf", importedAt: daysAgo(2), rowCount: 0, status: "FAILED" },
+    { id: 1, sourceFiles: ["cs-department-fall2026.pdf"], mode: "REPLACE", importedAt: daysAgo(12), addedCount: 24, skippedCount: 0, replacedCount: 0, status: "SUCCESS" },
+    { id: 2, sourceFiles: ["math-department-fall2026.pdf"], mode: "MERGE", importedAt: daysAgo(9), addedCount: 18, skippedCount: 2, replacedCount: 0, status: "SUCCESS" },
+    { id: 3, sourceFiles: ["physics-department-fall2026.pdf"], mode: "REPLACE", importedAt: daysAgo(2), addedCount: 0, skippedCount: 0, replacedCount: 0, status: "FAILED" },
   ];
 }
 
