@@ -74,8 +74,8 @@ CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens (user_id);
 CREATE TABLE refresh_tokens (
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    token_hash  text NOT NULL UNIQUE,          -- SHA-256 of the raw 256-bit token; the raw value lives only in the BFF's httpOnly cookie
-    expires_at  timestamptz NOT NULL,          -- created_at + 30 days (matches the BFF cookie)
+    token_hash  text NOT NULL UNIQUE,          -- SHA-256 of the raw 256-bit token; the raw value lives only in the client's localStorage
+    expires_at  timestamptz NOT NULL,          -- created_at + 30 days
     revoked_at  timestamptz,                   -- set on rotation, logout, password change/reset, deactivation
     created_at  timestamptz NOT NULL DEFAULT now()
 );

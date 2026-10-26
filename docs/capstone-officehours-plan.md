@@ -359,7 +359,7 @@ erDiagram
     REFRESH_TOKENS {
         uuid id PK
         uuid user_id FK
-        string token_hash UK "SHA-256; raw token only in the httpOnly cookie"
+        string token_hash UK "SHA-256; raw token only in client localStorage"
         timestamptz expires_at
         timestamptz revoked_at "NULL = active"
     }

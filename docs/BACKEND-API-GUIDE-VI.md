@@ -2,7 +2,7 @@
 
 > **Mục đích:** tài liệu làm việc cho dev backend (Spring Boot + PostgreSQL) chuẩn bị code. Tổng hợp và **rà soát chéo** 4 tài liệu thiết kế
 > (`capstone-officehours-plan.md`, `capstone-api-endpoints.md`, `capstone-db-schema.md`, `allocate-engine.md`) cùng với code frontend hiện có
-> (`lib/office-hours/types.ts`, `lib/auth/*`, `app/api/auth/*`, `lib/office-hours/mock-data.ts`).
+> (`lib/office-hours/types.ts`, `lib/auth/*`, `lib/api-client.ts`, `lib/office-hours/mock-data.ts`).
 >
 > **Trạng thái:** backend **chưa tồn tại**. Mọi thứ dưới đây là *hợp đồng* đã được đội thống nhất (các mâu thuẫn ở mục 3 **đã chốt và đã áp dụng** vào 4 file thiết kế gốc và vào FE). Frontend hiện chạy bằng mock data
 > (chỉ `/auth/*` đã được gọi thật, có fallback sang tài khoản mock khi backend không reachable).
@@ -18,29 +18,34 @@
 | | |
 |---|---|
 | **Stack** | Spring Boot · PostgreSQL 15+ · Redis · Docker · (FE: Next.js 16, TypeScript) |
-| **Base URL (dev)** | `http://localhost:8080/api/v1` (biến môi trường FE: `API_BASE_URL`) |
+| **Base URL (dev)** | `http://localhost:8080/api/v1` (biến môi trường FE: `NEXT_PUBLIC_API_BASE_URL`, trình duyệt gọi thẳng) |
 | **Auth** | JWT bearer: `Authorization: Bearer <accessToken>` (trừ endpoint `Public`) |
 | **Vai trò** | `STUDENT`, `LECTURER`, `ADMIN`, `SYSTEM` (job nội bộ, không gọi từ ngoài) |
 | **Định dạng** | JSON; thời gian **ISO-8601 UTC** (`timestamptz`); mọi `id` là **UUID** (chuỗi trong JSON, `uuid` trong DB) |
 | **Mục tiêu nghiệp vụ** | Đặt lịch office hours **không trùng lịch**, và **phân bổ công bằng** khi slot bị quá tải (waitlist + allocation policy) |
 
-### 1.1 Cách FE gọi backend (quan trọng để thiết kế CORS/cookie/SSE)
+### 1.1 Cách FE gọi backend (quan trọng để thiết kế CORS/token/SSE)
 
-- FE dùng **BFF**: trình duyệt chỉ gọi route của Next.js (`/api/auth/*`), route đó mới gọi Spring Boot bằng `fetch` phía server (`lib/api-server.ts`).
-  → Backend **không cần mở CORS cho trình duyệt** ở giai đoạn này, nhưng nên cho phép cấu hình.
-- Token **không** nằm trong JS: `accessToken` lưu cookie httpOnly `oh_access_token`; `refreshToken` lưu cookie httpOnly `oh_refresh_token` (path `/api/auth`, 30 ngày).
-  `proxy.ts` (middleware) chỉ kiểm tra *có cookie hay không* để chặn route; **không verify JWT** → backend phải verify mọi request.
-- Lỗi phải trả **RFC 7807-style**: `{ status, code, error, message, path, timestamp, details? }` — `code` là mã số tuyệt đối (base của error domain + mã tương đối, mỗi module một dải), `error` là key ổn định (vd `INVALID_CREDENTIALS`); response thành công trả thẳng DTO, không bọc envelope. Lỗi được **gom và báo một lần**: validation liệt kê mọi field sai/thiếu (`VALIDATION_FAILED`, `details.errors[{ field, code, error, message }]`); nhiều lỗi nghiệp vụ độc lập → `MULTIPLE_ERRORS` (400), chỉ một lỗi thì giữ status/key riêng (FE đọc `message` để hiển thị — `ApiError` trong `lib/api-server.ts`).
-- Các route BFF hiện có: `login`, `logout`, `me`, `refresh`, `register`, `forgot-password`, `reset-password`.
-  Các module còn lại (bookings, slots…) FE chưa có route BFF — khi nối API thật sẽ thêm route proxy tương tự.
-- **SSE (`/notifications/stream`)**: `EventSource` trình duyệt không gửi được header `Authorization`, nên **BFF của Next.js proxy luồng SSE** (đọc cookie rồi forward kèm bearer token). Giữ thêm `GET /notifications?since=` làm fallback polling.
+Mô hình cố ý **đơn giản** cho MVP: không BFF, không Nginx, không cookie httpOnly, không error domain.
+
+- **Gọi thẳng:** trình duyệt gọi Spring Boot trực tiếp qua `NEXT_PUBLIC_API_BASE_URL` (dev: `http://localhost:8080/api/v1`). Không có reverse proxy (Nginx) ở giữa — cả dev lẫn pilot: FE chạy port `3000`, backend port `8080`.
+  → Backend **phải bật CORS** cho origin của FE (env `CORS_ALLOWED_ORIGINS`, dev: `http://localhost:3000`), cho phép header `Authorization`, `Content-Type`, `Idempotency-Key`, `Accept-Language`. Không cần `allowCredentials` vì không dùng cookie.
+- **Token lưu ở `localStorage`:** sau `/auth/login`, FE lưu `accessToken` và `refreshToken` vào `localStorage` (`oh_access_token`, `oh_refresh_token` — `lib/auth/token-storage.ts`), rồi `lib/api-client.ts` gửi `Authorization: Bearer <accessToken>` ở mọi request. Mỗi lần tải trang, FE gọi `GET /users/me` để lấy lại user.
+  - Gặp `401` → gọi `/auth/refresh` **một lần** rồi gửi lại request; refresh thất bại → xóa `localStorage`, chuyển về `/login`.
+  - Logout → gọi `/auth/logout` (best-effort) rồi xóa `localStorage`.
+  - Chặn route ở phía client (layout dashboard kiểm tra có token/user). Đây chỉ là UX — **backend phải verify JWT và quyền ở mọi request**.
+  - Đánh đổi đã chấp nhận: JS đọc được token nên XSS có thể lấy token. Giảm rủi ro bằng access token ngắn hạn (~15 phút), refresh token rotate, không render HTML thô do user nhập.
+- **Lỗi** trả JSON kiểu RFC 7807: `{ status, error, message, path, timestamp, details? }` — `error` là key ổn định (vd `INVALID_CREDENTIALS`), FE rẽ nhánh theo `error` và hiển thị `message`. **Không có mã số `code` / error domain.** Response thành công trả thẳng DTO, không bọc envelope. Lỗi được **gom và báo một lần**: validation liệt kê mọi field sai/thiếu (`VALIDATION_FAILED`, `details.errors[{ field, error, message }]`); nhiều lỗi nghiệp vụ độc lập → `MULTIPLE_ERRORS` (400, `details.errors[{ error, message, context? }]`); chỉ một lỗi thì giữ status/key riêng.
+- **SSE (`/notifications/stream`)**: `EventSource` không gửi được header `Authorization`, nên FE đọc stream bằng `fetch` (vd thư viện `@microsoft/fetch-event-source`) kèm bearer token. Giữ `GET /notifications?since=` làm fallback polling (MVP có thể chỉ cần polling).
+- **Hiện trạng FE:** đã theo mô hình trên — không còn route `app/api/*`, không còn `proxy.ts`; layout `app/(dashboard)` chặn route phía client.
+- **Ngoài scope:** nhánh backend `feature/auth` (auth nâng cao: error domain + `ErrorCodeValidator`, …) chỉ là **bản nháp tham khảo**, không phải hợp đồng của MVP. Hợp đồng là tài liệu này và `capstone-api-endpoints.md`.
 
 ---
 
 ## 2. Quy ước chung
 
 1. **Phân trang** (Spring Data): `?page=0&size=20&sort=field,dir` → `{ content[], totalElements, totalPages, page, size }`. `page` bắt đầu từ **0**.
-2. **Lỗi**: RFC 7807 như trên. Mã thường dùng: `400` dữ liệu sai, `401` chưa đăng nhập/token hết hạn, `403` sai quyền, `404`, `409` mất race (slot đã bị đặt), `422` vi phạm nghiệp vụ (ví dụ trùng lịch học).
+2. **Lỗi**: như mục 1.1 (`error` key + HTTP status, không có error domain). Status thường dùng: `400` dữ liệu sai, `401` chưa đăng nhập/token hết hạn, `403` sai quyền, `404`, `409` mất race (slot đã bị đặt), `422` vi phạm nghiệp vụ (ví dụ trùng lịch học).
 3. **Idempotency**: `POST` tạo booking/allocation nhận header tùy chọn `Idempotency-Key` để chống double-submit.
 4. **Concurrency**: chống đặt trùng bằng **DB exclusion constraint** (mục 5.2). `409` nghĩa là "thua race", FE sẽ tải lại slot — không phải lỗi client.
 5. **RBAC**: mọi endpoint kiểm tra role tối thiểu; kiểm tra quyền theo hàng (row-level) được ghi chú từng endpoint (ví dụ student chỉ hủy được booking của mình).
@@ -68,12 +73,15 @@ Mỗi mục: quyết định + nơi đã áp dụng. “Tài liệu” = 4 file 
 | 9 | Cách import lịch học | **Client parse PDF → gom toàn bộ dòng thành một mảng JSON → backend chỉ validate và lưu.** Không có pipeline PDF/job/staging ở MVP | Tài liệu: API §4 viết lại, plan (FR-5, NFR-4, scope), schema §2.4–2.5; FE: type `ScheduleBatchPayload`, `ScheduleImportMode` |
 | 10 | Quyền override | **Mọi Admin** (quyết định có chủ đích cho MVP), luôn ghi `allocation_events` `OVERRIDDEN` | Giữ nguyên tài liệu; ghi nhận ở đây |
 | 11 | Import lại cùng học kỳ | Mặc định **`REPLACE`** (giữ block `MANUAL`), `MERGE` là tùy chọn | Tài liệu schema §8 #7, API §4 |
-| 12 | SSE với cookie httpOnly | BFF proxy SSE + polling fallback | Mục 1.1 + API §8 |
+| 12 | SSE khi token ở `localStorage` | FE đọc SSE bằng `fetch` kèm bearer + polling fallback | Mục 1.1 + API §8 |
 | 13 | `citext` | Bật trong V1 cùng btree_gist | Schema §0/§1.1 |
 | 14 | Capacity group booking | Service lock slot row trong transaction; requester tính là một người, participants chỉ chứa người bổ sung; vượt capacity → `409` | Schema §8 |
 | 15 | Retention `allocation_events`/`notifications` | Quyết định partition/archive trước pilot nếu chạy stress | Schema §8 #5 (không đổi) |
 | 16 | `allocate()` viết bằng TS, backend phải cài lại | Backend cài lại theo mục 8, kiểm bằng test vector sinh từ bản TS | Mục 8 |
 | 17 | `ON CONFLICT` ở lệnh commit import cần **unique** index nhưng schema chỉ có index thường | `uq_schedule_entries_dedup` là **UNIQUE ... NULLS NOT DISTINCT** (PostgreSQL 15+) | Tài liệu: schema §2.3 |
+| 18 | Lưu token: cookie httpOnly qua BFF hay `localStorage` | **`localStorage`**, trình duyệt gọi backend trực tiếp kèm bearer; bỏ BFF và cookie httpOnly cho đơn giản | Mục 1.1, API §0/§1; FE: `lib/api-client.ts`, `lib/auth/*`, xóa `app/api/auth/*` và `proxy.ts` |
+| 19 | Có cần Nginx reverse proxy | **Không.** FE `3000` và backend `8080` chạy trực tiếp; backend bật CORS cho origin FE | Mục 1.1, 10.2; `docker-flow-guide.html` |
+| 20 | Mã lỗi số theo error domain (dải mã mỗi module) | **Bỏ.** Chỉ dùng HTTP status + key `error` ổn định | Mục 1.1, API §0; FE: `ProblemDetail` bỏ `code` |
 
 ## 4. Vai trò & phân quyền nhanh
 
@@ -142,8 +150,8 @@ Ký hiệu **Role**: `P` = Public, `A` = mọi user đã đăng nhập, `S` = St
 |---|---|---|---|
 | POST | `/auth/register` | P | `{ email, password, fullName, role, department? }` → `201 AuthUser`, không cấp token. `role` tự chọn chỉ `STUDENT`/`LECTURER`; `ADMIN` chỉ do seed/admin tạo. |
 | POST | `/auth/login` | P | `{ email, password }` → `{ accessToken, refreshToken, expiresIn, user }` (`expiresIn` tính bằng **giây**). |
-| POST | `/auth/refresh` | P | `{ refreshToken }` → `200 { accessToken, refreshToken, expiresIn }` (`RefreshResponse`, giây). Rotate và thu hồi token cũ (lưu hash trong bảng `refresh_tokens`; dùng lại token đã thu hồi → thu hồi mọi session của user); BFF cần đủ ba field. |
-| POST | `/auth/logout` | A | Bearer token, không body → `204` rỗng. Thu hồi mọi refresh session của user (bảng `refresh_tokens`). BFF luôn xóa cookie cục bộ. |
+| POST | `/auth/refresh` | P | `{ refreshToken }` → `200 { accessToken, refreshToken, expiresIn }` (`RefreshResponse`, giây). Rotate và thu hồi token cũ (lưu hash trong bảng `refresh_tokens`; dùng lại token đã thu hồi → thu hồi mọi session của user); FE ghi đè cả ba vào `localStorage`. |
+| POST | `/auth/logout` | A | Bearer token, không body → `204` rỗng. Thu hồi mọi refresh session của user (bảng `refresh_tokens`). FE luôn xóa `localStorage` kể cả khi gọi lỗi. |
 | POST | `/auth/forgot-password` | P | `{ email }` → **luôn `202`** (không lộ email có tồn tại hay không). Nếu có: tạo token dùng một lần, TTL **30 phút**, lưu **hash** (không lưu token thô), gửi mail `{FRONTEND_URL}/reset-password?token=...`. |
 | POST | `/auth/reset-password` | P | `{ token, newPassword }`. Kiểm tra token (chưa hết hạn, chưa dùng, khớp hash) → đổi `password_hash`, đánh dấu đã dùng, **thu hồi mọi refresh token** của user. `400` nếu token sai/hết hạn/đã dùng. |
 | GET | `/users/me` | A | `UserProfile`: các field của `AuthUser` và đủ bốn boolean `notificationPrefs`. |
@@ -361,7 +369,7 @@ Cân nhắc **tạm cắt** research API nếu thiếu thời gian (đánh dấu
 | GET | `/notifications` | A | `?unreadOnly=true`. |
 | POST | `/notifications/{id}/read` | A(owner) | Đánh dấu đã đọc. |
 | POST | `/notifications/read-all` | A | Đọc tất cả. |
-| GET | `/notifications/stream` | A | **SSE** (`text/event-stream`), qua BFF proxy; phát các event trong bảng danh mục bên dưới. |
+| GET | `/notifications/stream` | A | **SSE** (`text/event-stream`), FE đọc bằng `fetch` kèm bearer token; phát các event trong bảng danh mục bên dưới. |
 
 **Danh mục event (nguồn duy nhất):**
 
@@ -492,7 +500,7 @@ FE type nằm ở `lib/office-hours/types.ts` và `lib/auth/types.ts`. Backend *
 | `EquityMetrics`, `PolicyComparisonRow` | `/admin/analytics/*` | |
 | `SyntheticDemandRun`, `Experiment`, `ExperimentPolicyResult` | `/research/*` | `dataset jsonb` không đưa vào DTO |
 
-**Mock hiện đang đứng thay API** (xem `lib/office-hours/mock-data.ts`): `getMockOfficeHours`→`/public/office-hours`, `getMockStudentBookings`/`getMockLecturerBookings`→`/bookings`, `getMockLecturers`→`/lecturers`, `getMockSuggestedLecturerSlots`→`/users/me/suggested-slots`, `getMockWaitlistEntries`→`/waitlist/me`, `getMockAllocationPolicies`→`/allocation-policies`, `getMockPolicyComparison`→`/admin/analytics/policy-comparison`. Mỗi hàm này sẽ được thay bằng `fetch` tới route BFF tương ứng.
+**Mock hiện đang đứng thay API** (xem `lib/office-hours/mock-data.ts`): `getMockOfficeHours`→`/public/office-hours`, `getMockStudentBookings`/`getMockLecturerBookings`→`/bookings`, `getMockLecturers`→`/lecturers`, `getMockSuggestedLecturerSlots`→`/users/me/suggested-slots`, `getMockWaitlistEntries`→`/waitlist/me`, `getMockAllocationPolicies`→`/allocation-policies`, `getMockPolicyComparison`→`/admin/analytics/policy-comparison`. Mỗi hàm này sẽ được thay bằng `fetch` thẳng tới endpoint backend tương ứng (qua một API client dùng chung tự gắn bearer token).
 
 ---
 
@@ -502,7 +510,7 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 
 | Mốc | Nội dung | DoD |
 |---|---|---|
-| **M0 — Nền tảng** | Project Spring Boot, Flyway, Docker compose (Postgres+Redis), RFC 7807 handler, security filter JWT, cấu hình timezone, seed | `docker compose up` chạy; `/actuator/health` OK; migration chạy từ DB trống |
+| **M0 — Nền tảng** | Project Spring Boot, Flyway, Docker compose (Postgres+Redis, không Nginx), handler lỗi `{ status, error, message }`, security filter JWT, CORS cho origin FE, cấu hình timezone, seed | `docker compose up` chạy; `/actuator/health` OK; migration chạy từ DB trống |
 | **M1 — Auth & user** | §6.1; refresh/logout (bảng `refresh_tokens`); forgot/reset | FE đăng nhập thật được (bỏ nhánh fallback mock); token reset dùng một lần, thu hồi refresh token |
 | **M2 — Semester & availability** | §6.2, §6.3; **sinh slot** từ rule+exception | Test: sửa rule không đụng slot đã book; BLOCK/ADD đúng |
 | **M3 — Schedule entries** | §6.4 (batch JSON, CRUD, REPLACE/MERGE, validate payload) | `MERGE` khử trùng lặp; `REPLACE` giữ block `MANUAL`; payload sai/quá lớn bị từ chối, không ghi dở dang |
@@ -532,7 +540,7 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 - Băm mật khẩu bcrypt/argon2; không log mật khẩu/token; rate-limit auth.
 - Validate JSON batch import và giới hạn 1 MiB/2.000 dòng; backend không nhận file PDF để kiểm MIME/chữ ký.
 - Log có cấu trúc + metric cơ bản (số booking, số lần allocation, tỷ lệ gửi notification).
-- Một lệnh `docker compose up` dựng toàn bộ stack dev; triển khai pilot một VM.
+- Một lệnh `docker compose up` dựng toàn bộ stack dev; triển khai pilot một VM. Không dùng Nginx/reverse proxy: expose thẳng FE `3000` và backend `8080`, CORS chỉ cho origin FE.
 
 ---
 
@@ -541,7 +549,7 @@ Thứ tự theo phụ thuộc và giá trị demo; mỗi mốc có tiêu chí ho
 1. Slot listing và availability cần auth; `/public/office-hours` là aggregate công khai riêng.
 2. Allocation tự chạy qua service nội bộ; REST trigger chỉ Admin cho demo, không có JWT role SYSTEM bên ngoài.
 3. Reschedule atomic bằng `{ newSlotId }`, cùng lecturer; lỗi tạo mới rollback hủy booking cũ.
-4. SSE qua BFF và polling fallback; override dùng event hiện có với nội dung nói rõ admin gán lại slot.
+4. SSE đọc bằng `fetch` kèm bearer token và polling fallback; override dùng event hiện có với nội dung nói rõ admin gán lại slot.
 5. Mọi Admin có quyền override toàn cục; vẫn kiểm tra conflict/capacity và audit. Nếu chưa có waitlist entry thì tạo trong cùng transaction để giữ FK NOT NULL.
 6. Confirm đầu tiên tự DECLINE đối thủ; confirm đối thủ sau đó trả `409 SLOT_ALREADY_CONFIRMED`. Exclusion violation cần rollback trước khi ghi tiếp; xem API §12.
 7. Research identity đã chốt: API Experiment.id = experiment_groups.id; child experiments có unique(group, policy) và policy_order. Research vẫn stretch; retention và PWA chạy nền là follow-up vận hành.

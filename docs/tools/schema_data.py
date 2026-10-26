@@ -36,7 +36,7 @@ ENTITIES = [
     ("refresh_tokens", "Server-side refresh-token sessions, rotated on every refresh and revoked on logout or password change.", [
         ("id", "uuid (PK)", "Unique session identifier"),
         ("user_id", "uuid (FK)", "Foreign key referencing users(id)"),
-        ("token_hash", "text (UK)", "SHA-256 of the raw refresh token; the raw value only lives in the httpOnly cookie"),
+        ("token_hash", "text (UK)", "SHA-256 of the raw refresh token; the raw value only lives in client localStorage"),
         ("expires_at", "timestamptz", "Expiry time (creation + 30 days)"),
         ("revoked_at", "timestamptz", "Set on rotation, logout or password change; NULL means active"),
         ("created_at", "timestamptz", "Creation time"),

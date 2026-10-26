@@ -466,21 +466,21 @@
     <div id="tab-compose" class="tab-content">
       <div class="card">
         <div class="card-title">🐙 Docker Compose: Nhạc Trưởng Cho Ứng Dụng Đa Dịch Vụ</div>
-        <p>Nếu không có Docker Compose, một dự án gồm <em>Next.js + Backend API + Postgres + Nginx</em> sẽ bắt bạn phải gõ hàng chục câu lệnh <code>docker run -p ... -v ... --network ...</code> cực kỳ dễ nhầm lẫn. Docker Compose gom toàn bộ cấu hình vào 1 file <code>docker-compose.yml</code> duy nhất.</p>
+        <p>Nếu không có Docker Compose, một dự án gồm <em>Next.js + Spring Boot API + Postgres</em> sẽ bắt bạn phải gõ hàng chục câu lệnh <code>docker run -p ... -v ... --network ...</code> cực kỳ dễ nhầm lẫn. Docker Compose gom toàn bộ cấu hình vào 1 file <code>docker-compose.yml</code> duy nhất.</p>
 
         <div class="diagram-container" style="margin-top: 1.5rem;">
           <h4 style="text-align: center; margin-bottom: 1.25rem; color: var(--primary);">🌐 Kiến Trúc Mạng Nội Bộ (Internal Bridge Network)</h4>
           <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="background: #1e293b; border: 2px dashed #0284c7; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
-              <div style="font-size: 1.5rem;">🌐</div>
-              <strong>Nginx (Proxy)</strong>
-              <div style="font-size: 0.75rem; color: #94a3b8;">Port: 80 / 443</div>
-            </div>
-            <div style="color: var(--primary); font-size: 1.5rem;">⇄</div>
             <div style="background: #1e293b; border: 2px solid #38bdf8; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
               <div style="font-size: 1.5rem;">⚡</div>
               <strong>Next.js (Web)</strong>
-              <div style="font-size: 0.75rem; color: #94a3b8;">Gọi DB qua: <code>db:5432</code></div>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Port: 3000 · trình duyệt gọi API trực tiếp</div>
+            </div>
+            <div style="color: var(--primary); font-size: 1.5rem;">⇄</div>
+            <div style="background: #1e293b; border: 2px solid #0284c7; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
+              <div style="font-size: 1.5rem;">☕</div>
+              <strong>Spring Boot (API)</strong>
+              <div style="font-size: 0.75rem; color: #94a3b8;">Port: 8080 · gọi DB qua <code>db:5432</code></div>
             </div>
             <div style="color: var(--primary); font-size: 1.5rem;">⇄</div>
             <div style="background: #1e293b; border: 2px solid #10b981; padding: 1.25rem; border-radius: 12px; text-align: center; width: 180px;">
@@ -490,7 +490,7 @@
             </div>
           </div>
           <p style="text-align: center; font-size: 0.85rem; color: #94a3b8; margin-top: 1.25rem;">
-            *Các container nói chuyện với nhau bằng <strong>tên service</strong> (ví dụ: Nginx proxy tới <code>http://web:3000</code>). Không cần quan tâm IP thay đổi!
+            *Các container nói chuyện với nhau bằng <strong>tên service</strong> (ví dụ: backend kết nối <code>db:5432</code>). Không cần quan tâm IP thay đổi! Dự án <strong>không dùng Nginx</strong>: FE (3000) và backend (8080) được expose trực tiếp, backend bật CORS cho origin của FE.
           </p>
         </div>
       </div>
@@ -526,7 +526,7 @@ volumes:
             <li><code>docker compose down -v</code>: Tắt và xóa luôn cả database volume (làm mới hoàn toàn).</li>
             <li><code>docker compose logs -f web</code>: Theo dõi log trực tiếp của dịch vụ web.</li>
             <li><code>docker compose exec web sh</code>: Mở terminal bên trong container để debug.</li>
-            <li><code>docker compose restart nginx</code>: Khởi động lại riêng 1 service.</li>
+            <li><code>docker compose restart backend</code>: Khởi động lại riêng 1 service.</li>
           </ul>
         </div>
       </div>
