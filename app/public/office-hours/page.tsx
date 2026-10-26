@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api-server";
+import { apiFetch } from "@/lib/api-client";
 import { getMockOfficeHours } from "@/lib/office-hours/mock-data";
 import { LogoWithText } from "@/components/LogoWithText";
 import { initials } from "@/lib/avatar";
@@ -57,7 +57,9 @@ export default async function PublicOfficeHoursPage({ searchParams }: PageProps)
   try {
     const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
     if (department) query.set("department", department);
-    const res = await apiFetch<PublicOfficeHoursResponse>(`/public/office-hours?${query.toString()}`);
+    const res = await apiFetch<PublicOfficeHoursResponse>(`/public/office-hours?${query.toString()}`, {
+      auth: false,
+    });
     content = res.content;
     totalPages = res.totalPages;
   } catch {

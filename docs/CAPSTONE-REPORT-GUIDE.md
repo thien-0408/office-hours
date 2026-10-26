@@ -29,9 +29,9 @@ exist in this repository.** What exists is:
 
 - A complete **Next.js 16 frontend** (31/31 planned pages built — see §7), styled against a real
   design system.
-- A thin **Next.js API-route auth BFF** that calls the Spring Boot backend at `API_BASE_URL`
-  (auth and `/users/me` are real; the mock-account fallback was removed once real login worked).
-  See `app/api/auth/*/route.ts`.
+- A small **browser API client** that calls the Spring Boot backend directly at
+  `NEXT_PUBLIC_API_BASE_URL` (auth and `/users/me` are real; the mock-account fallback was removed
+  once real login worked). See `lib/api-client.ts` and `lib/auth/auth-context.tsx`.
 - All non-auth data comes from `lib/office-hours/mock-data.ts`, not a database.
 - One genuinely real, non-mocked piece of engineering: the **allocation engine + fairness
   simulation** (`lib/allocation/`, `lib/prng.ts`, `simulatePolicy()`/`giniCoefficient()` in
@@ -97,7 +97,7 @@ by grepping actual imports, not guessed.
 
 | Package | Version | Category | Actually used for (verified) | Report chapter |
 |---|---|---|---|---|
-| `next` | `16.2.12` | Framework | App Router, route groups `(auth)`/`(dashboard)`, API routes, `proxy.ts` auth gating, `next/image`, `next/font` | System Architecture |
+| `next` | `16.2.12` | Framework | App Router, route groups `(auth)`/`(dashboard)`, client-side auth gating in the dashboard layout, `next/image`, `next/font` | System Architecture |
 | `react` / `react-dom` | `19.2.4` | UI runtime | React 19; note the codebase is written against the **React Compiler** ESLint rules (`react-hooks/refs`, `react-hooks/purity`) — see `DESIGN.md` §1 and `prng.ts` comments | Implementation |
 | `typescript` | `^5` | Language | Whole codebase; `strict: true` (`tsconfig.json`) | Implementation |
 | `tailwindcss` | `^4` | Styling | Tailwind v4 (via `@tailwindcss/postcss`); utility classes + the design tokens in `DESIGN.md` §3 | UI/UX Design |
@@ -123,7 +123,7 @@ by grepping actual imports, not guessed.
 - **No backend framework, no DB driver, no ORM.** No Spring Boot, no `pg`, no Prisma/Drizzle, no
   Redis client. The Spring Boot / PostgreSQL / Redis stack in `plan.md` §12–13 is **design only**.
 - **No auth library in the frontend.** Hashing and JWT signing live in the Spring Boot backend
-  (`auth` / `user` modules); the frontend only stores the tokens in httpOnly cookies.
+  (`auth` / `user` modules); the frontend only stores the tokens in `localStorage`.
 - **No test framework.** No Jest/Vitest/Playwright in `package.json`. The "11 checks" and Gini
   validation in `allocate-engine.md` §6 were run via *standalone scripts*, not a committed test
   suite — verify whether those scripts still exist before citing them as reproducible CI.
@@ -151,8 +151,7 @@ nav swaps by role (Student / Lecturer / Admin) rather than separate portals (`DE
 - `app/public/office-hours/` — public read-only office-hours listing (no auth).
 - `app/page.tsx` — public landing page (neo-brutalist; `components/landing/`).
 - `app/welcome/` — a welcome experience (3D dioramas). Untracked/new scope.
-- `app/api/auth/…` — the only server-side API routes: `register`, `login`, `logout`, `refresh`,
-  `me`, `forgot-password`, `reset-password`.
+- No `app/api/` routes: the browser calls the backend directly (no BFF, no Nginx).
 
 **Layered structure of the code:**
 
@@ -164,26 +163,29 @@ nav swaps by role (Student / Lecturer / Admin) rather than separate portals (`DE
 | Mock data layer | `lib/office-hours/mock-data.ts` | Stands in for every non-auth API; all list/detail data |
 | Allocation domain logic | `lib/allocation/engine.ts`, `lib/prng.ts` | The real algorithms (§8) |
 | Timetable parsing | `lib/timetable/parse-pdf.ts` | Client-side AAO PDF → structured busy blocks |
-| Auth shim | `app/api/auth/**`, `lib/api-server.ts`, `lib/auth/*` | Cookie/session handling + backend-or-mock fallback |
+| API client & auth | `lib/api-client.ts`, `lib/auth/*` | Bearer-token fetch with one refresh retry; tokens in `localStorage` |
 | UI utilities | `lib/ui/*`, `lib/avatar.ts` | Status hues, accent palette, relative time, memoji avatars |
 
 **Auth flow (as actually built):**
 
-1. Client posts credentials to `app/api/auth/login/route.ts` (a Next.js Route Handler).
-2. The route calls `apiFetch("/auth/login")` (`lib/api-server.ts`) against `API_BASE_URL`.
-3. The backend validates the credentials against the seeded/registered accounts (demo:
+1. `AuthProvider.login` (`lib/auth/auth-context.tsx`) calls `apiFetch("/auth/login")`
+   (`lib/api-client.ts`) straight from the browser against `NEXT_PUBLIC_API_BASE_URL`; the backend
+   allows the frontend origin via CORS.
+2. The backend validates the credentials against the seeded/registered accounts (demo:
    student/lecturer/admin@officehours.dev, password `password123`) and returns the JWT pair.
-4. On success it sets **httpOnly cookies** (`oh_access_token`, `oh_refresh_token`) via
-   `lib/auth/session.ts`. Access token is app-wide; refresh token is path-scoped to `/api/auth`.
-   `secure` only in production; `sameSite: lax`.
-5. **Route gating** is done by `proxy.ts` (Next.js middleware): any path not in `PUBLIC_PATHS` and
-   without an `oh_access_token` cookie is redirected to `/login?redirectTo=…`. Public paths: `/`,
-   `/welcome`, `/login`, `/register`, `/public/office-hours`, `/forgot-password`,
-   `/reset-password`, and `/api/auth/*`.
+3. On success the tokens are saved in **`localStorage`** (`oh_access_token`, `oh_refresh_token`)
+   via `lib/auth/token-storage.ts`. `apiFetch` adds `Authorization: Bearer …` to every request; on
+   a `401` it calls `/auth/refresh` once and retries, otherwise it clears the tokens and the
+   provider signs the user out.
+4. **Route gating** is client-side: `app/(dashboard)/layout.tsx` waits for `GET /users/me` and
+   redirects to `/login?redirectTo=…` when there is no user. There is no Next.js middleware,
+   because the server cannot see `localStorage`.
 
-> Honest caveat for the architecture chapter: `proxy.ts` is **cookie-presence gating only**; the
-> real authorization is the backend's JWT verification and role checks on `/auth/*`, `/users/me`
-> and `/users`. Every other endpoint is still mock data until its module is built.
+> Honest caveat for the architecture chapter: the dashboard gate is **UX only**, and tokens in
+> `localStorage` are readable by any script on the page (an accepted MVP trade-off versus httpOnly
+> cookies). The real authorization is the backend's JWT verification and role checks on
+> `/auth/*`, `/users/me` and `/users`. Every other endpoint is still mock data until its module is
+> built.
 
 ### 4.B Designed (not built): the production backend
 
@@ -204,8 +206,8 @@ microservices; SSE not WebSockets; no Kafka/CRDTs — simplicity matched to a 4-
 - `next.config.ts` — `images.qualities: [75, 95]`; Next 16 clamps optimized image quality to
   `[75]` by default, so 95 is allowlisted for the auth-background gradient to avoid WebP banding.
 - `tsconfig.json` — `strict: true`, `moduleResolution: "bundler"`, path alias `@/*`.
-- `proxy.ts` — the middleware described above; note the matcher excludes static assets and 3D
-  model files (`.glb`/`.gltf`).
+- `NEXT_PUBLIC_API_BASE_URL` — inlined into the client bundle at build time, so changing the
+  backend URL needs a rebuild.
 
 ---
 
@@ -269,9 +271,9 @@ strongest DB-design arguments):
 ## 6. API surface summary
 
 Full spec: `capstone-api-endpoints.md`. **Status: proposed REST contract; not implemented.** The
-only server-side endpoints that actually run are the 7 auth Route Handlers under `app/api/auth/`
-(login/register/refresh/logout/me/forgot-password/reset-password), and even those fall back to mock
-accounts. Everything else in the API doc is a designed contract that the frontend currently
+only endpoints the frontend actually calls are the backend's auth ones
+(login/register/refresh/logout/forgot-password/reset-password and `/users/me`), called directly
+from the browser. Everything else in the API doc is a designed contract that the frontend currently
 satisfies with `mock-data.ts` functions instead of network calls.
 
 Designed base URL `http://localhost:8080/api/v1`; JWT bearer auth; RFC-7807 error bodies; Spring
@@ -309,8 +311,7 @@ Data pagination; roles STUDENT/LECTURER/ADMIN/SYSTEM.
 
 From `PAGES-PROGRESS.md` (31/31 pages "shipped") cross-checked against the actual files. Status is
 honest: **"UI-complete, not wired"** means the page renders and interacts against mock data but has
-no real backend behind it — which, per §1, is true of *every* page except the auth flow's cookie
-handling. The distinctions below are about how much *real logic* sits behind each surface.
+no real backend behind it — which, per §1, is true of *every* page except the auth flow. The distinctions below are about how much *real logic* sits behind each surface.
 
 | Feature | Page/file | Status & honest note |
 |---|---|---|
@@ -502,8 +503,8 @@ cite the general literature behind each — flagged here by topic, not with spec
 
 ---
 
-*Guide compiled from: `package.json`, `next.config.ts`, `tsconfig.json`, `proxy.ts`,
+*Guide compiled from: `package.json`, `next.config.ts`, `tsconfig.json`,
 `lib/allocation/engine.ts`, `lib/prng.ts`, `lib/office-hours/mock-data.ts`, `lib/auth/*`,
-`lib/api-server.ts`, `lib/env.ts`, and `docs/{capstone-officehours-plan, capstone-db-schema,
+`lib/api-client.ts`, `lib/env.ts`, and `docs/{capstone-officehours-plan, capstone-db-schema,
 capstone-api-endpoints, DESIGN, PAGES-PROGRESS, DASHBOARD-UPGRADE, allocate-engine}.md`. Where a
 figure could not be verified from source it is marked `verify:`.*

@@ -61,7 +61,6 @@ export interface ResetPasswordPayload {
 // RFC 7807 problem detail, per capstone-api-endpoints.md §0 Conventions
 export interface ProblemDetail {
   status: number;
-  code: number; // absolute error code (domain base + relative), e.g. AUTH range
   error: string; // stable error key, e.g. "INVALID_CREDENTIALS"
   message: string;
   path?: string;

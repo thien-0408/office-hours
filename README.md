@@ -12,9 +12,9 @@ supply. The fairness study is the research core of the capstone — see
 ## This repository
 
 This is the **Next.js frontend**. It talks to a separate **Spring Boot** backend over REST.
-Auth tokens are handled server-side: browser-facing routes under `app/api/auth/*` proxy the
-backend and store the access/refresh tokens in `httpOnly` cookies, so JWTs never reach client
-JavaScript.
+The browser calls the backend directly (no BFF, no Nginx): `lib/api-client.ts` sends the access
+token as `Authorization: Bearer …`, refreshes it once on a `401`, and the access/refresh tokens are
+kept in `localStorage`. The backend must allow this app's origin via CORS.
 
 ### Stack
 
@@ -34,7 +34,7 @@ Requires Node.js and a running backend.
 npm install
 
 # point the app at the Spring Boot backend
-echo "API_BASE_URL=http://localhost:8080/api/v1" > .env.local
+echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1" > .env.local
 
 npm run dev          # http://localhost:3000
 ```
@@ -52,19 +52,19 @@ npm run dev          # http://localhost:3000
 
 | Variable | Required | Description |
 |---|---|---|
-| `API_BASE_URL` | yes | Full Spring Boot API prefix, without a trailing slash (e.g. `http://localhost:8080/api/v1`) |
+| `NEXT_PUBLIC_API_BASE_URL` | yes | Full Spring Boot API prefix, without a trailing slash (e.g. `http://localhost:8080/api/v1`). Inlined at build time — rebuild after changing it. |
 
 ## Project structure
 
 ```
 app/
   (auth)/                  Login, register, forgot- & reset-password (shared glass layout)
-  api/auth/                Server routes proxying the backend; set httpOnly session cookies
+  (dashboard)/             Authenticated app shell; layout redirects to /login without a user
   public/office-hours/     Public read-only "office hours this week" view
   page.tsx                 Landing page
 lib/
-  api-server.ts            Server-only fetch wrapper for the backend
-  auth/                    Session cookies, auth context, types
+  api-client.ts            Fetch wrapper for the backend (bearer token + one refresh retry)
+  auth/                    localStorage token storage, auth context, types
   office-hours/            Types + mock data
   env.ts                   Validated environment access
 docs/                      Capstone plan, API endpoints, DB schema, design system

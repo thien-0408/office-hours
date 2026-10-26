@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Shown while useAuth()'s initial GET /api/auth/me is in flight (the one real
+// Shown while useAuth()'s initial GET /users/me is in flight (the one real
 // async loading state on this route right now — see (dashboard)/layout.tsx).
 // Shaped like DashboardShell so there's no layout jump once the real shell mounts.
 export function DashboardSkeleton() {
