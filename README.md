@@ -28,25 +28,25 @@ kept in `localStorage`. The backend must allow this app's origin via CORS.
 
 ## Getting started
 
-Requires Node.js and a running backend.
+Requires [Bun](https://bun.sh) and a running backend.
 
 ```bash
-npm install
+bun install
 
 # point the app at the Spring Boot backend
 echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1" > .env.local
 
-npm run dev          # http://localhost:3000
+bun run dev          # http://localhost:3000
 ```
 
 ### Scripts
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint |
+| `bun run dev` | Start the dev server |
+| `bun run build` | Production build |
+| `bun run start` | Serve the production build |
+| `bun run lint` | Run ESLint |
 
 ### Environment
 
