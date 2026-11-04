@@ -9,6 +9,10 @@ automatically and (b) allocates scarce office-hour slots **fairly** when demand 
 supply. The fairness study is the research core of the capstone — see
 [`docs/capstone-officehours-plan.md`](docs/capstone-officehours-plan.md).
 
+## Project map
+
+This project spans three repositories. Start from [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md). Shared rules are in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) and web progress is in [`docs/WEB-CHECKLIST.md`](docs/WEB-CHECKLIST.md).
+
 ## This repository
 
 This is the **Next.js frontend**. It talks to a separate **Spring Boot** backend over REST.

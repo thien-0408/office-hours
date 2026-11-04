@@ -9,6 +9,10 @@ smallest complete change, don't run builds/lint/tests or start servers unless as
 unless asked. Read the relevant `node_modules/next/dist/docs/` guide before Next.js code (Next 16
 differs from training data) and `docs/DESIGN.md` before any UI/CSS.
 
+## Project map
+
+This repo is one of three. See `docs/PROJECT-HUB.md` for the others, `docs/CONVENTIONS.md` for shared rules, and tick tasks in `docs/WEB-CHECKLIST.md`.
+
 ## Commands
 
 ```bash
