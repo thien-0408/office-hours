@@ -196,18 +196,30 @@ Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in �
 | POST | `/bookings` | Student | `{ slotId, topic?, participantEmails? }` (group members by email; see §5.1). Server re-validates conflicts. Returns `201 Booking` with `status: PENDING`, or `409` (slot unavailable) with `details: { waitlistAvailable: true }`, or `422` (conflict detected). Multiple PENDING requests may coexist; the exclusion constraint guards confirmation. |
 | GET | `/bookings` | Authenticated | List own bookings (student) or bookings-to-review (lecturer), filterable by `status`. Admin can filter by any user. |
 | GET | `/bookings/{id}` | Owner (student/lecturer) / Admin | Booking detail. |
+| GET | `/bookings/{id}/timeline` | Owner (student/lecturer) / Admin | Booking history from `booking_events`, oldest first. Returns `BookingTimelineEvent[]`. |
 | POST | `/bookings/{id}/confirm` | Lecturer (owner of slot) | UC8. → `status: CONFIRMED`; notifies student. The first successful confirm atomically auto-`DECLINE`s the slot's other PENDING requests with notifications. A later confirm of a loser returns `409` with `error: "SLOT_ALREADY_CONFIRMED"`. See §12 for transaction handling. |
 | POST | `/bookings/{id}/decline` | Lecturer (owner of slot) | `{ reason? }`. → `status: DECLINED`; notifies student; may trigger waitlist allocation (§7) if others are queued. |
 | POST | `/bookings/{id}/cancel` | Student or Lecturer (participant) | FR-9. Enforces configurable notice-period rule (reject if inside window, unless Admin override). → `status: CANCELLED`; triggers waitlist allocation if slot had a queue. |
 | POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }` — the FE reschedule dialog lists the lecturer's open, conflict-free slots (`GET /lecturers/{id}/slots`) and sends the chosen slot id; free-form date/time is not accepted. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule. |
-| POST | `/bookings/{id}/complete` | Lecturer | Marks a past `CONFIRMED` booking `COMPLETED` (or auto-job does this after `end_at`). |
-| POST | `/bookings/{id}/no-show` | Lecturer | FR-10. → `status: NO_SHOW`. |
+| POST | `/bookings/{id}/complete` | Lecturer | Lecturer confirms the meeting happened, allowed from the slot's `start_at`. → `COMPLETED`; writes `MEETING_RECORDS.attended = true`. If the lecturer never confirms, a job sets `COMPLETED` 24 hours after `end_at` without a meeting record, which means unconfirmed. |
+| POST | `/bookings/{id}/no-show` | Lecturer | FR-10, allowed from the slot's `start_at`. → `status: NO_SHOW`; writes `MEETING_RECORDS.attended = false`. |
 | PATCH | `/bookings/{id}` | Lecturer (owner of slot) | `{ meetingUrl: string \| null }` — override (or clear, falling back to the slot's link) the online-meeting link of one booking. `https://` only, ≤ 500 chars; `422` otherwise. |
 | PATCH | `/bookings/{id}/meeting-record` | Lecturer | `{ attended, notes? }`. Optional text field only — explicitly **not** an LMS field (§5.3 scope guard). |
+| GET | `/bookings/{id}/messages` | Owner (student/lecturer) / Admin | Chat history, newest first. `?before=<id>&limit=` pages back; `?after=<id>` fetches what was missed while disconnected. |
+| POST | `/bookings/{id}/messages/read` | Owner (student/lecturer) | `{ upToId }`. Marks the other party's messages as read and broadcasts the change. |
 
 **Booking response (DTO).** Besides display names, every booking carries the ids the UI needs: `{ id, slotId, lecturerId, studentId, lecturerName, studentName, department, topic, startAt, endAt, status, meetingUrl, participants? }` (`meetingUrl` is the effective link, `string | null`, see §3; FE type `Booking`, `lib/office-hours/types.ts`).
 
-Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`. State machine per §9.3.
+Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`, `CHAT_MESSAGES`. State machine per §9.3.
+
+**Chat WebSocket (STOMP).** Connect to `/ws` with `Authorization: Bearer <accessToken>` in the CONNECT frame. Only the booking's student and lecturer can subscribe.
+
+| Direction | Destination | Payload |
+|---|---|---|
+| Send | `/app/bookings/{id}/messages` | `{ clientMessageId, body }`, up to 2,000 characters, only while the booking is `CONFIRMED` |
+| Send | `/app/bookings/{id}/typing` | `{ typing }`, never stored |
+| Subscribe | `/topic/bookings/{id}/messages` | New messages, including `SYSTEM` messages for status changes, and read updates |
+| Subscribe | `/topic/bookings/{id}/typing` | `{ userId, typing }` |
 
 ### 5.1 Group Bookings (FR-15, Stretch; UC5)
 

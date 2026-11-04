@@ -9,6 +9,10 @@ automatically and (b) allocates scarce office-hour slots **fairly** when demand 
 supply. The fairness study is the research core of the capstone — see
 [`docs/capstone-officehours-plan.md`](docs/capstone-officehours-plan.md).
 
+## Project map
+
+This project spans three repositories. Start from [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md). Shared rules are in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) and web progress is in [`docs/WEB-CHECKLIST.md`](docs/WEB-CHECKLIST.md).
+
 ## This repository
 
 This is the **Next.js frontend**. It talks to a separate **Spring Boot** backend over REST.
@@ -28,25 +32,25 @@ kept in `localStorage`. The backend must allow this app's origin via CORS.
 
 ## Getting started
 
-Requires Node.js and a running backend.
+Requires [Bun](https://bun.sh) and a running backend.
 
 ```bash
-npm install
+bun install
 
 # point the app at the Spring Boot backend
 echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1" > .env.local
 
-npm run dev          # http://localhost:3000
+bun run dev          # http://localhost:3000
 ```
 
 ### Scripts
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint |
+| `bun run dev` | Start the dev server |
+| `bun run build` | Production build |
+| `bun run start` | Serve the production build |
+| `bun run lint` | Run ESLint |
 
 ### Environment
 

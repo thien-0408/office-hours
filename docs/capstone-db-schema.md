@@ -9,7 +9,9 @@
 | **Timestamps** | `timestamptz` throughout — never naive `timestamp` (multi-timezone-safe even for a single-institution deploy) |
 | **Source mapping** | Every table cites the FR / entity it implements from the plan |
 
-> **Storage baseline — 15 October 2026.** This proposed DDL has not been applied via migration. It owns column names, nullability and constraints; the API baseline in `capstone-api-endpoints.md` owns JSON DTO names. `DB-SCHEMA-PROTOTYPE.md`, Word tables and draw.io are derived views, not competing schemas. Use `id` for entity PKs except shared `lecturer_profiles.user_id` and composite `booking_participants` keys.
+> **Migrations:** applied in the backend as Flyway V1–V10. Where this document uses `CREATE TYPE ... AS ENUM`, the migrations use `varchar` with a `CHECK` constraint, the same as `users.role` in V1. Values are unchanged.
+>
+> **Storage baseline — 15 October 2026.** It owns column names, nullability and constraints; the API baseline in `capstone-api-endpoints.md` owns JSON DTO names. `DB-SCHEMA-PROTOTYPE.md`, Word tables and draw.io are derived views, not competing schemas. Use `id` for entity PKs except shared `lecturer_profiles.user_id` and composite `booking_participants` keys.
 
 ---
 
@@ -415,6 +417,52 @@ CREATE TABLE meeting_records (
 );
 ```
 
+### 3.4a `booking_events` (FR-7, FR-9, FR-10; backs `GET /bookings/{id}/timeline`) — append-only booking history
+
+```sql
+CREATE TYPE booking_event_type AS ENUM (
+    'CREATED', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'RESCHEDULED', 'COMPLETED', 'NO_SHOW'
+);
+
+CREATE TABLE booking_events (
+    id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    booking_id          uuid NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    event_type          booking_event_type NOT NULL,
+    status              booking_status NOT NULL,   -- booking status after this event
+    actor_id            uuid REFERENCES users (id), -- NULL = system (auto-decline, auto-complete job)
+    related_booking_id  uuid REFERENCES bookings (id), -- RESCHEDULED: the replacement booking
+    note                varchar(255),
+    created_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_booking_events_booking ON booking_events (booking_id, created_at);
+```
+
+> The service writing a transition inserts its event in the same transaction, so history cannot drift from `bookings.status`. Rows are never updated or deleted. Maps to FE `BookingTimelineEvent`: `id`, `label` (derived from `event_type`), `at` = `created_at`, `status`.
+
+### 3.4b `chat_messages` — per-booking student-lecturer chat over WebSocket
+
+```sql
+CREATE TYPE chat_message_type AS ENUM ('TEXT', 'SYSTEM');
+
+CREATE TABLE chat_messages (
+    id                 bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    booking_id         uuid NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    sender_id          uuid REFERENCES users (id),  -- NULL only for SYSTEM messages
+    message_type       chat_message_type NOT NULL DEFAULT 'TEXT',
+    body               varchar(2000) NOT NULL,
+    client_message_id  uuid,                        -- client-generated, makes a resend safe
+    created_at         timestamptz NOT NULL DEFAULT now(),
+    read_at            timestamptz,
+    CONSTRAINT chk_chat_sender CHECK ((message_type = 'TEXT') = (sender_id IS NOT NULL)),
+    CONSTRAINT uq_chat_client_message UNIQUE (sender_id, client_message_id)
+);
+
+CREATE INDEX idx_chat_messages_booking ON chat_messages (booking_id, id);
+```
+
+> Only the booking's student and lecturer can read or send. Sending requires `bookings.status = 'CONFIRMED'`; a finished booking's chat is read-only. Typing indicators are broadcast only and never stored.
+
 ### 3.5 `recurring_bookings` (FR-16, Stretch) — standing weekly series
 
 ```sql
@@ -594,6 +642,8 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | `bookings` | FR-7–10, §9.3 | `EXCLUDE` constraint = the correctness centerpiece (NFR-2) |
 | `booking_participants` | FR-15, UC5 | Group bookings |
 | `meeting_records` | FR-10 | Attendance + optional notes (hard scope ceiling) |
+| `booking_events` | FR-7, FR-9, FR-10 | Append-only booking history; backs the booking timeline |
+| `chat_messages` | Chat feature | Per-booking chat over WebSocket; Postgres is the source of truth |
 | `recurring_bookings` | FR-16 | Standing weekly series |
 | `waitlist_entries` | FR-12, UC3 | Research demand queue |
 | `allocation_policies` | FR-13, UC12 | Pluggable, one active at a time |

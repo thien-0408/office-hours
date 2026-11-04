@@ -486,7 +486,7 @@ FE type nằm ở `lib/office-hours/types.ts` và `lib/auth/types.ts`. Backend *
 | `TodayAvailabilitySlot` | (widget dashboard) | thêm `lecturerId`; chưa có endpoint riêng → dùng `/slots` hoặc thêm `/slots/today` |
 | `BookableSlot` | `/lecturers/{id}/slots` | `available=false` nếu đã có người đặt; `conflict=true` nếu trùng lịch của student |
 | `Booking`, `BookingParticipant` | `/bookings*` | có `slotId`, `lecturerId`, `studentId` (đã thêm vào FE) |
-| `BookingTimelineEvent` | `/bookings/{id}` (hoặc `/timeline`) | FE hiện suy ra từ status + startAt; backend nên trả lịch sử thật |
+| `BookingTimelineEvent` | `/bookings/{id}/timeline` | FE hiện suy ra từ status + startAt; backend trả lịch sử thật từ `booking_events` |
 | `Notification`, `NotificationPrefs` | `/notifications*` | `read` = `read_at != null`; 7 `NotificationType` theo danh mục ở 6.9 |
 | `RecurringSeries`, `RecurringOccurrence` | `/bookings/recurring*` | `dayOfWeek` thống nhất ISO 1–7; `semester` là tên |
 | `WaitlistEntry`, `SlotWaitlistGroup` | `/waitlist/me`, `/lecturers/me/slot-waitlist` | có `slotId`; `position` tính động; `desiredSlotLabel` dựng từ slot |
