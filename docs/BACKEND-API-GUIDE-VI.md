@@ -195,7 +195,7 @@ DTO FE: `AvailabilityRule { id, dayOfWeek, startTime, endTime, slotLengthMinutes
 
 `effectiveTo: null` nghĩa là tới `semesters.end_date`; DB `effective_to` nullable. API dùng `active`, DB dùng `is_active`. List calendar trả array; admin import history phân trang theo baseline API §0.1.
 
-> **Lưu ý khi sinh slot:** áp dụng rule → trừ `BLOCK` → cộng `ADD` → trừ lịch dạy của chính lecturer (`schedule_entries`). Sửa/xóa rule **không được** động vào slot đã có booking.
+> **Lưu ý khi sinh slot:** áp dụng rule → trừ `BLOCK` → cộng `ADD` → trừ lịch dạy của chính lecturer (`schedule_entries`). Sửa/xóa rule **không được** động vào slot đã có booking. Khi `schedule_entries` của lecturer thay đổi (import, thêm, xóa), các slot tương lai chưa có booking cũng được sinh lại theo cùng quy tắc.
 
 ### 6.4 Import lịch học/dạy — nguồn xung đột (FR-5, FR-5a)
 
