@@ -36,7 +36,7 @@ Repo backend là private, nên chỉ người được cấp quyền mới mở 
 | Phase backend | Nội dung | Backend xong | Web đã nối | Mobile đã nối |
 |---|---|---|---|---|
 | Có sẵn | Đăng nhập, hồ sơ, quản lý user | [x] | [ ] | [ ] |
-| B0 | Nền, Redis, schema, seed | [ ] | Không cần | Không cần |
+| B0 | Nền, Redis, schema, seed | [x] | Không cần | Không cần |
 | B1 | Học kỳ, danh bạ giảng viên | [ ] | [ ] | [ ] |
 | B2 | Availability, import và xem lịch | [ ] | [ ] | [ ] |
 | B3 | Slot, đặt lịch, duyệt, lịch sử booking | [ ] | [ ] | [ ] |
