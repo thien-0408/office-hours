@@ -289,7 +289,8 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> PENDING: student requests
     PENDING --> CONFIRMED: lecturer confirms
-    PENDING --> DECLINED: lecturer declines
+    PENDING --> DECLINED: lecturer declines, or start time passes
+    PENDING --> CANCELLED: student withdraws
     CONFIRMED --> CANCELLED: either party cancels
     CONFIRMED --> COMPLETED: meeting held
     CONFIRMED --> NO_SHOW: student absent
