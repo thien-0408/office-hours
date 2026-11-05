@@ -38,7 +38,7 @@ Repo backend là private, nên chỉ người được cấp quyền mới mở 
 | Có sẵn | Đăng nhập, hồ sơ, quản lý user | [x] | [ ] | [ ] |
 | B0 | Nền, Redis, schema, seed | [x] | Không cần | Không cần |
 | B1 | Học kỳ, danh bạ giảng viên | [x] | [ ] | [ ] |
-| B2 | Availability, import và xem lịch | [ ] | [ ] | [ ] |
+| B2 | Availability, import và xem lịch | [x] | [ ] | [ ] |
 | B3 | Slot, đặt lịch, duyệt, lịch sử booking | [ ] | [ ] | [ ] |
 | B4 | Hủy, đổi lịch, thông báo, chat, xác nhận đã gặp | [ ] | [ ] | [ ] |
 | B5 | Waitlist, allocation | [ ] | [ ] | [ ] |

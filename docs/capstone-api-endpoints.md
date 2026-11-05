@@ -92,7 +92,7 @@ Maps to `SEMESTERS` entity.
 | POST | `/lecturers/{lecturerId}/availability-exceptions` | Lecturer (self) / Admin | `{ date, type: BLOCK|ADD, startTime, endTime, reason, meetingUrl? }` (`meetingUrl` only applies to `ADD`). (Field is `date`, not `exceptionDate` — matches the FE's `AvailabilityException` type; the DB column itself is `exception_date` per `capstone-db-schema.md` §2.2, so the API layer is expected to rename on the way out.) |
 | DELETE | `/availability-exceptions/{id}` | Lecturer (owner) / Admin | Remove an exception. |
 
-`dayOfWeek` is ISO `1`–`7` (Mon–Sun), not `0`–`6`. `effectiveTo: null` means the semester end (§0.1). When generating slots: apply the rule, subtract `BLOCK` exceptions, add `ADD` exceptions, then subtract the lecturer's own `schedule_entries` (teaching). An `ADD` exception has no slot length, so it becomes one slot spanning its whole window. Editing/deleting a rule must never touch slots that already have a booking.
+`dayOfWeek` is ISO `1`–`7` (Mon–Sun), not `0`–`6`. `effectiveTo: null` means the semester end (§0.1). When generating slots: apply the rule, subtract `BLOCK` exceptions, add `ADD` exceptions, then subtract the lecturer's own `schedule_entries` (teaching). An `ADD` exception has no slot length, so it becomes one slot spanning its whole window; an `ADD` that cannot produce a slot (overlap with a kept slot, a booked slot or a schedule entry) returns `409`. Exception dates must be today or later and inside a semester. `reason` is returned only to the owner and Admin. Changing a semester's dates also regenerates its future unbooked slots. Editing/deleting a rule must never touch slots that already have a booking. Changing a lecturer's `schedule_entries` (import, add or delete) regenerates their future unbooked slots under the same rule.
 
 **Online meeting link (`meetingUrl`).** The platform does not host video; a lecturer pastes a Meet/Zoom/Teams link once per rule (or per `ADD` exception) and slot generation copies it to `slots.meeting_url`. It is optional (`null` = in person), must be an absolute `https://` URL of ≤ 500 chars, and is not restricted to specific domains. Editing a rule's link updates future unbooked slots only; a lecturer may override the link of a single booking via `PATCH /bookings/{id}` (§5). The booking DTO exposes the effective link `bookings.meeting_url ?? slots.meeting_url`, and only to the booking's participants, the slot's lecturer and Admin (never in the public slot listing before a booking is confirmed).
 
@@ -130,13 +130,13 @@ Maps to `AVAILABILITY_RULES`, `AVAILABILITY_EXCEPTIONS`.
 | POST | `/users/me/schedule-entries` | Student / Lecturer | Manually add one block of your own (backs the "Add schedule event" modal; stored with `source: MANUAL`). Same body as above minus `semesterId` default (active semester). |
 | DELETE | `/schedule-entries/{id}` | Owner / Admin | Remove one busy block. |
 | GET | `/users/me/schedule-imports` | Student / Lecturer | `ScheduleImportHistoryEntry[]`: `{ id, importedAt, mode, sourceFiles[], addedCount, skippedCount, replacedCount, status: SUCCESS\|FAILED }`. Exactly one record per batch, including every source file; `importedAt` maps from `created_at`, counts from `rows_added/rows_skipped/rows_replaced`, and DB `COMPLETED` maps to API `SUCCESS`. Failed batches have all three mutation counts zero. No `fileName`/`rowCount` aliases. |
-| GET | `/schedule-imports` | Admin | Paginated import history using the same batch DTO, with additional `{ uploadedBy, targetUserId }` numeric fields; `targetUserId` is the resolved owner (`target_user_id ?? uploaded_by`). |
+| GET | `/schedule-imports` | Admin | Paginated import history using the same batch DTO, with additional `{ uploadedBy, targetUserId }` UUID fields; `targetUserId` is the resolved owner (`target_user_id ?? uploaded_by`). |
 
 ### 4.2 Batch payload schema (backend-defined; the FE type is `ScheduleBatchPayload` in `lib/office-hours/types.ts`)
 
 ```json
 {
-  "semesterId": 12,
+  "semesterId": "2f6c1c9e-7f3a-4b1d-9a55-0c8e6d4b2a11",
   "mode": "REPLACE",
   "sourceFiles": ["TimeTable-lecture.pdf", "TimeTable-lab.pdf"],
   "rows": [
@@ -157,7 +157,7 @@ Maps to `AVAILABILITY_RULES`, `AVAILABILITY_EXCEPTIONS`.
 
 | Field | Type / rule |
 |---|---|
-| `semesterId` | required integer, existing semester; the FE explicitly sends the active semester id, no implicit backend default |
+| `semesterId` | required UUID, existing semester; the FE explicitly sends the active semester id, no implicit backend default |
 | `mode` | required `REPLACE` \| `MERGE`; the FE defaults its selection to `REPLACE` |
 | `sourceFiles` | required array (may be empty), ≤ 20 names, each ≤ 255 chars (audit only) |
 | `rows` | required array, 1–2 000 rows |
