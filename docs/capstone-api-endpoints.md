@@ -186,7 +186,7 @@ Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in �
 |---|---|---|---|
 | GET | `/lecturers` | Authenticated | Browse/search lecturers — the entry point into slot browsing. `?q=` (free-text over name + department), `?department=` (exact match), `?dayOfWeek=1-7` (Mon=1..Sun=7 — only lecturers with ≥1 remaining open slot that weekday), `?availableOnly=true` (has any open slot left this week). Returns `{ content: Lecturer[], totalElements, totalPages, page, size }` per §0 pagination convention, where `Lecturer = { id, slug, name, department, photoUrl, blurb }`. |
 | GET | `/lecturers/{id}` | Authenticated | Single lecturer profile (same `Lecturer` shape) — backs the slot-picker page header. |
-| GET | `/users/me/suggested-slots` | Student | **Proactive Recommendation Feed.** Surfaces verified conflict-free open slots across faculty advisors (checked against the student's 07:30 AM class schedule). Filterable by `?category=ALL\|CS\|MATH\|SOON`, where `MATH` is actually a "Math & Physics" bucket that also folds in Economics (department name matches "math", "physic", or "econ" — see the FE's `SuggestedSlotsCard.tsx`, whose own tab label reads "Math & Physics"; consider renaming the query value to match once the backend exists). Returns `{ id, lecturerId, lecturerName, department, photoUrl, startAt, endAt, dayOfWeek, dayLabel, formattedTime, specialtyTag, blurb, isConflictFree }` — `dayOfWeek` (1-7, used for conflict-day filtering) and `blurb` (short lecturer description, part of the shape though not yet rendered by the card) were missing from earlier drafts of this row. The FE card caps display at 6 results (`.slice(0, 6)`); paginate server-side if the real feed can exceed that. Powers the student dashboard 1-click booking card. |
+| GET | `/users/me/suggested-slots` | Student | **Proactive Recommendation Feed.** Surfaces verified conflict-free open slots across faculty advisors (checked against the student's 07:30 AM class schedule). Filterable by `?category=ALL\|CS\|MATH\|SOON`, where `MATH` is actually a "Math & Physics" bucket that also folds in Economics (department name matches "math", "physic", or "econ" — see the FE's `SuggestedSlotsCard.tsx`, whose own tab label reads "Math & Physics"; consider renaming the query value to match once the backend exists). Returns `{ id, lecturerId, lecturerName, department, photoUrl, startAt, endAt, dayOfWeek, dayLabel, formattedTime, specialtyTag, blurb, isConflictFree }` — `dayOfWeek` (1-7, used for conflict-day filtering) and `blurb` (short lecturer description, part of the shape though not yet rendered by the card) were missing from earlier drafts of this row. The response is a plain array. `?limit=` accepts 1–50 and defaults to 6, matching the FE card. Candidates start within the next 14 days; slots overlapping the student's classes or `PENDING`/`CONFIRMED` bookings are removed before `limit` applies, so `isConflictFree` is always `true`. `SOON` means today or tomorrow in `Asia/Ho_Chi_Minh`. Powers the student dashboard 1-click booking card. |
 
 | Method | Path | Role | Description |
 |---|---|---|---|
@@ -199,27 +199,42 @@ Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in �
 | GET | `/bookings/{id}/timeline` | Owner (student/lecturer) / Admin | Booking history from `booking_events`, oldest first. Returns `BookingTimelineEvent[]`, each `{ id, type, label, at, status, note }`, with `note` nullable. |
 | POST | `/bookings/{id}/confirm` | Lecturer (owner of slot) | UC8. → `status: CONFIRMED`; notifies student. The first successful confirm atomically auto-`DECLINE`s the slot's other PENDING requests with notifications. A later confirm of a loser returns `409` with `error: "SLOT_ALREADY_CONFIRMED"`. Confirm is rejected with `409` from the slot's `start_at`; a job sets any `PENDING` request past `start_at` to `DECLINED` with a system reason in `booking_events`. See §12 for transaction handling. |
 | POST | `/bookings/{id}/decline` | Lecturer (owner of slot) | `{ reason? }`. → `status: DECLINED`; notifies student; may trigger waitlist allocation (§7) if others are queued. |
-| POST | `/bookings/{id}/cancel` | Student or Lecturer (participant) | FR-9. A `PENDING` request can always be withdrawn. For a `CONFIRMED` booking, enforces configurable notice-period rule (reject if inside window, unless Admin override). → `status: CANCELLED`; triggers waitlist allocation if slot had a queue. |
-| POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }` — the FE reschedule dialog lists the lecturer's open, conflict-free slots (`GET /lecturers/{id}/slots`) and sends the chosen slot id; free-form date/time is not accepted. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule (`CONFIRMED` bookings only). |
+| POST | `/bookings/{id}/cancel` | Student or Lecturer (participant) | FR-9. A `PENDING` request can always be withdrawn. For a `CONFIRMED` booking, enforces the 24-hour notice period: inside the window it returns `409 CANCELLATION_NOTICE_PASSED` with `details.noticeHours`, unless the actor is an Admin. → `status: CANCELLED`; triggers waitlist allocation if slot had a queue. |
+| POST | `/bookings/{id}/reschedule` | Student | `{ newSlotId }` — the FE reschedule dialog lists the lecturer's open, conflict-free slots (`GET /lecturers/{id}/slots`) and sends the chosen slot id; free-form date/time is not accepted. Equivalent to cancel + create, executed atomically; subject to same conflict checks and notice-period rule (`CONFIRMED` bookings only). A slot that is the same one or belongs to another lecturer returns `422 BOOKING_RESCHEDULE_SLOT_INVALID`. The replacement starts as `PENDING`, so the lecturer must confirm it again. |
 | POST | `/bookings/{id}/complete` | Lecturer | Lecturer confirms the meeting happened, allowed from the slot's `start_at`. → `COMPLETED`; writes `MEETING_RECORDS.attended = true`. If the lecturer never confirms, a job sets `COMPLETED` 24 hours after `end_at` without a meeting record, which means unconfirmed. |
 | POST | `/bookings/{id}/no-show` | Lecturer | FR-10, allowed from the slot's `start_at`. → `status: NO_SHOW`; writes `MEETING_RECORDS.attended = false`. |
 | PATCH | `/bookings/{id}` | Lecturer (owner of slot) | `{ meetingUrl: string \| null }` — override (or clear, falling back to the slot's link) the online-meeting link of one booking. `https://` only, ≤ 500 chars; `422` otherwise. |
 | PATCH | `/bookings/{id}/meeting-record` | Lecturer | `{ attended, notes? }`. Optional text field only — explicitly **not** an LMS field (§5.3 scope guard). |
-| GET | `/bookings/{id}/messages` | Owner (student/lecturer) / Admin | Chat history, newest first. `?before=<id>&limit=` pages back; `?after=<id>` fetches what was missed while disconnected. |
-| POST | `/bookings/{id}/messages/read` | Owner (student/lecturer) | `{ upToId }`. Marks the other party's messages as read and broadcasts the change. |
+| GET | `/bookings/{id}/messages` | Owner (student/lecturer) / Admin | Chat history as a plain array, available in every booking status. With no cursor or `?before=<id>`: newest first. `?after=<id>`: ascending order, for what was missed while disconnected. `?limit=` accepts 1–100 and defaults to 50. Sending both cursors is a validation error. Each item is `{ id, bookingId, senderId, type, body, clientMessageId, createdAt, readAt }`, with `type` `TEXT` or `SYSTEM`. |
+| POST | `/bookings/{id}/messages/read` | Owner (student/lecturer) | `{ upToId }`, answers `204`. Marks the other party's `TEXT` messages up to that id as read, keeps any earlier `readAt`, and broadcasts only if something changed. Allowed in every booking status. An Admin gets `403`. |
 
 **Booking response (DTO).** Besides display names, every booking carries the ids the UI needs: `{ id, slotId, lecturerId, studentId, lecturerName, studentName, department, topic, startAt, endAt, status, meetingUrl, participants? }` (`meetingUrl` is the effective link, `string | null`, see §3; FE type `Booking`, `lib/office-hours/types.ts`).
 
 Maps to `SLOTS`, `BOOKINGS`, `MEETING_RECORDS`, `CHAT_MESSAGES`. State machine per §9.3.
 
-**Chat WebSocket (STOMP).** Connect to `/ws` with `Authorization: Bearer <accessToken>` in the CONNECT frame. Only the booking's student and lecturer can subscribe.
+**Chat WebSocket (STOMP).** Connect with native WebSocket (no SockJS) to `/api/v1/ws`, with `Authorization: Bearer <accessToken>` in the CONNECT frame. The handshake itself needs no token, and origins follow `CORS_ALLOWED_ORIGINS`. Only the booking's student and lecturer can subscribe, with no Admin exception. The token is checked again on every `SUBSCRIBE` and `SEND`; a rejected frame produces a STOMP `ERROR` with the generic message `Chat frame rejected`, and the server then closes the connection, so the client must reconnect, with a fresh token if it expired.
 
 | Direction | Destination | Payload |
 |---|---|---|
 | Send | `/app/bookings/{id}/messages` | `{ clientMessageId, body }`, up to 2,000 characters, only while the booking is `CONFIRMED` |
 | Send | `/app/bookings/{id}/typing` | `{ typing }`, never stored |
-| Subscribe | `/topic/bookings/{id}/messages` | New messages, including `SYSTEM` messages for status changes, and read updates |
+| Subscribe | `/topic/bookings/{id}/messages` | Frames with a `kind`, listed below |
 | Subscribe | `/topic/bookings/{id}/typing` | `{ userId, typing }` |
+| Subscribe | `/user/queue/chat-errors` | `{ clientMessageId, error }`, sent only to the sender of a rejected frame |
+
+Frames on `/topic/bookings/{id}/messages`:
+
+| `kind` | Fields | Meaning |
+|---|---|---|
+| `MESSAGE` | The history item fields | A stored message. A resend repeats the same `id`, so clients deduplicate by `id`. |
+| `READ` | `bookingId, readerId, upToId, readAt` | The other party read up to `upToId`. |
+| `ROOM_CLOSED` | `bookingId, status` | The booking left `CONFIRMED`. Later sends are rejected, and history stays readable. |
+
+**Sending rules.** `clientMessageId` is a required UUID, and a resend by the same sender returns the existing row without a second one. `body` is required, not blank, at most 2,000 code points. Limits: 20 messages and 10 typing events per sender per booking per 10 seconds. Typing events over the limit are dropped silently. Error keys: `VALIDATION_FAILED`, `CHAT_NOT_OPEN`, `CHAT_RATE_LIMITED`, `CHAT_CLIENT_MESSAGE_ID_REUSED`, `UNEXPECTED`.
+
+**`SYSTEM` messages.** `senderId` is null, and `body` is a stable key for the client to translate: `booking.confirmed`, `booking.completed`, `booking.completed.automatic`, `booking.no_show`, `booking.cancelled`, `booking.rescheduled`. Rooms that never opened produce none.
+
+**Push.** A new `TEXT` message sends an FCM push to the other participant when they have no open subscription to the room. The title is the sender's name, the body is the message cut to 100 code points, and data is `{ type: "CHAT_MESSAGE", bookingId, messageId }`. Room presence and SSE connections are held in memory, so both assume one backend instance.
 
 ### 5.1 Group Bookings (FR-15, Stretch; UC5)
 
@@ -291,7 +306,7 @@ Maps to `ALLOCATION_POLICIES`, `ALLOCATION_EVENTS`. This cluster is the **resear
 | GET | `/notifications` | Authenticated | List own notifications, `?unreadOnly=true`. |
 | POST | `/notifications/{id}/read` | Authenticated (owner) | Mark one as read. |
 | POST | `/notifications/read-all` | Authenticated | Mark all read. |
-| GET | `/notifications/stream` | Authenticated | **SSE** (`text/event-stream`) — pushes the events in the catalogue below in real time. Browsers' `EventSource` cannot send an `Authorization` header, so the FE reads the stream with `fetch` (e.g. `@microsoft/fetch-event-source`) and the bearer token from `localStorage`; a polling fallback `GET /notifications?since=` is acceptable (and enough for the MVP). |
+| GET | `/notifications/stream` | Authenticated | **SSE** (`text/event-stream`) — pushes the events in the catalogue below in real time. Browsers' `EventSource` cannot send an `Authorization` header, so the FE reads the stream with `fetch` (e.g. `@microsoft/fetch-event-source`) and the bearer token from `localStorage`; a polling fallback `GET /notifications?since=` is acceptable (and enough for the MVP). A query-string token is never accepted. There is no `Last-Event-ID` replay. A user has at most 5 connections, and a sixth closes the oldest. A heartbeat comment every 25 seconds also checks the token, so the stream ends when the token expires: the client must reconnect with a fresh token and reconcile with `?since=`. |
 
 **Event catalogue (single source of truth — FE enum in parentheses):**
 
@@ -308,7 +323,9 @@ Maps to `ALLOCATION_POLICIES`, `ALLOCATION_EVENTS`. This cluster is the **resear
 The API returns `{ id, type, title, body, createdAt, read, bookingId? }`; `type` is the **uppercase FE enum** from the table. SSE uses the dotted event name and the same DTO as its JSON data. The backend renders `title`/`body` in the requested locale (`Accept-Language: en|vi`, default `en`); `payload` remains internal. Per-user prefs (`NotificationPrefs`: `bookingConfirmed`, `bookingDeclined`, `waitlistOffer`, `reminders`) default to true, are stored as `users.notification_prefs`, and are read/edited through `/users/me`. Preferences control email delivery; retain in-app records and SSE for every lifecycle event.
 
 Backing delivery (not directly called by FE, triggered internally on lifecycle events per §9.1/§9.2):
-- Email via SMTP for the same event set — no separate REST surface, fired server-side alongside the SSE push and `NOTIFICATIONS` row insert.
+- Email via SMTP for the same event set — no separate REST surface, fired server-side alongside the SSE push and `NOTIFICATIONS` row insert. `booking.pending` and `booking.cancelled` have no preference and always send. Mail goes out after commit on a bounded queue, in the locale of `MAIL_DEFAULT_LOCALE` (default `vi`). `POST /auth/forgot-password` prepares its token and email in the background too, so its response time and body do not reveal whether an address has an account.
+- FCM push and a read-only Firestore copy for the mobile app, after commit on one background worker. Email preferences do not apply to pushes. A slow or failing Firebase never affects the request.
+- `reminder.upcoming` is sent once per person per booking, by a job running every 5 minutes, for `CONFIRMED` bookings starting within 24 hours. A booking confirmed less than 24 hours ahead is reminded at the next run.
 
 Maps to `NOTIFICATIONS`.
 
@@ -329,7 +346,7 @@ Maps to `NOTIFICATIONS`.
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/public/office-hours` | Public (no auth) | "Office hours this week" — read-only listing of open (`slots.status = 'OPEN'`) slots across all lecturers, bounded to the current week, `?department=` (exact match, optional) `&page=&size=` (§0 pagination convention). Returns `{ content: PublicSlot[], totalElements, totalPages, page, size }` where `PublicSlot = { lecturerName, department, startAt, endAt }`. No student/lecturer PII beyond lecturer name/department — no email, no booking/student data joined in. |
+| GET | `/public/office-hours` | Public (no auth) | "Office hours this week" — read-only listing of open (`slots.status = 'OPEN'`) slots with no `CONFIRMED` booking, across active lecturers, from now until Sunday of the current week in `Asia/Ho_Chi_Minh`, ordered by `startAt` then id (a client `sort` is ignored), `?department=` (exact match, optional) `&page=&size=` (§0 pagination convention). Returns `{ content: PublicSlot[], totalElements, totalPages, page, size }` where `PublicSlot = { lecturerName, department, startAt, endAt }`. No student/lecturer PII beyond lecturer name/department — no email, no booking/student data joined in. |
 
 ---
 
