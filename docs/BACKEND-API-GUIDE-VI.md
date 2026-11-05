@@ -279,10 +279,10 @@ EXISTS (SELECT 1 FROM schedule_entries
 | POST | `/bookings` | S | `{ slotId, topic?, participantEmails? }`. Validate lại xung đột. `201 Booking` + `status: PENDING`; `409` kèm `details: { waitlistAvailable: true }`; `422` xung đột. Nhiều PENDING có thể cùng slot; constraint bảo vệ CONFIRMED. |
 | GET | `/bookings` | A | Student: booking của mình. Lecturer: booking cần duyệt. Admin lọc theo user. Lọc `?status=`. |
 | GET | `/bookings/{id}` | O/AD | Chi tiết + `participants`. |
-| POST | `/bookings/{id}/confirm` | L(chủ slot) | Confirm đầu tiên → CONFIRMED, tự DECLINE đối thủ và thông báo cùng transaction. Confirm đối thủ sau đó → `409 SLOT_ALREADY_CONFIRMED`; rollback exclusion violation trước khi ghi tiếp (API §12). |
+| POST | `/bookings/{id}/confirm` | L(chủ slot) | Confirm đầu tiên → CONFIRMED, tự DECLINE đối thủ và thông báo cùng transaction. Confirm đối thủ sau đó → `409 SLOT_ALREADY_CONFIRMED`; rollback exclusion violation trước khi ghi tiếp (API §12). Từ `start_at` của slot, confirm trả `409`; một job chuyển yêu cầu `PENDING` đã quá `start_at` sang `DECLINED`, ghi lý do hệ thống vào `booking_events`. |
 | POST | `/bookings/{id}/decline` | L(chủ slot) | `{ reason? }` → `DECLINED`; có thể kích hoạt allocation nếu có waitlist. |
-| POST | `/bookings/{id}/cancel` | S/L (thành viên) | FR-9: áp **notice period** cấu hình được (từ chối nếu nằm trong cửa sổ, trừ Admin). → `CANCELLED`; kích hoạt allocation nếu slot có hàng đợi. |
-| POST | `/bookings/{id}/reschedule` | S | `{ newSlotId }` — tương đương cancel+create **trong một transaction**, cùng luật xung đột & notice period. FE cho người dùng chọn slot từ `GET /lecturers/{id}/slots`; **không** nhận ngày giờ tự do (mục 3 #2). |
+| POST | `/bookings/{id}/cancel` | S/L (thành viên) | FR-9: yêu cầu `PENDING` luôn được rút. Với booking `CONFIRMED`, áp **notice period** cấu hình được (từ chối nếu nằm trong cửa sổ, trừ Admin). → `CANCELLED`; kích hoạt allocation nếu slot có hàng đợi. |
+| POST | `/bookings/{id}/reschedule` | S | `{ newSlotId }` — tương đương cancel+create **trong một transaction**, cùng luật xung đột & notice period (chỉ với `CONFIRMED`). FE cho người dùng chọn slot từ `GET /lecturers/{id}/slots`; **không** nhận ngày giờ tự do (mục 3 #2). |
 | POST | `/bookings/{id}/complete` | L | `CONFIRMED` đã qua giờ → `COMPLETED` (hoặc job tự động sau `end_at`). |
 | POST | `/bookings/{id}/no-show` | L | FR-10 → `NO_SHOW`. |
 | PATCH | `/bookings/{id}/meeting-record` | L | `{ attended, notes? }` — `notes` là text tùy chọn, **không** phải trường LMS (giữ trần phạm vi). |
