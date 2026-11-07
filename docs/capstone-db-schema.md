@@ -9,7 +9,7 @@
 | **Timestamps** | `timestamptz` throughout — never naive `timestamp` (multi-timezone-safe even for a single-institution deploy) |
 | **Source mapping** | Every table cites the FR / entity it implements from the plan |
 
-> **Migrations:** applied in the backend as Flyway V1–V10. Where this document uses `CREATE TYPE ... AS ENUM`, the migrations use `varchar` with a `CHECK` constraint, the same as `users.role` in V1. Values are unchanged.
+> **Migrations:** applied in the backend as Flyway V1–V15. Where this document uses `CREATE TYPE ... AS ENUM`, the migrations use `varchar` with a `CHECK` constraint, the same as `users.role` in V1. Values are unchanged.
 >
 > **Storage baseline — 15 October 2026.** It owns column names, nullability and constraints; the API baseline in `capstone-api-endpoints.md` owns JSON DTO names. `DB-SCHEMA-PROTOTYPE.md`, Word tables and draw.io are derived views, not competing schemas. Use `id` for entity PKs except shared `lecturer_profiles.user_id` and composite `booking_participants` keys.
 
@@ -95,8 +95,11 @@ CREATE TABLE lecturer_profiles (
     slug        varchar(80)  NOT NULL UNIQUE,   -- derived from full_name, e.g. 'amara-chen'; used in URLs
     photo_url   text,
     blurb       varchar(280),                   -- short description shown on the directory card
-    specialty   varchar(100)                    -- e.g. 'Algorithms & Capstone' (feeds suggested-slot tags)
+    specialty   varchar(100),                   -- e.g. 'Algorithms & Capstone' (feeds suggested-slot tags)
+    office_room_id uuid REFERENCES campus_rooms (id) ON DELETE SET NULL  -- where the lecturer sits; NULL = not set (V14)
 );
+
+CREATE INDEX idx_lecturer_profiles_office_room ON lecturer_profiles (office_room_id) WHERE office_room_id IS NOT NULL;
 ```
 
 > `users` deliberately has no `slug`/`photo_url`/`blurb`; those exist only for lecturers. App-level guard (not expressible as a `CHECK` across tables): `user_id` must reference a user with `role = 'LECTURER'`.
@@ -116,6 +119,30 @@ CREATE TABLE semesters (
 -- Only one active semester at a time
 CREATE UNIQUE INDEX uq_semesters_one_active ON semesters (is_active) WHERE is_active = true;
 ```
+
+---
+
+### 1.3 `campus_rooms` (mobile campus map; V14, `code` and `capacity` added in V15)
+
+```sql
+CREATE TABLE campus_rooms (
+    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    building_code  varchar(20) NOT NULL,        -- 'B3', 'B8', 'B11' in the floor plans; demo data uses 'B08', 'B09'
+    floor          smallint    NOT NULL,
+    name           varchar(50) NOT NULL,        -- as printed on the plan, e.g. 'P.VIP', '101'
+    code           varchar(30),                 -- full room code '<room>.<building>', e.g. '100.B3'; NULL = unknown
+    capacity       smallint,                    -- seats; NULL = unknown
+    x_m            real,                        -- campus metres, NULL until surveyed
+    z_m            real,
+    qr_secret      text        NOT NULL,        -- reserved for signing room QR codes; never returned by the API
+    CONSTRAINT uq_campus_rooms_location UNIQUE (building_code, floor, name),
+    CONSTRAINT chk_campus_rooms_capacity CHECK (capacity IS NULL OR capacity > 0)
+);
+
+CREATE UNIQUE INDEX uq_campus_rooms_code ON campus_rooms (code) WHERE code IS NOT NULL;
+```
+
+> `code` and `capacity` exist so the floor-plan list in the mobile repo (`docs/campus/eiu-rooms.json`: `building`, `floor`, `code`, `name`, `capacity`) can be imported later without a schema change. That file reads building as `B3`, so an import must map it to `building_code` as it is. Many plan rows have no capacity, which is why both columns are nullable. `lecturer_profiles.office_room_id` points here; deleting a room clears the link. Served by `GET /campus/rooms`; the QR secret is never exposed.
 
 ---
 
@@ -506,6 +533,9 @@ CREATE TABLE waitlist_entries (
 
 CREATE INDEX idx_waitlist_slot_status ON waitlist_entries (slot_id, status);
 CREATE INDEX idx_waitlist_student ON waitlist_entries (student_id, status);
+
+-- At most one live offer per slot (V13); the slot is held while it exists
+CREATE UNIQUE INDEX uq_waitlist_one_offer_per_slot ON waitlist_entries (slot_id) WHERE status = 'OFFERED';
 ```
 
 > A waitlist entry belongs to one concrete slot (`slot_id`); the UI's "position" and slot label are **derived on read** (rank by `requested_at`/`priority_score` among `WAITING` entries of that slot) — there is no `position` column. A scheduled job moves `OFFERED` entries past `offer_expires_at` to `EXPIRED` and re-runs allocation.
@@ -614,13 +644,18 @@ CREATE INDEX idx_experiments_policy ON experiments (policy_id);
 CREATE TABLE notifications (
     id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    type        varchar(50) NOT NULL,   -- catalogue: booking.pending | booking.confirmed | booking.declined | booking.cancelled | waitlist.offered | waitlist.expired | reminder.upcoming (see API doc §8)
+    type        varchar(50) NOT NULL,   -- catalogue: booking.pending | booking.confirmed | booking.declined | booking.cancelled | waitlist.offered | waitlist.expired | waitlist.accepted | reminder.upcoming (see API doc §8)
     payload     jsonb NOT NULL DEFAULT '{}',
     read_at     timestamptz,
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read_at IS NULL;
+-- Paging of GET /notifications (V11)
+CREATE INDEX idx_notifications_user_created_id ON notifications (user_id, created_at DESC, id);
+-- A reminder is stored once per person per booking (V12)
+CREATE UNIQUE INDEX idx_notifications_reminder_once
+    ON notifications (user_id, (payload ->> 'bookingId')) WHERE type = 'reminder.upcoming';
 ```
 
 ---
@@ -632,7 +667,8 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | `users` | FR-1 | Root identity table; role enum drives RBAC |
 | `password_reset_tokens` | FR-1 | Hashed, expiring, single-use password-reset tokens |
 | `refresh_tokens` | FR-1 | Hashed refresh-token sessions; rotation + revoke-all on logout/password change |
-| `lecturer_profiles` | FR-6 | slug / photo / blurb for the lecturer directory (1-to-1 with a LECTURER user) |
+| `lecturer_profiles` | FR-6 | slug / photo / blurb for the lecturer directory (1-to-1 with a LECTURER user); `office_room_id` links to `campus_rooms` |
+| `campus_rooms` | Mobile campus map | Rooms with building, floor, code, capacity and map position; QR secret never exposed |
 | `semesters` | FR-2 | Single active semester enforced by partial unique index |
 | `availability_rules` | FR-3, UC6 | Generates `slots` |
 | `availability_exceptions` | FR-4, UC7 | `BLOCK`/`ADD`, applied at slot-generation time |
@@ -645,7 +681,7 @@ CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE read
 | `booking_events` | FR-7, FR-9, FR-10 | Append-only booking history; backs the booking timeline |
 | `chat_messages` | Chat feature | Per-booking chat over WebSocket; Postgres is the source of truth |
 | `recurring_bookings` | FR-16 | Standing weekly series |
-| `waitlist_entries` | FR-12, UC3 | Research demand queue |
+| `waitlist_entries` | FR-12, UC3 | Research demand queue; one live `OFFERED` entry per slot |
 | `allocation_policies` | FR-13, UC12 | Pluggable, one active at a time |
 | `allocation_events` | FR-14, UC14; Risk #1 mitigation | Reproducibility backbone (NFR-3); `OVERRIDDEN` decision backs the admin override endpoint |
 | `synthetic_demand_runs`, `experiment_groups`, `experiments` | §11.4 | Research-only; one parent group has one result per requested policy |

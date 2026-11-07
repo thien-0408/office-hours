@@ -24,6 +24,18 @@ ENTITIES = [
         ("photo_url", "text", "Profile photo address"),
         ("blurb", "varchar(280)", "Short description shown on the directory card"),
         ("specialty", "varchar(100)", "Main teaching or research area"),
+        ("office_room_id", "uuid (FK)", "Foreign key referencing campus_rooms(id); the lecturer's office, NULL if not set"),
+    ]),
+    ("campus_rooms", "Rooms of the campus used by the mobile map and as lecturers' offices.", [
+        ("id", "uuid (PK)", "Unique room identifier"),
+        ("building_code", "varchar(20)", "Building the room belongs to, e.g. B3"),
+        ("floor", "smallint", "Floor number"),
+        ("name", "varchar(50)", "Room name as printed on the floor plan"),
+        ("code", "varchar(30) (UK)", "Full room code such as 100.B3; NULL if unknown"),
+        ("capacity", "smallint", "Number of seats, positive; NULL if unknown"),
+        ("x_m", "real", "East-west position in campus metres, NULL until surveyed"),
+        ("z_m", "real", "North-south position in campus metres, NULL until surveyed"),
+        ("qr_secret", "text", "Secret reserved for signing room QR codes; never returned by the API"),
     ]),
     ("password_reset_tokens", "Single-use tokens for the forgot-password flow.", [
         ("id", "uuid (PK)", "Unique token record identifier"),
@@ -170,6 +182,26 @@ ENTITIES = [
         ("notes", "text", "Optional free-text notes"),
         ("recorded_at", "timestamptz", "Time the record was saved"),
     ]),
+    ("booking_events", "Append-only history of every booking status change; backs the booking timeline.", [
+        ("id", "bigint (PK)", "Identity number of the event"),
+        ("booking_id", "uuid (FK)", "Foreign key referencing bookings(id)"),
+        ("event_type", "enum", "CREATED, CONFIRMED, DECLINED, CANCELLED, RESCHEDULED, COMPLETED or NO_SHOW"),
+        ("status", "enum", "Booking status after this event"),
+        ("actor_id", "uuid (FK)", "Foreign key referencing users(id); NULL when the system acted"),
+        ("related_booking_id", "uuid (FK)", "Foreign key referencing bookings(id); the replacement booking of a reschedule"),
+        ("note", "varchar(255)", "Optional reason or note"),
+        ("created_at", "timestamptz", "Time of the event"),
+    ]),
+    ("chat_messages", "Messages exchanged between the student and the lecturer of one booking.", [
+        ("id", "bigint (PK)", "Identity number of the message"),
+        ("booking_id", "uuid (FK)", "Foreign key referencing bookings(id)"),
+        ("sender_id", "uuid (FK)", "Foreign key referencing users(id); NULL only for SYSTEM messages"),
+        ("message_type", "enum", "TEXT or SYSTEM"),
+        ("body", "varchar(2000)", "Message text, or a translation key for SYSTEM messages"),
+        ("client_message_id", "uuid", "Client-generated id that makes a resend safe; unique with sender_id"),
+        ("created_at", "timestamptz", "Time the message was stored"),
+        ("read_at", "timestamptz", "Time the other party read it; NULL means unread"),
+    ]),
     ("recurring_bookings", "Weekly repeating consultations between a student and a lecturer.", [
         ("id", "uuid (PK)", "Unique recurring booking identifier"),
         ("student_id", "uuid (FK)", "Foreign key referencing users(id)"),
@@ -242,7 +274,7 @@ ENTITIES = [
     ("notifications", "In-app notifications delivered to users.", [
         ("id", "uuid (PK)", "Unique notification identifier"),
         ("user_id", "uuid (FK)", "Foreign key referencing users(id)"),
-        ("type", "varchar(50)", "booking.pending, booking.confirmed, booking.declined, booking.cancelled, waitlist.offered, waitlist.expired or reminder.upcoming"),
+        ("type", "varchar(50)", "booking.pending, booking.confirmed, booking.declined, booking.cancelled, waitlist.offered, waitlist.expired, waitlist.accepted or reminder.upcoming"),
         ("payload", "jsonb", "Event data used to render the message"),
         ("read_at", "timestamptz", "Time the user read it; NULL means unread"),
         ("created_at", "timestamptz", "Creation time"),
@@ -252,6 +284,7 @@ ENTITIES = [
 # (child, child_field, parent, parent_field, kind)
 RELATIONS = [
     ("lecturer_profiles", "user_id", "users", "id", "11"),
+    ("lecturer_profiles", "office_room_id", "campus_rooms", "id", "n1"),
     ("password_reset_tokens", "user_id", "users", "id", "n1"),
     ("refresh_tokens", "user_id", "users", "id", "n1"),
     ("notifications", "user_id", "users", "id", "n1"),
@@ -278,6 +311,11 @@ RELATIONS = [
     ("booking_participants", "booking_id", "bookings", "id", "n1"),
     ("booking_participants", "student_id", "users", "id", "n1"),
     ("meeting_records", "booking_id", "bookings", "id", "11"),
+    ("booking_events", "booking_id", "bookings", "id", "n1"),
+    ("booking_events", "actor_id", "users", "id", "n1"),
+    ("booking_events", "related_booking_id", "bookings", "id", "n1"),
+    ("chat_messages", "booking_id", "bookings", "id", "n1"),
+    ("chat_messages", "sender_id", "users", "id", "n1"),
     ("recurring_bookings", "student_id", "users", "id", "n1"),
     ("recurring_bookings", "lecturer_id", "users", "id", "n1"),
     ("recurring_bookings", "semester_id", "semesters", "id", "n1"),
@@ -293,9 +331,9 @@ RELATIONS = [
 
 # Grid layout for the draw.io diagram: one list per column, top to bottom.
 LAYOUT = [
-    ["users", "lecturer_profiles", "password_reset_tokens", "refresh_tokens", "notifications"],
+    ["users", "lecturer_profiles", "campus_rooms", "password_reset_tokens", "refresh_tokens", "notifications"],
     ["semesters", "availability_rules", "availability_exceptions", "slots"],
-    ["bookings", "booking_participants", "meeting_records", "recurring_bookings"],
+    ["bookings", "booking_participants", "meeting_records", "booking_events", "chat_messages", "recurring_bookings"],
     ["waitlist_entries", "allocation_events", "allocation_policies", "experiment_groups", "experiments", "synthetic_demand_runs"],
     ["schedule_entries", "schedule_imports", "schedule_import_staging"],
 ]
