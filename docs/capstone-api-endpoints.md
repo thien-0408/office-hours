@@ -189,7 +189,7 @@ Maps to `SCHEDULE_ENTRIES` and `SCHEDULE_IMPORTS`. Feeds conflict detection in �
 | Method | Path | Role | Description |
 |---|---|---|---|
 | GET | `/lecturers` | Authenticated | Browse/search lecturers — the entry point into slot browsing. `?q=` (free-text over name + department), `?department=` (exact match), `?dayOfWeek=1-7` (Mon=1..Sun=7 — only lecturers with ≥1 remaining open slot that weekday), `?availableOnly=true` (has any open slot left this week). Returns `{ content: Lecturer[], totalElements, totalPages, page, size }` per §0 pagination convention, where `Lecturer = { id, slug, name, department, photoUrl, blurb }`. |
-| GET | `/lecturers/{id}` | Authenticated | Single lecturer profile — backs the slot-picker page header. Same `Lecturer` shape plus `officeRoom`: `{ id, buildingCode, floor, name, xM?, zM? }` or `null` when the lecturer has no office room. The list endpoint does not include `officeRoom`. |
+| GET | `/lecturers/{id}` | Authenticated | Single lecturer profile — backs the slot-picker page header. Same `Lecturer` shape plus `officeRoom`: `{ id, buildingCode, floor, name, code?, capacity?, xM?, zM? }` or `null` when the lecturer has no office room. The list endpoint does not include `officeRoom`. |
 | GET | `/users/me/suggested-slots` | Student | **Proactive Recommendation Feed.** Surfaces verified conflict-free open slots across faculty advisors (checked against the student's 07:30 AM class schedule). Filterable by `?category=ALL\|CS\|MATH\|SOON`, where `MATH` is actually a "Math & Physics" bucket that also folds in Economics (department name matches "math", "physic", or "econ" — see the FE's `SuggestedSlotsCard.tsx`, whose own tab label reads "Math & Physics"; consider renaming the query value to match once the backend exists). Returns `{ id, lecturerId, lecturerName, department, photoUrl, startAt, endAt, dayOfWeek, dayLabel, formattedTime, specialtyTag, blurb, isConflictFree }` — `dayOfWeek` (1-7, used for conflict-day filtering) and `blurb` (short lecturer description, part of the shape though not yet rendered by the card) were missing from earlier drafts of this row. The response is a plain array. `?limit=` accepts 1–50 and defaults to 6, matching the FE card. Candidates start within the next 14 days; slots overlapping the student's classes or `PENDING`/`CONFIRMED` bookings are removed before `limit` applies, so `isConflictFree` is always `true`. `SOON` means today or tomorrow in `Asia/Ho_Chi_Minh`. Powers the student dashboard 1-click booking card. |
 
 | Method | Path | Role | Description |
@@ -244,7 +244,7 @@ Frames on `/topic/bookings/{id}/messages`:
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/campus/rooms` | Authenticated (any role) | Plain array of rooms ordered by `buildingCode`, `floor`, `name`: `[{ id, buildingCode, floor, name, xM?, zM? }]`. `xM` and `zM` are campus metres and are omitted when unset. Optional `?buildingCode=` filter. The room's QR secret is never returned. |
+| GET | `/campus/rooms` | Authenticated (any role) | Plain array of rooms ordered by `buildingCode`, `floor`, `name`: `[{ id, buildingCode, floor, name, code?, capacity?, xM?, zM? }]`. `code` (full room code such as `100.B3`), `capacity` (seats), `xM` and `zM` (campus metres) are omitted when unset. Optional `?buildingCode=` filter. The room's QR secret is never returned. |
 
 Maps to `CAMPUS_ROOMS`. `lecturer_profiles.office_room_id` links a lecturer to a room; deleting a room clears the link. A lecturer sets it with `PATCH /users/me`, an Admin with `PATCH /users/{id}`.
 
