@@ -41,9 +41,9 @@ Repo backend là private, nên chỉ người được cấp quyền mới mở 
 | B2 | Availability, import và xem lịch | [x] | [ ] | [ ] |
 | B3 | Slot, đặt lịch, duyệt, lịch sử booking | [x] | [ ] | [ ] |
 | B4 | Hủy, đổi lịch, thông báo, chat, xác nhận đã gặp | [x] | [ ] | [ ] |
-| B5 | Waitlist, allocation | [ ] | [ ] | [ ] |
-| B6 | GPS theo booking, phòng trên map | [ ] | Không cần | [ ] |
-| B7 | Vận hành, deploy | [ ] | Không cần | Không cần |
+| B5 | Waitlist, allocation | [x] | [ ] | [ ] |
+| B6 | GPS theo booking, phòng trên map | [x] | Không cần | [ ] |
+| B7 | Vận hành, deploy | [x] | Không cần | Không cần |
 
 ## Mã task
 
