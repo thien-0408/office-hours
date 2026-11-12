@@ -9,7 +9,7 @@
 | **Roles** | `STUDENT` · `LECTURER` · `ADMIN` · `SYSTEM` (internal jobs, not externally callable) |
 | **Source mapping** | Each endpoint cites the FR / UC / entity it implements from the plan |
 
-> **Contract baseline — 15 October 2026.** This document defines the wire contract; `capstone-db-schema.md` defines storage, and `lib/auth/types.ts` / `lib/office-hours/types.ts` define the corresponding frontend DTOs. The Vietnamese guide and generated diagrams summarize these sources. Earlier audit/report notes are historical and do not override this baseline. The backend is not implemented in this repository. Change these sources together when revising a contract.
+> **Contract baseline — 15 October 2026.** This document defines the wire contract; `capstone-db-schema.md` defines storage, and `lib/auth/types.ts` / `lib/office-hours/types.ts` define the corresponding frontend DTOs. The Vietnamese guide and generated diagrams summarize these sources. Earlier audit/report notes are historical and do not override this baseline. The backend lives in a separate repository (`chaunhattang/office-hours`, branch `feature/realtime-hybrid`) and implements every endpoint here except the ones §0.2 lists. Change these sources together when revising a contract.
 
 ---
 
@@ -19,7 +19,7 @@
 - **Client & tokens (kept simple on purpose):** the browser calls this API directly at `NEXT_PUBLIC_API_BASE_URL` — no Next.js BFF and no Nginx/reverse proxy. The backend enables CORS for the frontend origin (`CORS_ALLOWED_ORIGINS`, dev `http://localhost:3000`; headers `Authorization`, `Content-Type`, `Idempotency-Key`, `Accept-Language`; no credentials). After login the FE keeps `accessToken` and `refreshToken` in `localStorage` (`lib/auth/token-storage.ts`), reloads the user via `GET /users/me`, and sends `Authorization: Bearer` (`lib/api-client.ts`); on `401` it calls `/auth/refresh` once and retries, otherwise clears storage and returns to `/login`. Client-side route guards are UX only — the backend verifies the JWT and role on every request. Accepted trade-off: XSS could read the tokens, so keep the access token short-lived (~15 min) and rotate refresh tokens.
 - **Errors:** RFC 7807-style problem JSON — `{ status, error, message, path, timestamp, details? }`. `error` is the stable machine key (e.g. `INVALID_CREDENTIALS`, `SLOT_ALREADY_CONFIRMED`); `message` is human-readable English. There is **no numeric error code / error domain**. Clients branch on `status` + `error`, never on `message`. Success responses are the DTO itself (no envelope).
   - **Aggregated errors (reported once):** bean validation lists every invalid/missing field in one `400` — `error: "VALIDATION_FAILED"`, `details.errors[{ field, error, message }]` (e.g. `FIELD_REQUIRED`). Independent business checks are collected server-side; two or more → `400`, `error: "MULTIPLE_ERRORS"`, `details.errors[{ error, message, context? }]`; exactly one keeps its own status/key.
-- **Idempotency:** mutating POSTs that create bookings/allocations accept an optional `Idempotency-Key` header to guard against double-submit on flaky networks.
+- **Idempotency:** mutating POSTs that create bookings/allocations accept an optional `Idempotency-Key` header to guard against double-submit on flaky networks. **Not implemented yet (BE-42):** CORS allows the header, but the backend ignores it. Chat messages have their own dedup through `clientMessageId` (§5).
 - **Concurrency:** booking creation relies on a DB exclusion constraint (§10.1); a 409 response means "lost the race," not a client bug — the FE should re-fetch slots.
 - **Day of week:** every `dayOfWeek` in this API, the DB and the FE is **ISO — `1` = Monday … `7` = Sunday**. (An earlier draft used `0` = Sunday for availability/recurring; that was dropped to match `schedule_entries` and the FE.)
 - **Time zone:** timestamps are UTC; availability-rule `time` values are the institution's local time (`Asia/Ho_Chi_Minh`, UTC+7, no DST) and are converted when slots are generated.
@@ -40,6 +40,21 @@
 | Scope | Group/recurring, waitlist/allocation, analytics, research and public listing retain their documented stretch priorities. Documenting a contract does not require implementing every stretch endpoint for the first backend milestone. Server PDF ingestion/staging is deferred. |
 
 DTO optional fields may be omitted; fields explicitly typed `T | null` must be present and nullable. Do not expose raw database rows as responses.
+
+### 0.2 Implementation status (backend `feature/realtime-hybrid`, 12 November 2026)
+
+Phases B0–B7 of `OfficeHours/BACKEND-PLAN.md` are done. Everything in this document is implemented except:
+
+| Section | Endpoints | Backend task |
+|---|---|---|
+| §0 Idempotency | `Idempotency-Key` header | BE-42 (Could) |
+| §5 `POST /bookings` | `participantEmails` (a non-empty list returns `400 VALIDATION_FAILED`, field error `FIELD_INVALID`) | BE-37 (Could) |
+| §5.1 Group bookings | `/bookings/group`, `/bookings/{id}/participants*` | BE-37 (Could) |
+| §5.2 Recurring bookings | `/bookings/recurring*` | BE-38 (Could) |
+| §7.1 Research | `/research/*` | BE-40, BE-41 (Should) |
+| §9 Admin analytics | `/admin/analytics/*` | BE-39 (Could) |
+
+Clients must not call these yet. Swagger UI (`/api/v1/swagger`) and `/api/v1/v3/api-docs` show what the running backend actually serves.
 
 ---
 
@@ -248,7 +263,7 @@ Frames on `/topic/bookings/{id}/messages`:
 
 Maps to `CAMPUS_ROOMS`. `lecturer_profiles.office_room_id` links a lecturer to a room; deleting a room clears the link. A lecturer sets it with `PATCH /users/me`, an Admin with `PATCH /users/{id}`.
 
-### 5.1 Group Bookings (FR-15, Stretch; UC5)
+### 5.1 Group Bookings (FR-15, Stretch; UC5) — not implemented yet (BE-37)
 
 | Method | Path | Role | Description |
 |---|---|---|---|
@@ -256,7 +271,7 @@ Maps to `CAMPUS_ROOMS`. `lecturer_profiles.office_room_id` links a lecturer to a
 | POST | `/bookings/{id}/participants` | Student (existing participant) | `{ email }` — add a participant to an existing group booking (capacity permitting; same email-resolution rule as above). |
 | DELETE | `/bookings/{id}/participants/{studentId}` | Student (self) / Admin | Leave/remove from a group booking. |
 
-### 5.2 Recurring Bookings (FR-16, Stretch)
+### 5.2 Recurring Bookings (FR-16, Stretch) — not implemented yet (BE-38)
 
 | Method | Path | Role | Description |
 |---|---|---|---|
@@ -308,7 +323,7 @@ Maps to `WAITLIST_ENTRIES`.
 
 Maps to `ALLOCATION_POLICIES`, `ALLOCATION_EVENTS`. This cluster is the **research API surface** — every field here should be exposed because the defense chapter depends on being able to pull and replay this data (NFR-3). `OVERRIDDEN` events should be **excluded by default** from the fairness/efficiency metric computations in §7.1 (they're human interventions, not policy output) but retained in the raw log for operational transparency — flag this in the experiment query filters.
 
-### 7.1 Research / Experiment Endpoints (supporting §11.4, not user-facing product features)
+### 7.1 Research / Experiment Endpoints (supporting §11.4, not user-facing product features) — not implemented yet (BE-40)
 
 | Method | Path | Role | Description |
 |---|---|---|---|
@@ -351,9 +366,36 @@ Backing delivery (not directly called by FE, triggered internally on lifecycle e
 
 Maps to `NOTIFICATIONS`.
 
+### 8.1 Realtime for the mobile app (Firebase)
+
+Postgres stays the source of truth. Firebase gets read-only copies after commit, and holds live location and presence that the backend never sees. Everything here is off unless `FIREBASE_ENABLED=true`.
+
+| Method | Path | Role | Description |
+|---|---|---|---|
+| POST | `/realtime/firebase-token` | Authenticated | No body → `200 { firebaseToken }`, a Firebase custom token whose `uid` is the user's UUID, with the role as a custom claim. The app signs in with `signInWithCustomToken`. `503 REALTIME_DISABLED` while Firebase is off, `502 REALTIME_UPSTREAM_FAILED` if Firebase fails. |
+
+**Firestore (written by the backend only; clients read).** Dates are Firestore timestamps, and null fields are omitted.
+
+| Path | Fields |
+|---|---|
+| `users/{uid}/bookings/{bookingId}` | `id, slotId, studentId, lecturerId, status, startAt, endAt, topic, updatedAt`, written for both participants |
+| `users/{uid}/notifications/{notificationId}` | `id, type, title, body, bookingId, read, createdAt` |
+| `users/{uid}/waitlist/{entryId}` | `id, slotId, lecturerId, lecturerName, status, position` (only while `WAITING`), `startAt, endAt, offeredAt, offerExpiresAt, updatedAt` |
+| `lecturerSlots/{lecturerId}` | `lecturerId, updatedAt, slots[{ id, startAt, endAt, available }]`: slots in `[now, now + 30 days)`, not `CLOSED`, first 500 by start time. Shared data only, so it does not apply the per-student filter of `GET /lecturers/{id}/slots`. |
+
+**Realtime Database.**
+
+| Path | Writer | Content |
+|---|---|---|
+| `/activeBookings/{bookingId}` | Backend only | `{ studentId, lecturerId, startAt, endAt }` (ISO-8601 UTC strings) for a `CONFIRMED` booking that has not ended; see §8 for when it is removed |
+| `/bookingLive/{bookingId}/{uid}` | The two participants | Live position during the booking window. The backend deletes the whole node when the booking ends. |
+| `/presence/{uid}` | Lecturers | Lecturer status and position. The backend never reads or writes it. |
+
+**FCM.** Pushes go to the topic `user-<uuid>`. The app subscribes after sign-in and unsubscribes on sign-out; there is no device-token table. Data payloads: notifications carry `type` (dotted name), `notificationId` and, when relevant, `bookingId`, `waitlistEntryId`, `slotId`; chat pushes carry `{ type: "CHAT_MESSAGE", bookingId, messageId }` (§5).
+
 ---
 
-## 9. Admin Analytics (FR-17, Stretch; UC13)
+## 9. Admin Analytics (FR-17, Stretch; UC13) — not implemented yet (BE-39)
 
 | Method | Path | Role | Description |
 |---|---|---|---|

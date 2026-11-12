@@ -4,8 +4,9 @@
 > (`capstone-officehours-plan.md`, `capstone-api-endpoints.md`, `capstone-db-schema.md`, `allocate-engine.md`) cùng với code frontend hiện có
 > (`lib/office-hours/types.ts`, `lib/auth/*`, `lib/api-client.ts`, `lib/office-hours/mock-data.ts`).
 >
-> **Trạng thái:** backend **chưa tồn tại**. Mọi thứ dưới đây là *hợp đồng* đã được đội thống nhất (các mâu thuẫn ở mục 3 **đã chốt và đã áp dụng** vào 4 file thiết kế gốc và vào FE). Frontend hiện chạy bằng mock data
-> (chỉ `/auth/*` đã được gọi thật, có fallback sang tài khoản mock khi backend không reachable).
+> **Trạng thái (12/11/2026):** backend đã xong các phase B0–B7 trên nhánh `feature/realtime-hybrid` của repo `chaunhattang/office-hours`. Phần chưa làm (group, recurring, research, analytics, `Idempotency-Key`) liệt kê ở §0.2 của `capstone-api-endpoints.md`. Guide này **không** mô tả chat WebSocket (§5), phòng campus (§5.0.1), rate limit và realtime Firebase (§8.1); xem các mục đó trong `capstone-api-endpoints.md`. Mục 10 (kế hoạch đề xuất) đã được thay bằng `OfficeHours/BACKEND-PLAN.md` trong repo backend.
+>
+> Mọi thứ dưới đây là *hợp đồng* đã được đội thống nhất (các mâu thuẫn ở mục 3 **đã chốt và đã áp dụng** vào 4 file thiết kế gốc và vào FE).
 >
 > **Baseline 15/10/2026:** `capstone-api-endpoints.md` quyết định wire DTO; `capstone-db-schema.md` quyết định storage. Guide này và các sơ đồ là bản dẫn xuất; audit/report cũ không ghi đè baseline.
 >
