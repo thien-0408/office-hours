@@ -33,6 +33,8 @@ Still worth asking both instructors: whether reusing the capstone system in anot
 | Course labs (React Native reference) | `...\Q12627\CSW434\CSW434-AdvancedMobile` (Lab 1: RN 0.88 CLI + Socket.IO) | `github.com/thien-0408/CSW434-AdvancedMobile` |
 | API and DB contract | `docs/capstone-api-endpoints.md`, `docs/capstone-db-schema.md`, `docs/BACKEND-API-GUIDE-VI.md`, `docs/capstone-officehours-plan.md` in the web repo | |
 
+> **Update 2026-11-12.** Sections 4, 7 and "Backend work needed" in 8 describe the state on 2026-11-03 and are now historical. The backend has finished phases B0–B7: booking, chat over WebSocket, notifications, waitlist, Firestore and FCM projections, `/activeBookings` and `GET /campus/rooms` all exist. QR check-in (`POST /bookings/{id}/check-in`, `GET /admin/campus-rooms/{id}/qr`) was dropped; the lecturer confirms the meeting from the chat (`POST /bookings/{id}/complete` or `/no-show`). For the current wire contract, including Firebase paths, read §8.1 of `capstone-api-endpoints.md`. The mobile plan is `MOBILE-PLAN.md` in the mobile repo.
+
 ## 4. Current repo state (2026-11-03)
 
 **Web repo**
