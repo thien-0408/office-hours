@@ -11,7 +11,7 @@ differs from training data) and `docs/DESIGN.md` before any UI/CSS.
 
 ## Project map
 
-This repo is one of three. See `docs/PROJECT-HUB.md` for the others, `docs/CONVENTIONS.md` for shared rules, and tick tasks in `docs/WEB-CHECKLIST.md`.
+This repo is one of three, cloned side by side (`../office-hours-backend`, `../office-hours-mobile`). The section "Dự án OfficeHours: 3 repo" in `AGENTS.md` (imported above) lists their paths and which doc to read for what. Tick tasks in `docs/WEB-CHECKLIST.md`.
 
 ## Commands
 
