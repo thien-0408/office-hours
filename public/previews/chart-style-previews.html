@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Chart style previews — OfficeHours</title>
+    <style>
+      :root {
+        --brand-50: #eff4ff;
+        --brand-100: #dce7ff;
+        --brand-200: #b7ceff;
+        --brand-300: #8fb0ff;
+        --brand-500: #3465e0;
+        --brand-600: #274fc0;
+        --brand-700: #1d3b98;
+        --paper-0: #ffffff;
+        --paper-50: #f6f8fc;
+        --paper-100: #edf1f8;
+        --paper-200: #dce2ed;
+        --ink-300: #b7bfce;
+        --ink-400: #8d96aa;
+        --ink-500: #6b7488;
+        --ink-600: #4e566a;
+        --ink-700: #383f52;
+        --ink-900: #171a26;
+        --info-100: #e8e1ff;
+        --info-500: #7c5cff;
+        --info-700: #5433c4;
+        --rose-100: #fce7f3;
+        --rose-500: #ec4899;
+        --rose-700: #be185d;
+        --mint-100: #dcfce7;
+        --mint-500: #22c55e;
+        --mint-700: #15803d;
+        --coral-100: #ffedd5;
+        --coral-500: #f97316;
+        --coral-700: #c2410c;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink-900);
+        background: var(--paper-50);
+      }
+
+      * { box-sizing: border-box; }
+      html { min-width: 320px; background: var(--paper-50); }
+      body { margin: 0; min-width: 320px; }
+      button { font: inherit; }
+      :focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 13px clamp(16px, 4vw, 48px);
+        border-bottom: 1px solid var(--paper-200);
+        background: color-mix(in srgb, var(--paper-0) 92%, transparent);
+        backdrop-filter: blur(16px);
+      }
+
+      .brand { display: flex; align-items: center; gap: 9px; }
+      .brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--brand-500); color: white; box-shadow: 3px 3px 0 var(--brand-700); font-size: 11px; font-weight: 900; }
+      .brand strong { font-size: 13px; letter-spacing: -.02em; }
+      .brand span { color: var(--ink-500); font-size: 11px; }
+      .top-note { color: var(--ink-500); font-size: 11px; font-weight: 700; }
+
+      .frame { max-width: 1280px; margin: 0 auto; padding: 44px clamp(16px, 4vw, 52px) 70px; }
+      .intro { max-width: 710px; margin-bottom: 30px; }
+      .eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--brand-700); font-size: 10px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+      .eyebrow::before { content: ""; width: 18px; height: 2px; border-radius: 4px; background: var(--brand-500); }
+      h1 { margin: 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.05; letter-spacing: -.06em; }
+      .intro p { max-width: 62ch; margin: 12px 0 0; color: var(--ink-500); font-size: 14px; line-height: 1.6; }
+
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .preview-card { min-width: 0; padding: 20px; border: 1px solid var(--paper-200); border-radius: 17px; background: var(--paper-0); box-shadow: 0 8px 26px rgba(11,27,73,.045); }
+      .preview-card.recommended { border-color: var(--brand-300); box-shadow: 0 11px 32px rgba(52,101,224,.11); }
+      .card-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+      .card-head h2 { margin: 0; font-size: 16px; letter-spacing: -.03em; }
+      .card-head p { margin: 5px 0 0; color: var(--ink-500); font-size: 11px; line-height: 1.45; }
+      .tag { flex: none; padding: 5px 8px; border-radius: 999px; background: var(--brand-50); color: var(--brand-700); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+      .tag.alt { background: var(--paper-100); color: var(--ink-600); }
+
+      .ranking { display: grid; gap: 12px; }
+      .rank-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) 20px; align-items: center; gap: 10px; }
+      .rank-row label { color: var(--ink-600); font-size: 11px; font-weight: 750; }
+      .track { height: 12px; overflow: hidden; border-radius: 99px; background: var(--paper-100); }
+      .fill { height: 100%; border-radius: inherit; background: var(--brand-300); }
+      .fill.hot { background: var(--rose-500); }
+      .rank-row strong { color: var(--ink-800); font-size: 12px; text-align: right; }
+      .chart-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--paper-100); color: var(--ink-400); font-size: 10px; }
+      .legend { display: inline-flex; align-items: center; gap: 6px; }
+      .legend i { width: 7px; height: 7px; border-radius: 50%; background: var(--rose-500); }
+
+      .lollipop { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: end; height: 218px; padding: 12px 4px 0; border-bottom: 1px solid var(--paper-200); }
+      .lolli-item { display: grid; grid-template-rows: 18px 1fr 22px; align-items: end; height: 100%; text-align: center; }
+      .lolli-value { color: var(--ink-600); font-size: 11px; font-weight: 800; }
+      .lolli-item.hot .lolli-value { color: var(--rose-700); }
+      .lolli-track { position: relative; display: flex; height: 100%; align-items: end; justify-content: center; }
+      .lolli-stem { position: relative; width: 2px; height: var(--height); background: var(--brand-200); }
+      .lolli-item.hot .lolli-stem { background: var(--rose-300, #f9a8d4); }
+      .lolli-stem::after { content: ""; position: absolute; top: -5px; left: 50%; width: 12px; height: 12px; border: 3px solid var(--paper-0); border-radius: 50%; background: var(--brand-500); box-shadow: 0 0 0 1px var(--brand-300); transform: translateX(-50%); }
+      .lolli-item.hot .lolli-stem::after { background: var(--rose-500); box-shadow: 0 0 0 1px var(--rose-500); }
+      .lolli-item span { align-self: end; color: var(--ink-500); font-size: 10px; font-weight: 750; }
+
+      .line-wrap { height: 218px; padding: 3px 0 0; }
+      .line-wrap svg { display: block; width: 100%; height: 184px; overflow: visible; }
+      .line-labels { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); color: var(--ink-500); font-size: 10px; font-weight: 750; text-align: center; }
+      .line-grid { stroke: var(--paper-100); stroke-width: 1; stroke-dasharray: 3 4; }
+      .line-area { fill: url(#activity-fill); }
+      .line-path { fill: none; stroke: var(--brand-500); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .line-dot { fill: var(--paper-0); stroke: var(--brand-500); stroke-width: 2; }
+      .line-dot.hot { fill: var(--rose-500); stroke: var(--rose-500); }
+
+      .heatmap { display: grid; grid-template-columns: 105px repeat(7, minmax(0, 1fr)); gap: 6px; align-items: center; }
+      .heatmap .day { color: var(--ink-500); font-size: 10px; font-weight: 750; text-align: center; }
+      .heatmap .row-label { color: var(--ink-600); font-size: 10px; font-weight: 750; }
+      .cell { height: 30px; border: 1px solid var(--paper-200); border-radius: 7px; background: var(--paper-50); }
+      .cell.l1 { border-color: var(--brand-100); background: var(--brand-50); }
+      .cell.l2 { border-color: var(--brand-200); background: var(--brand-100); }
+      .cell.l3 { border-color: var(--brand-300); background: var(--brand-300); }
+      .cell.l4 { border-color: var(--brand-500); background: var(--brand-500); }
+      .cell.hot { border-color: var(--rose-500); background: var(--rose-500); }
+      .heat-legend { display: flex; align-items: center; justify-content: end; gap: 5px; margin-top: 18px; color: var(--ink-400); font-size: 10px; }
+      .heat-legend i { width: 12px; height: 12px; border-radius: 4px; background: var(--paper-100); }
+      .heat-legend i:nth-of-type(2) { background: var(--brand-100); }
+      .heat-legend i:nth-of-type(3) { background: var(--brand-300); }
+      .heat-legend i:nth-of-type(4) { background: var(--brand-500); }
+
+      .recommendation { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding: 15px 17px; border: 1px solid var(--brand-200); border-radius: 14px; background: var(--brand-50); }
+      .recommendation strong { display: block; font-size: 13px; }
+      .recommendation p { margin-top: 4px; color: var(--ink-600); font-size: 11px; line-height: 1.45; }
+      .recommendation span { flex: none; padding: 8px 11px; border-radius: 9px; background: var(--brand-500); color: white; font-size: 10px; font-weight: 850; }
+
+      @media (max-width: 820px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 560px) {
+        .top-note { display: none; }
+        .frame { padding-top: 28px; }
+        .preview-card { padding: 16px; }
+        .card-head { flex-direction: column; gap: 9px; }
+        .heatmap { grid-template-columns: 80px repeat(7, minmax(26px, 1fr)); gap: 4px; }
+        .cell { height: 25px; }
+        .recommendation { align-items: start; flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">OH</span><strong>OfficeHours</strong><span>Chart explorations</span></div>
+      <span class="top-note">Static preview · no app code changed</span>
+    </header>
+
+    <main class="frame">
+      <section class="intro">
+        <p class="eyebrow">Dashboard data visualisation</p>
+        <h1>Four ways to show weekly activity.</h1>
+        <p>The same seven-day booking data, explored as a comparison chart, a lighter trend view, and an OfficeHours-specific occupancy surface.</p>
+      </section>
+
+      <section class="grid" aria-label="Chart style alternatives">
+        <article class="preview-card recommended">
+          <div class="card-head">
+            <div><h2>Horizontal ranking bars</h2><p>Uses the available width and makes the busiest day obvious.</p></div>
+            <span class="tag">Recommended</span>
+          </div>
+          <div class="ranking" aria-label="Weekly bookings: Monday 2, Tuesday 4, Wednesday 7, Thursday 3, Friday 5, Saturday 1, Sunday 3">
+            <div class="rank-row"><label>Mon</label><div class="track"><div class="fill" style="width:29%"></div></div><strong>2</strong></div>
+            <div class="rank-row"><label>Tue</label><div class="track"><div class="fill" style="width:57%"></div></div><strong>4</strong></div>
+            <div class="rank-row"><label>Wed</label><div class="track"><div class="fill hot" style="width:100%"></div></div><strong>7</strong></div>
+            <div class="rank-row"><label>Thu</label><div class="track"><div class="fill" style="width:43%"></div></div><strong>3</strong></div>
+            <div class="rank-row"><label>Fri</label><div class="track"><div class="fill" style="width:71%"></div></div><strong>5</strong></div>
+            <div class="rank-row"><label>Sat</label><div class="track"><div class="fill" style="width:14%"></div></div><strong>1</strong></div>
+            <div class="rank-row"><label>Sun</label><div class="track"><div class="fill" style="width:43%"></div></div><strong>3</strong></div>
+          </div>
+          <div class="chart-foot"><span class="legend"><i></i> Busiest day</span><span>7 bookings total</span></div>
+        </article>
+
+        <article class="preview-card">
+          <div class="card-head">
+            <div><h2>Lollipop comparison</h2><p>More editorial and lighter than a solid bar chart.</p></div>
+            <span class="tag alt">Lightweight</span>
+          </div>
+          <div class="lollipop" aria-label="Weekly bookings lollipop chart">
+            <div class="lolli-item"><strong class="lolli-value">2</strong><div class="lolli-track"><i class="lolli-stem" style="--height:29%"></i></div><span>Mon</span></div>
+            <div class="lolli-item"><strong class="lolli-value">4</strong><div class="lolli-track"><i class="lolli-stem" style="--height:57%"></i></div><span>Tue</span></div>
+            <div class="lolli-item hot"><strong class="lolli-value">7</strong><div class="lolli-track"><i class="lolli-stem" style="--height:100%"></i></div><span>Wed</span></div>
+            <div class="lolli-item"><strong class="lolli-value">3</strong><div class="lolli-track"><i class="lolli-stem" style="--height:43%"></i></div><span>Thu</span></div>
+            <div class="lolli-item"><strong class="lolli-value">5</strong><div class="lolli-track"><i class="lolli-stem" style="--height:71%"></i></div><span>Fri</span></div>
+            <div class="lolli-item"><strong class="lolli-value">1</strong><div class="lolli-track"><i class="lolli-stem" style="--height:14%"></i></div><span>Sat</span></div>
+            <div class="lolli-item"><strong class="lolli-value">3</strong><div class="lolli-track"><i class="lolli-stem" style="--height:43%"></i></div><span>Sun</span></div>
+          </div>
+          <div class="chart-foot"><span>One measure · seven days</span><span>Peak: Wed</span></div>
+        </article>
+
+        <article class="preview-card">
+          <div class="card-head">
+            <div><h2>Line and area trend</h2><p>Best when the story is movement through the week.</p></div>
+            <span class="tag alt">Trend</span>
+          </div>
+          <div class="line-wrap">
+            <svg viewBox="0 0 760 190" role="img" aria-label="Weekly bookings trend: 2, 4, 7, 3, 5, 1, 3">
+              <defs><linearGradient id="activity-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8fb0ff" stop-opacity=".45"/><stop offset="1" stop-color="#eff4ff" stop-opacity=".15"/></linearGradient></defs>
+              <line class="line-grid" x1="0" y1="35" x2="760" y2="35"/><line class="line-grid" x1="0" y1="85" x2="760" y2="85"/><line class="line-grid" x1="0" y1="135" x2="760" y2="135"/>
+              <path class="line-area" d="M35 140 L150 100 L265 40 L380 120 L495 80 L610 160 L725 120 L725 180 L35 180 Z"/>
+              <path class="line-path" d="M35 140 L150 100 L265 40 L380 120 L495 80 L610 160 L725 120"/>
+              <circle class="line-dot" cx="35" cy="140" r="5"/><circle class="line-dot" cx="150" cy="100" r="5"/><circle class="line-dot hot" cx="265" cy="40" r="6"/><circle class="line-dot" cx="380" cy="120" r="5"/><circle class="line-dot" cx="495" cy="80" r="5"/><circle class="line-dot" cx="610" cy="160" r="5"/><circle class="line-dot" cx="725" cy="120" r="5"/>
+            </svg>
+            <div class="line-labels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          </div>
+          <div class="chart-foot"><span class="legend"><i style="background:var(--brand-500)"></i> Weekly bookings</span><span>Peak: 7</span></div>
+        </article>
+
+        <article class="preview-card">
+          <div class="card-head">
+            <div><h2>Availability heatmap</h2><p>More native to OfficeHours when comparing demand and capacity.</p></div>
+            <span class="tag alt">Scheduling</span>
+          </div>
+          <div class="heatmap" aria-label="Weekly availability heatmap">
+            <span></span><span class="day">Mon</span><span class="day">Tue</span><span class="day">Wed</span><span class="day">Thu</span><span class="day">Fri</span><span class="day">Sat</span><span class="day">Sun</span>
+            <span class="row-label">Booked</span><i class="cell l1"></i><i class="cell l2"></i><i class="cell hot"></i><i class="cell l2"></i><i class="cell l3"></i><i class="cell"></i><i class="cell l1"></i>
+            <span class="row-label">Open slots</span><i class="cell l3"></i><i class="cell l2"></i><i class="cell l1"></i><i class="cell l3"></i><i class="cell l1"></i><i class="cell l4"></i><i class="cell l2"></i>
+            <span class="row-label">Waitlist</span><i class="cell"></i><i class="cell l1"></i><i class="cell hot"></i><i class="cell l1"></i><i class="cell l2"></i><i class="cell"></i><i class="cell l1"></i>
+          </div>
+          <div class="heat-legend"><span>Low</span><i></i><i></i><i></i><i></i><span>High</span></div>
+        </article>
+      </section>
+
+      <aside class="recommendation">
+        <div><strong>Suggested direction: horizontal ranking bars</strong><p>It keeps the one-accent accessibility rule, uses the wide dashboard canvas, and reads well beside the table view.</p></div>
+        <span>Best fit</span>
+      </aside>
+    </main>
+  </body>
+</html>

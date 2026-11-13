@@ -1,0 +1,2013 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="system" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Giờ tiếp sinh viên EIU</title>
+<!-- Preview giao diện landing theo style Mochy (docs/STYLE-MOCHY-WEB.md). Hỗ trợ Light/Dark và animations. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   MOCHY DESIGN TOKENS (LIGHT DEFAULT, DARK VIA DATA-MOCHY-THEME OR OS DARK)
+   ========================================================================== */
+.mochy {
+  --m-bg: #f2f2f2;
+  --m-s1: #ffffff;
+  --m-s2: #ebebeb;
+  --m-s3: #e2e2e2;
+  --m-s4: #d6d6d6;
+  --m-fg: #0a0a0a;
+  --m-fg2: rgba(0, 0, 0, 0.64);
+  --m-fg3: rgba(0, 0, 0, 0.50);
+  --m-fg4: rgba(0, 0, 0, 0.16);
+  --m-line: rgba(0, 0, 0, 0.07);
+  --m-line2: rgba(0, 0, 0, 0.14);
+  --m-focus: rgba(0, 0, 0, 0.40);
+  --m-primary: #111111;
+  --m-primary-hover: #000000;
+  --m-on-primary: #ffffff;
+  --m-glass: rgba(255, 255, 255, 0.72);
+  --m-glass-line: rgba(0, 0, 0, 0.06);
+  --m-glass-hi: rgba(0, 0, 0, 0.06);
+  --m-glass-hi2: rgba(0, 0, 0, 0.10);
+  --m-hover: rgba(0, 0, 0, 0.04);
+  --m-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --m-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --m-scrim: rgba(0, 0, 0, 0.32);
+  --m-sheet: #ffffff;
+  --m-err: #c62828;
+  --m-glow: 0.4;
+  --m-grain: 0.035;
+  --m-grain-blend: multiply;
+  --m-phone-shell: #e4e4e7;
+  --m-phone-border: #d4d4d8;
+  --m-phone-screen: #ffffff;
+  --m-map-wall-a: #d8d8d8;
+  --m-map-wall-b: #c8c8c8;
+  --m-map-roof: #e6e6e6;
+  --m-map-target-a: #18181b;
+  --m-map-target-b: #27272a;
+  --m-map-line: #0a0a0a;
+
+  /* Springs & Easings from Mochy source */
+  --m-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --m-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --m-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: light;
+}
+
+.mochy[data-mochy-theme="dark"] {
+  --m-bg: #000000;
+  --m-s1: #0d0d0d;
+  --m-s2: #161616;
+  --m-s3: #1f1f1f;
+  --m-s4: #2a2a2a;
+  --m-fg: #ffffff;
+  --m-fg2: rgba(255, 255, 255, 0.62);
+  --m-fg3: rgba(255, 255, 255, 0.50);
+  --m-fg4: rgba(255, 255, 255, 0.16);
+  --m-line: rgba(255, 255, 255, 0.07);
+  --m-line2: rgba(255, 255, 255, 0.14);
+  --m-focus: rgba(255, 255, 255, 0.34);
+  --m-primary: #e0e0e0;
+  --m-primary-hover: #ffffff;
+  --m-on-primary: #000000;
+  --m-glass: rgba(19, 19, 19, 0.78);
+  --m-glass-line: rgba(255, 255, 255, 0.05);
+  --m-glass-hi: rgba(255, 255, 255, 0.10);
+  --m-glass-hi2: rgba(255, 255, 255, 0.14);
+  --m-hover: rgba(255, 255, 255, 0.06);
+  --m-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.12);
+  --m-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --m-scrim: rgba(0, 0, 0, 0.70);
+  --m-sheet: #121212;
+  --m-err: #ff8a80;
+  --m-glow: 1;
+  --m-grain: 0.06;
+  --m-grain-blend: overlay;
+  --m-phone-shell: #1a1a1a;
+  --m-phone-border: #2b2b2b;
+  --m-phone-screen: #000000;
+  --m-map-wall-a: #1a1a1a;
+  --m-map-wall-b: #131313;
+  --m-map-roof: #262626;
+  --m-map-target-a: #e9e9e9;
+  --m-map-target-b: #a9a9a9;
+  --m-map-line: #ffffff;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mochy[data-mochy-theme="system"] {
+    --m-bg: #000000;
+    --m-s1: #0d0d0d;
+    --m-s2: #161616;
+    --m-s3: #1f1f1f;
+    --m-s4: #2a2a2a;
+    --m-fg: #ffffff;
+    --m-fg2: rgba(255, 255, 255, 0.62);
+    --m-fg3: rgba(255, 255, 255, 0.50);
+    --m-fg4: rgba(255, 255, 255, 0.16);
+    --m-line: rgba(255, 255, 255, 0.07);
+    --m-line2: rgba(255, 255, 255, 0.14);
+    --m-focus: rgba(255, 255, 255, 0.34);
+    --m-primary: #e0e0e0;
+    --m-primary-hover: #ffffff;
+    --m-on-primary: #000000;
+    --m-glass: rgba(19, 19, 19, 0.78);
+    --m-glass-line: rgba(255, 255, 255, 0.05);
+    --m-glass-hi: rgba(255, 255, 255, 0.10);
+    --m-glass-hi2: rgba(255, 255, 255, 0.14);
+    --m-hover: rgba(255, 255, 255, 0.06);
+    --m-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.12);
+    --m-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+    --m-scrim: rgba(0, 0, 0, 0.70);
+    --m-sheet: #121212;
+    --m-err: #ff8a80;
+    --m-glow: 1;
+    --m-grain: 0.06;
+    --m-grain-blend: overlay;
+    --m-phone-shell: #1a1a1a;
+    --m-phone-border: #2b2b2b;
+    --m-phone-screen: #000000;
+    --m-map-wall-a: #1a1a1a;
+    --m-map-wall-b: #131313;
+    --m-map-roof: #262626;
+    --m-map-target-a: #e9e9e9;
+    --m-map-target-b: #a9a9a9;
+    --m-map-line: #ffffff;
+    color-scheme: dark;
+  }
+}
+
+/* ==========================================================================
+   BASE & RESET
+   ========================================================================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color 0.3s var(--m-ease), color 0.3s var(--m-ease);
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; }
+button { font-family: inherit; border: none; background: transparent; cursor: pointer; color: inherit; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; }
+
+/* ==========================================================================
+   MOCHY GLASS, GLOW, GRAIN
+   ========================================================================== */
+.m-glass {
+  background: var(--m-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.m-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: calc(var(--o, 0.3) * var(--m-glow));
+  transition: opacity 0.4s ease;
+}
+.m-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  opacity: var(--m-grain);
+  mix-blend-mode: var(--m-grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   BUTTONS & PRESS PHYSICS (TouchFeedback.kt / site.js)
+   ========================================================================== */
+.m-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 9999px;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.42s var(--m-spring), background 0.2s var(--m-ease), color 0.2s var(--m-ease), box-shadow 0.2s;
+  user-select: none;
+}
+.m-btn:active {
+  transform: scale(0.96);
+  transition: transform 0.12s ease-out;
+}
+.m-btn-primary {
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+}
+.m-btn-primary:hover {
+  background: var(--m-primary-hover);
+}
+.m-btn-ghost {
+  background: var(--m-glass-hi);
+  color: var(--m-fg);
+}
+.m-btn-ghost:hover {
+  background: var(--m-glass-hi2);
+}
+.m-btn-sm {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* Row highlight */
+.m-hl {
+  transition: background-color 0.34s ease-out;
+}
+.m-hl:hover, .m-hl:active {
+  background-color: var(--m-hover);
+  transition-duration: 0.09s;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+.eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg3);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+h1, h2, h3 {
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+  font-weight: 700;
+}
+.lead {
+  color: var(--m-fg2);
+  font-size: 17px;
+  line-height: 1.55;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+/* ==========================================================================
+   LOGO & SYMBOLS
+   ========================================================================== */
+.oh-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.oh-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  transition: background 0.3s, color 0.3s;
+}
+.oh-mark svg {
+  width: 28px;
+  height: 28px;
+}
+
+.gl {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+/* ==========================================================================
+   SCROLL REVEAL (Mochy REVEAL: 36px rise, scale 0.98, Mochy sheet curve)
+   ========================================================================== */
+.rv {
+  opacity: 0;
+  transform: translateY(32px) scale(0.985);
+  transition: opacity 0.85s var(--m-sheet), transform 0.85s var(--m-sheet);
+  will-change: opacity, transform;
+}
+.rv.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   NAVIGATION (FROSTED GLASS ON SCROLL)
+   ========================================================================== */
+.nav-wrap {
+  position: fixed;
+  z-index: 50;
+  top: 16px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.nav {
+  pointer-events: auto;
+  margin: 0 auto;
+  width: min(1120px, calc(100% - 32px));
+  height: 64px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px 0 18px;
+  transition: transform 0.4s var(--m-sheet), background 0.3s, box-shadow 0.3s, border-color 0.3s;
+}
+.nav.scrolled {
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow-card);
+}
+.nav .links {
+  display: flex;
+  gap: 4px;
+  margin: 0 auto;
+}
+.nav .links a {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  letter-spacing: -0.02em;
+  transition: background 0.2s, color 0.2s;
+}
+.nav .links a:hover, .nav .links a.active {
+  background: var(--m-glass-hi);
+  color: var(--m-fg);
+}
+.nav .acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Theme Switcher Pill */
+.theme-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--m-glass-hi);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+}
+.theme-btn {
+  position: relative;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  color: var(--m-fg3);
+  transition: color 0.2s;
+}
+.theme-btn:hover {
+  color: var(--m-fg);
+}
+.theme-btn.active {
+  color: var(--m-bg);
+}
+.theme-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.theme-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 32px;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  z-index: 1;
+  transition: transform 0.4s var(--m-spring);
+}
+
+/* ==========================================================================
+   MOCHY GHOST OUTLINED WORDS (home.css .ghost)
+   ========================================================================== */
+.m-ghost-strip {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 32px 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.28;
+}
+.m-ghost-row {
+  display: flex;
+  width: max-content;
+  animation: m-drift 48s linear infinite;
+}
+.m-ghost-row.rev {
+  animation-direction: reverse;
+  animation-duration: 54s;
+}
+.m-ghost {
+  font-size: clamp(64px, 7vw, 110px);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--m-line2);
+  white-space: nowrap;
+}
+@keyframes m-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* ==========================================================================
+   HERO & 3D INTERACTIVE PHONE STAGE (Press3D.kt)
+   ========================================================================== */
+.hero {
+  position: relative;
+  padding: 168px 0 90px;
+  overflow: hidden;
+}
+.hero .grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+}
+.hero h1 {
+  font-size: clamp(48px, 6.4vw, 84px);
+}
+.hero h1 span {
+  color: var(--m-fg3);
+}
+.hero .lead {
+  margin-top: 24px;
+  max-width: 520px;
+}
+.hero .cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+.hero .note {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--m-fg3);
+  font-weight: 500;
+}
+
+/* Stage & 3D Phone */
+.stage {
+  position: relative;
+  height: 640px;
+  perspective: 1000px;
+}
+.phone {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%) rotateZ(-3deg);
+  width: 312px;
+  height: 640px;
+  border-radius: 46px;
+  padding: 8px;
+  background: var(--m-phone-shell);
+  box-shadow: 0 0 0 1px var(--m-phone-border), 0 40px 80px -25px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease-out, background 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+  user-select: none;
+}
+.phone:active {
+  transform: translateX(-50%) rotateZ(-3deg) scale(0.97) !important;
+  transition: transform 0.12s ease-out !important;
+}
+.screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 38px;
+  overflow: hidden;
+  background: var(--m-phone-screen);
+  position: relative;
+  padding: 44px 16px 0;
+  transition: background 0.3s;
+}
+.screen .hi {
+  font-size: 13px;
+  color: var(--m-fg3);
+  font-weight: 600;
+}
+.screen .t {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  margin-top: 2px;
+}
+
+/* Next booking floating card */
+.nextcard {
+  margin-top: 16px;
+  border-radius: 22px;
+  padding: 14px;
+  background: var(--m-s2);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  transition: background 0.3s;
+}
+.nextcard .r {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.nextcard img {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--m-s3);
+}
+.nextcard b {
+  display: block;
+  font-size: 14.5px;
+  letter-spacing: -0.03em;
+}
+.nextcard small {
+  display: block;
+  font-size: 12px;
+  color: var(--m-fg2);
+  font-weight: 500;
+}
+
+/* Odometer mechanical reels */
+.nextcard .cd {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 14px;
+}
+.m-odo {
+  display: inline-flex;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.m-odo-d {
+  position: relative;
+  display: inline-block;
+  width: 0.62em;
+  height: 1em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
+  mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
+}
+.m-odo-reel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.55s var(--m-spring);
+}
+.m-odo-reel > span {
+  height: 1em;
+  text-align: center;
+  display: block;
+}
+.m-odo-sep {
+  display: inline-block;
+  width: 0.28em;
+  text-align: center;
+}
+
+.nextcard .cd span {
+  font-size: 12px;
+  color: var(--m-fg3);
+  font-weight: 600;
+}
+.nextcard .meet {
+  margin-top: 12px;
+  height: 42px;
+  border-radius: 9999px;
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.4s var(--m-spring);
+}
+.nextcard .meet:active {
+  transform: scale(0.96);
+}
+.nextcard .meet svg {
+  width: 18px;
+  height: 18px;
+  fill: #00897B;
+}
+
+/* Shelf */
+.shelf-t {
+  margin: 20px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  display: flex;
+  justify-content: space-between;
+}
+.shelf-t span {
+  color: var(--m-fg3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.shelf {
+  display: flex;
+  gap: 10px;
+}
+.shelf div {
+  width: 92px;
+  flex: none;
+}
+.shelf img {
+  width: 92px;
+  height: 92px;
+  border-radius: 20px;
+  background: var(--m-s3);
+  padding: 6px;
+  transition: transform 0.3s var(--m-spring);
+}
+.shelf div:hover img {
+  transform: translateY(-3px);
+}
+.shelf b {
+  display: block;
+  font-size: 12px;
+  margin-top: 7px;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shelf small {
+  display: block;
+  font-size: 11px;
+  color: var(--m-fg3);
+  font-weight: 500;
+}
+
+/* Phone Nav Pill */
+.navpill {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  height: 58px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 6px;
+}
+.navpill i {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  color: var(--m-fg3);
+}
+.navpill i.on {
+  white-space: nowrap;
+  width: auto;
+  padding: 0 14px;
+  gap: 6px;
+  display: flex;
+  align-items: center;
+  background: var(--m-glass-hi);
+  color: var(--m-fg);
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.navpill svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Floating toasts with parallax */
+.toast {
+  position: absolute;
+  z-index: 5;
+  border-radius: 9999px;
+  height: 52px;
+  padding: 0 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow-card);
+  transition: transform 0.2s ease-out;
+}
+.toast .gl {
+  width: 30px;
+  height: 30px;
+}
+.toast.a {
+  right: -16px;
+  top: -22px;
+  transform: rotate(3deg);
+}
+.toast.b {
+  left: -40px;
+  bottom: 104px;
+  transform: rotate(-2deg);
+}
+.toast.b img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--m-s3);
+}
+.toast small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--m-fg3);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   BRAND INTEGRATIONS STRIP
+   ========================================================================== */
+.brands {
+  border-top: 1px solid var(--m-line);
+  border-bottom: 1px solid var(--m-line);
+  padding: 28px 0;
+  transition: border-color 0.3s;
+}
+.brands .wrap {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.brands p {
+  font-size: 14px;
+  color: var(--m-fg3);
+  font-weight: 600;
+  max-width: 260px;
+  line-height: 1.45;
+}
+.brands ul {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+  flex-wrap: wrap;
+}
+.brands li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  transition: transform 0.3s var(--m-spring);
+}
+.brands li:hover {
+  transform: translateY(-2px);
+}
+.brands svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ==========================================================================
+   NUMBERS / STATS
+   ========================================================================== */
+.nums {
+  padding: 100px 0 40px;
+}
+.nums .grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+.nums h2 {
+  font-size: clamp(36px, 4.4vw, 56px);
+  max-width: 760px;
+}
+.num {
+  padding: 20px 0;
+  border-top: 1px solid var(--m-line2);
+}
+.num b {
+  display: block;
+  font-size: clamp(56px, 6vw, 84px);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.num b sup {
+  font-size: 0.38em;
+  letter-spacing: -0.03em;
+  vertical-align: top;
+  margin-left: 4px;
+  color: var(--m-fg2);
+  position: relative;
+  top: 0.5em;
+}
+.num p {
+  margin-top: 12px;
+  color: var(--m-fg2);
+  font-size: 14.5px;
+  line-height: 1.5;
+  font-weight: 500;
+  max-width: 230px;
+}
+
+/* ==========================================================================
+   FEATURES (4 CARDS WITH 3D HOVER TILT)
+   ========================================================================== */
+.feat {
+  padding: 80px 0;
+}
+.feat .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 36px;
+}
+.feat h2 {
+  font-size: clamp(36px, 4.4vw, 56px);
+}
+.feat .head .lead {
+  max-width: 380px;
+  font-size: 15.5px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.card {
+  position: relative;
+  border-radius: 32px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  overflow: hidden;
+  padding: 30px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s var(--m-spring), box-shadow 0.3s, background 0.3s;
+  cursor: default;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: inset 0 0 0 1px var(--m-line2), var(--m-shadow-card);
+}
+.card.w7 { grid-column: span 7; }
+.card.w5 { grid-column: span 5; }
+.card.w6 { grid-column: span 6; }
+.card h3 {
+  font-size: 28px;
+  letter-spacing: -0.05em;
+}
+.card p {
+  margin-top: 10px;
+  color: var(--m-fg2);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+  max-width: 420px;
+  letter-spacing: -0.012em;
+}
+.card .vis {
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+/* Timetable visual */
+.tt {
+  display: grid;
+  grid-template-columns: 44px repeat(5, 1fr);
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg3);
+}
+.tt .h { text-align: center; padding-bottom: 4px; }
+.tt .tm { padding-top: 10px; }
+.tt i {
+  height: 44px;
+  border-radius: 12px;
+  background: var(--m-s2);
+  font-style: normal;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--m-fg3);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: transform 0.2s, background 0.2s;
+}
+.tt i:hover {
+  transform: scale(1.02);
+}
+.tt i.cls {
+  background: var(--m-s4);
+  color: var(--m-fg2);
+}
+.tt i.lec {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--m-line2);
+}
+.tt i.ok {
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  font-weight: 700;
+}
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--m-fg3);
+  font-weight: 600;
+}
+.legend span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.legend em {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* Queue visual */
+.q { display: flex; flex-direction: column; }
+.q .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  transition: background 0.2s;
+}
+.q .row + .row {
+  box-shadow: inset 0 1px 0 var(--m-line);
+}
+.q img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--m-s3);
+}
+.q .tx { flex: 1; }
+.q .tx b {
+  display: block;
+  font-size: 14.5px;
+  letter-spacing: -0.03em;
+}
+.q .tx small {
+  font-size: 12px;
+  color: var(--m-fg2);
+  font-weight: 500;
+}
+.q .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+.q .st.on {
+  color: var(--m-fg);
+}
+.q .gl {
+  width: 18px;
+  height: 18px;
+}
+
+/* Chat visual */
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bub {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 20px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.bub.them {
+  background: var(--m-s2);
+  color: var(--m-fg);
+  border-bottom-left-radius: 6px;
+}
+.bub.me {
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+}
+.actbar {
+  margin-top: 10px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.actbar span:first-child { flex: 1; }
+.actbar .m-btn {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+/* Campus Map Visual */
+.iso-wrap {
+  position: relative;
+  width: 100%;
+  height: 230px;
+  overflow: hidden;
+}
+.iso {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.map-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00C853;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 200, 83, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 83, 0); }
+}
+
+/* ==========================================================================
+   STEPS (3 BƯỚC)
+   ========================================================================== */
+.steps {
+  padding: 90px 0;
+}
+.steps h2 {
+  font-size: clamp(36px, 4.4vw, 56px);
+  max-width: 640px;
+}
+.steps ol {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 44px;
+}
+.steps li {
+  border-top: 1px solid var(--m-line2);
+  padding: 24px 16px 24px 0;
+  border-radius: 0 0 16px 0;
+  transition: transform 0.3s var(--m-spring), background 0.2s;
+}
+.steps li:hover {
+  transform: translateY(-4px);
+}
+.steps li b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--m-fg3);
+  font-variant-numeric: tabular-nums;
+}
+.steps li h3 {
+  font-size: 26px;
+  margin-top: 28px;
+}
+.steps li p {
+  color: var(--m-fg2);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+  margin-top: 10px;
+  max-width: 320px;
+}
+
+/* ==========================================================================
+   FAIRNESS / NGHIÊN CỨU (INTERACTIVE POLICIES)
+   ========================================================================== */
+.fair {
+  position: relative;
+  padding: 100px 0;
+  overflow: hidden;
+}
+.fair .box {
+  position: relative;
+  border-radius: 40px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow-card);
+  padding: 64px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  overflow: hidden;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.fair h2 {
+  font-size: clamp(36px, 4vw, 52px);
+}
+.fair .lead {
+  margin-top: 18px;
+  font-size: 16px;
+}
+.pol-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pol-card {
+  border-radius: 22px;
+  padding: 18px 20px;
+  background: var(--m-s2);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  cursor: pointer;
+  transition: transform 0.3s var(--m-spring), background 0.25s, box-shadow 0.25s, color 0.25s;
+  user-select: none;
+}
+.pol-card:hover {
+  transform: translateX(4px);
+}
+.pol-card.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  box-shadow: none;
+}
+.pol-card b {
+  font-size: 17px;
+  letter-spacing: -0.035em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pol-card small {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.72;
+  display: block;
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   FAQ ACCORDION
+   ========================================================================== */
+.faq {
+  padding: 60px 0 100px;
+}
+.faq .grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 48px;
+}
+.faq h2 {
+  font-size: clamp(36px, 4vw, 52px);
+}
+details {
+  border-bottom: 1px solid var(--m-line);
+  transition: border-color 0.3s;
+}
+summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  user-select: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+  content: "+";
+  color: var(--m-fg3);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1;
+  transition: transform 0.35s var(--m-spring), color 0.2s;
+}
+details[open] summary::after {
+  transform: rotate(45deg);
+  color: var(--m-fg);
+}
+details p {
+  color: var(--m-fg2);
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 500;
+  padding: 0 40px 22px 0;
+}
+
+/* ==========================================================================
+   CTA & FOOTER
+   ========================================================================== */
+.cta-end {
+  position: relative;
+  padding: 130px 0;
+  text-align: center;
+  overflow: hidden;
+}
+.cta-end h2 {
+  font-size: clamp(44px, 6vw, 80px);
+  max-width: 860px;
+  margin: 0 auto;
+}
+.cta-end .lead {
+  margin: 20px auto 0;
+  max-width: 480px;
+}
+.cta-end .row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+
+footer {
+  border-top: 1px solid var(--m-line);
+  padding: 36px 0 48px;
+  transition: border-color 0.3s;
+}
+footer .wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+footer p {
+  font-size: 13px;
+  color: var(--m-fg3);
+  font-weight: 500;
+}
+footer nav {
+  display: flex;
+  gap: 22px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+footer nav a:hover {
+  color: var(--m-fg);
+}
+
+/* ==========================================================================
+   RESPONSIVE QUERIES
+   ========================================================================== */
+@media (max-width: 960px) {
+  .nav .links { display: none; }
+  .nav .acts { margin-left: auto; }
+  .hero { padding-top: 130px; }
+  .hero .grid, .fair .box, .faq .grid { grid-template-columns: 1fr; }
+  .stage { height: 600px; margin-top: 20px; }
+  .nums .grid { grid-template-columns: repeat(2, 1fr); }
+  .card.w7, .card.w5, .card.w6 { grid-column: span 12; }
+  .steps ol { grid-template-columns: 1fr; }
+  .feat .head { flex-direction: column; align-items: start; }
+  .fair .box { padding: 36px 24px; }
+  .toast.a { right: 0; }
+  .toast.b { left: 0; }
+}
+@media (max-width: 520px) {
+  .nums .grid { grid-template-columns: 1fr; }
+  .nav { padding: 0 8px 0 14px; }
+  .oh-logo span:last-child { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1 !important; transform: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+  .m-ghost-row { animation: none !important; }
+  .phone, .toast, .card, .m-btn { transition: none !important; transform: none !important; }
+  .m-odo-reel { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="m-grain"></div>
+
+<!-- SVG Sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="oh" viewBox="0 0 120 120">
+      <g fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M58.67 63.48A22 22 0 1 1 38 49"/>
+        <path d="M74 27V93"/>
+        <path d="M74 63A14 14 0 0 1 102 63V93"/>
+      </g>
+    </symbol>
+    <mask id="m-ok"><rect width="24" height="24" fill="#fff"/><path d="M7.5 12.2l3 3 6-6.4" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></mask>
+    <mask id="m-wait"><rect width="24" height="24" fill="#fff"/><path d="M12 7v5.2l3.2 2" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></mask>
+    <mask id="m-offer"><rect width="24" height="24" fill="#fff"/><path d="M8 12h8M13 8.5l3.5 3.5-3.5 3.5" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></mask>
+    <mask id="m-queue"><rect width="24" height="24" fill="#fff"/><path d="M8 9h8M8 12h8M8 15h5" stroke="#000" stroke-width="2.2" fill="none" stroke-linecap="round"/></mask>
+    <symbol id="g-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#m-ok)"/></symbol>
+    <symbol id="g-wait" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#m-wait)"/></symbol>
+    <symbol id="g-offer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#m-offer)"/></symbol>
+    <symbol id="g-queue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#m-queue)"/></symbol>
+  </defs>
+</svg>
+
+<!-- Header Nav with Frosted Glass & Theme Switcher -->
+<div class="nav-wrap">
+  <header class="nav m-glass" id="navbar">
+    <a class="oh-logo" href="#">
+      <span class="oh-mark"><svg><use href="#oh"/></svg></span>
+      <span>officehours</span>
+    </a>
+    <nav class="links">
+      <a href="#tinh-nang">Tính năng</a>
+      <a href="#cach-dung">Cách dùng</a>
+      <a href="#cong-bang">Hàng đợi công bằng</a>
+      <a href="#hoi-dap">Hỏi đáp</a>
+    </nav>
+    <div class="acts">
+      <!-- Theme Switcher Pill -->
+      <div class="theme-switch" role="radiogroup" aria-label="Giao diện">
+        <button type="button" class="theme-btn active" data-theme="system" title="Hệ thống" aria-label="Theo hệ thống">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 20h8M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" class="theme-btn" data-theme="light" title="Chế độ sáng" aria-label="Chế độ sáng">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" class="theme-btn" data-theme="dark" title="Chế độ tối" aria-label="Chế độ tối">
+          <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-5.4-5.4c0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="theme-thumb" id="themeThumb"></div>
+      </div>
+      <a class="m-btn m-btn-ghost m-btn-sm" href="/login">Đăng nhập</a>
+      <a class="m-btn m-btn-primary m-btn-sm" href="/register">Bắt đầu</a>
+    </div>
+  </header>
+</div>
+
+<main>
+<!-- Hero Section -->
+<section class="hero">
+  <div class="m-glow" style="width:720px;height:520px;left:-260px;top:-200px;background:#4b47a0;--o:0.34"></div>
+  <div class="m-glow" style="width:600px;height:500px;right:-200px;top:200px;background:#2f6b52;--o:0.22"></div>
+  
+  <div class="wrap grid">
+    <div>
+      <p class="eyebrow rv">Đặt lịch gặp giảng viên ở EIU</p>
+      <h1 class="rv" style="margin-top:18px">Giờ tiếp sinh viên, <span>không cần email qua lại.</span></h1>
+      <p class="lead rv">Chọn giảng viên, chọn slot trống là xong. Mỗi slot đều được kiểm tra với thời khóa biểu của cả sinh viên lẫn giảng viên, nên không có chuyện trùng giờ học.</p>
+      <div class="cta rv">
+        <a class="m-btn m-btn-primary" href="/register">Tạo tài khoản</a>
+        <a class="m-btn m-btn-ghost" href="/public/office-hours">Xem lịch giảng viên</a>
+      </div>
+      <p class="note rv">Có trên web và Android. Dùng email trường để đăng ký.</p>
+    </div>
+
+    <!-- 3D Interactive Phone Stage -->
+    <div class="stage rv" id="heroStage">
+      <div class="phone" id="heroPhone">
+        <div class="screen">
+          <p class="hi">Thứ Tư, 18/11</p>
+          <p class="t">Chào Bảo</p>
+          
+          <div class="nextcard">
+            <div class="r">
+              <img src="/memoji/12.png" alt="TS. Nguyễn Minh Khoa">
+              <div>
+                <b>TS. Nguyễn Minh Khoa</b>
+                <small>Đề cương đồ án · 14:00 – 14:20</small>
+              </div>
+            </div>
+            
+            <!-- Live mechanical odometer countdown -->
+            <div class="cd">
+              <div class="m-odo" id="odometer" aria-label="1 giờ 42 phút 08 giây nữa bắt đầu">
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="0"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="1"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+                <span class="m-odo-sep">:</span>
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="2"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="3"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+                <span class="m-odo-sep">:</span>
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="4"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+                <span class="m-odo-d"><span class="m-odo-reel" data-reel="5"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+              </div>
+              <span>nữa bắt đầu</span>
+            </div>
+            
+            <div class="meet">
+              <svg viewBox="0 0 24 24"><path d="M5.53 2.13 0 7.75h5.53zm.398 0v5.62h7.608v3.65l5.47-4.45c-.014-1.22.031-2.25-.025-3.46-.148-1.09-1.287-1.47-2.236-1.36zM23.1 4.32c-.802.295-1.358.995-2.047 1.49-2.506 2.05-4.982 4.12-7.468 6.19 3.025 2.59 6.04 5.18 9.065 7.76 1.218.671 1.428-.814 1.328-1.64v-13a.828.828 0 0 0-.877-.825zM.038 8.15v7.7h5.53v-7.7zm13.577 8.1H6.008v5.62c3.864-.006 7.737.011 11.58-.009 1.02-.07 1.618-1.12 1.468-2.07v-2.51l-5.47-4.68v3.65zm-13.577 0c.02 1.44-.041 2.88.033 4.31.162.948 1.158 1.43 2.047 1.31h3.464v-5.62z"/></svg>
+              Mở Google Meet
+            </div>
+          </div>
+
+          <p class="shelf-t">Còn slot hôm nay <span>Xem hết</span></p>
+          <div class="shelf">
+            <div><img src="/memoji/23.png" alt="TS. Trần Thu Hà"><b>TS. Trần Thu Hà</b><small>2 slot</small></div>
+            <div><img src="/memoji/7.png" alt="ThS. Lê Hoàng"><b>ThS. Lê Hoàng</b><small>5 slot</small></div>
+            <div><img src="/memoji/31.png" alt="TS. Võ Hải Đăng"><b>TS. Võ Hải Đăng</b><small>1 slot</small></div>
+          </div>
+
+          <div class="navpill m-glass">
+            <i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Trang chủ</i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></i>
+            <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Parallax Toasts -->
+      <div class="toast m-glass a" id="toastA">
+        <svg class="gl"><use href="#g-ok"/></svg>
+        <span>Đã xác nhận<small>Thầy Khoa duyệt lịch 14:00 · 306.B11</small></span>
+      </div>
+      <div class="toast m-glass b" id="toastB">
+        <img src="/memoji/40.png" alt="Bạn">
+        <span>Có slot trống cho bạn<small>Giữ chỗ trong 2 giờ</small></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Brand Integrations Strip -->
+<section class="brands">
+  <div class="wrap">
+    <p>Tương thích liền mạch với các công cụ nhà trường đang dùng.</p>
+    <ul>
+      <li><svg viewBox="0 0 24 24" fill="#4285F4"><path d="M18.316 5.684H24v12.632h-5.684V5.684zM5.684 24h12.632v-5.684H5.684V24zM18.316 5.684V0H1.895A1.894 1.894 0 0 0 0 1.895v16.421h5.684V5.684h12.632zm-7.207 6.25v-.065c.272-.144.5-.349.687-.617s.279-.595.279-.982c0-.379-.099-.72-.3-1.025a2.05 2.05 0 0 0-.832-.714 2.703 2.703 0 0 0-1.197-.257c-.6 0-1.094.156-1.481.467-.386.311-.65.671-.793 1.078l1.085.452c.086-.249.224-.461.413-.633.189-.172.445-.257.767-.257.33 0 .602.088.816.264a.86.86 0 0 1 .322.703c0 .33-.12.589-.36.778-.24.19-.535.284-.886.284h-.567v1.085h.633c.407 0 .748.109 1.020.327.272.218.407.499.407.843 0 .336-.129.614-.387.832s-.565.327-.924.327c-.351 0-.651-.103-.897-.311-.248-.208-.422-.502-.521-.881l-1.096.452c.178.616.505 1.082.977 1.401.472.319.984.478 1.538.477a2.84 2.84 0 0 0 1.293-.291c.382-.193.684-.458.902-.794.218-.336.327-.72.327-1.149 0-.429-.115-.797-.344-1.105a2.067 2.067 0 0 0-.881-.689zm2.093-1.931l.602.913L15 10.045v5.744h1.187V8.446h-.827l-2.158 1.557zM22.105 0h-3.289v5.184H24V1.895A1.894 1.894 0 0 0 22.105 0zm-3.289 23.5l4.684-4.684h-4.684V23.5zM0 22.105C0 23.152.848 24 1.895 24h3.289v-5.184H0v3.289z"/></svg>Google Calendar</li>
+      <li><svg viewBox="0 0 24 24" fill="#00897B"><path d="M5.53 2.13 0 7.75h5.53zm.398 0v5.62h7.608v3.65l5.47-4.45c-.014-1.22.031-2.25-.025-3.46-.148-1.09-1.287-1.47-2.236-1.36zM23.1 4.32c-.802.295-1.358.995-2.047 1.49-2.506 2.05-4.982 4.12-7.468 6.19 3.025 2.59 6.04 5.18 9.065 7.76 1.218.671 1.428-.814 1.328-1.64v-13a.828.828 0 0 0-.877-.825zM.038 8.15v7.7h5.53v-7.7zm13.577 8.1H6.008v5.62c3.864-.006 7.737.011 11.58-.009 1.02-.07 1.618-1.12 1.468-2.07v-2.51l-5.47-4.68v3.65zm-13.577 0c.02 1.44-.041 2.88.033 4.31.162.948 1.158 1.43 2.047 1.31h3.464v-5.62z"/></svg>Google Meet</li>
+      <li><svg viewBox="0 0 24 24" fill="#0B5CFF" style="width:48px;height:48px;margin:-11px 0"><path d="M5.033 14.649H.743a.74.74 0 0 1-.686-.458.74.74 0 0 1 .16-.808L3.19 10.41H1.06A1.06 1.06 0 0 1 0 9.35h3.957c.301 0 .57.18.686.458a.74.74 0 0 1-.161.808L1.51 13.59h2.464c.585 0 1.06.475 1.06 1.06zM24 11.338c0-1.14-.927-2.066-2.066-2.066-.61 0-1.158.265-1.537.686a2.061 2.061 0 0 0-1.536-.686c-1.14 0-2.066.926-2.066 2.066v3.311a1.06 1.06 0 0 0 1.06-1.06v-2.251a1.004 1.004 0 0 1 2.013 0v2.251c0 .586.474 1.06 1.06 1.06v-3.311a1.004 1.004 0 0 1 2.012 0v2.251c0 .586.475 1.06 1.06 1.06zM16.265 12a2.728 2.728 0 1 1-5.457 0 2.728 2.728 0 0 1 5.457 0zm-1.06 0a1.669 1.669 0 1 0-3.338 0 1.669 1.669 0 0 0 3.338 0zm-4.82 0a2.728 2.728 0 1 1-5.458 0 2.728 2.728 0 0 1 5.457 0zm-1.06 0a1.669 1.669 0 1 0-3.338 0 1.669 1.669 0 0 0 3.338 0z"/></svg>Zoom</li>
+      <li><svg viewBox="0 0 24 24" fill="#EA4335"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>Gmail</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Mochy Ghost Outlined Words Drifting Loop -->
+<div class="m-ghost-strip" aria-hidden="true">
+  <div class="m-ghost-row">
+    <span class="m-ghost">OFFICEHOURS &bull; KHÔNG TRÙNG LỊCH &bull; HÀNG ĐỢI CÔNG BẰNG &bull; BẢN ĐỒ CAMPUS &bull; EIU &bull; </span>
+    <span class="m-ghost">OFFICEHOURS &bull; KHÔNG TRÙNG LỊCH &bull; HÀNG ĐỢI CÔNG BẰNG &bull; BẢN ĐỒ CAMPUS &bull; EIU &bull; </span>
+  </div>
+</div>
+
+<!-- Stats / Numbers Section -->
+<section class="nums">
+  <div class="wrap">
+    <h2 class="rv">Luật rõ ràng, áp dụng đồng nhất cho mọi người.</h2>
+    <div class="grid">
+      <div class="num rv">
+        <b>0</b>
+        <p>Lịch trùng với giờ học. Slot nào đụng thời khóa biểu của một trong hai bên sẽ tự động ẩn.</p>
+      </div>
+      <div class="num rv">
+        <b>24<sup>giờ</sup></b>
+        <p>Hủy hoặc đổi lịch trước giờ hẹn ít nhất 24 giờ để slot kịp nhường cho sinh viên khác.</p>
+      </div>
+      <div class="num rv">
+        <b>2<sup>giờ</sup></b>
+        <p>Thời gian giữ chỗ khi bạn được mời từ hàng đợi. Quá hạn, slot tự động chuyển cho người tiếp theo.</p>
+      </div>
+      <div class="num rv">
+        <b>1<sup>chạm</sup></b>
+        <p>Mở thẳng link Zoom hoặc Google Meet của buổi hẹn trực tuyến, không cần lục tìm trong email.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Grid (4 Cards) -->
+<section class="feat" id="tinh-nang">
+  <div class="wrap">
+    <div class="head">
+      <h2 class="rv">Mọi thứ cho một buổi gặp,<br>ở cùng một nơi.</h2>
+      <p class="lead rv">Từ lúc tìm giảng viên tới lúc xác nhận đã gặp. Giảng viên mở lịch một lần, hệ thống tự động điều phối.</p>
+    </div>
+
+    <div class="cards">
+      <!-- Card 1: Timetable -->
+      <article class="card w7 rv" data-tilt>
+        <h3>Slot luôn khớp thời khóa biểu</h3>
+        <p>Nhập file PDF thời khóa biểu của trường. Slot chỉ hiển thị khi cả sinh viên lẫn giảng viên đều hoàn toàn rảnh.</p>
+        <div class="vis">
+          <div class="tt">
+            <span></span><span class="h">T2</span><span class="h">T3</span><span class="h">T4</span><span class="h">T5</span><span class="h">T6</span>
+            <span class="tm">08:00</span><i class="cls">Lập trình Web</i><i></i><i class="cls">Lập trình Web</i><i class="lec">GV dạy</i><i class="cls">Mạng MT</i>
+            <span class="tm">10:00</span><i></i><i class="cls">CTDL</i><i class="lec">GV dạy</i><i class="cls">CTDL</i><i></i>
+            <span class="tm">14:00</span><i class="lec">GV họp</i><i class="cls">Tiếng Anh</i><i class="ok">14:00 trống</i><i></i><i class="lec">GV dạy</i>
+          </div>
+          <div class="legend">
+            <span><em style="background:var(--m-s4)"></em>Giờ học của bạn</span>
+            <span><em style="box-shadow:inset 0 0 0 1px var(--m-line2)"></em>Giảng viên bận</span>
+            <span><em style="background:var(--m-primary)"></em>Slot đặt được</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2: Queue -->
+      <article class="card w5 rv" data-tilt>
+        <h3>Hàng đợi khi hết slot</h3>
+        <p>Xếp hàng tự động thay vì canh refresh. Khi có người hủy hẹn, bạn được mời và giữ slot trong 2 giờ.</p>
+        <div class="vis q">
+          <div class="row">
+            <img src="/memoji/40.png" alt="Bạn">
+            <div class="tx"><b>Bạn</b><small>Vào hàng đợi lúc 08:12</small></div>
+            <span class="st on"><svg class="gl"><use href="#g-offer"/></svg>Được mời</span>
+          </div>
+          <div class="row">
+            <img src="/memoji/18.png" alt="Lê Minh">
+            <div class="tx"><b>Lê Minh</b><small>08:30</small></div>
+            <span class="st"><svg class="gl"><use href="#g-queue"/></svg>Đang chờ</span>
+          </div>
+          <div class="row">
+            <img src="/memoji/27.png" alt="Trần Linh">
+            <div class="tx"><b>Trần Linh</b><small>09:05</small></div>
+            <span class="st"><svg class="gl"><use href="#g-queue"/></svg>Đang chờ</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 3: Chat -->
+      <article class="card w5 rv" data-tilt>
+        <h3>Nhắn tin theo từng buổi hẹn</h3>
+        <p>Kênh chat gắn liền với buổi hẹn. Giảng viên xác nhận đã gặp ngay trong luồng trò chuyện.</p>
+        <div class="vis">
+          <div class="chat">
+            <div class="bub them">Em tới cửa phòng 306.B11 rồi ạ.</div>
+            <div class="bub me">Chờ thầy 2 phút nhé.</div>
+          </div>
+          <div class="actbar m-glass">
+            <span>Đã tới giờ hẹn</span>
+            <a class="m-btn m-btn-ghost">Vắng mặt</a>
+            <a class="m-btn m-btn-primary">Đã gặp</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 4: 3D Campus Map -->
+      <article class="card w7 rv" data-tilt>
+        <h3>Tìm đúng phòng trên bản đồ campus</h3>
+        <p>Bản đồ isometric các block EIU, chỉ dẫn vị trí tới phòng làm việc (306.B11). Vị trí chỉ chia sẻ trong giờ hẹn khi hai bên đồng thuận.</p>
+        <div class="vis">
+          <div class="iso-wrap">
+            <svg class="iso" id="iso" viewBox="0 0 640 230" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="map-badge m-glass">
+              <span class="pulse-dot"></span>
+              <span>Đích: Phòng 306 · Tầng 3 Block 11</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 3 Steps Section -->
+<section class="steps" id="cach-dung">
+  <div class="wrap">
+    <h2 class="rv">Ba bước, không cần ai nhắc.</h2>
+    <ol>
+      <li class="rv">
+        <b>01</b>
+        <h3>Chọn giảng viên</h3>
+        <p>Tìm theo tên, khoa hoặc môn học. Trang giảng viên hiển thị lịch rảnh trong tuần và vị trí văn phòng làm việc.</p>
+      </li>
+      <li class="rv">
+        <b>02</b>
+        <h3>Chọn slot trống</h3>
+        <p>Điền vắn tắt lý do gặp. Giảng viên duyệt, hệ thống tự động đồng bộ vào Google Calendar của bạn bằng một chạm.</p>
+      </li>
+      <li class="rv">
+        <b>03</b>
+        <h3>Gặp và xác nhận</h3>
+        <p>Gặp trực tiếp tại trường hoặc qua phòng họp online. Cuối buổi, trạng thái hoàn tất được cập nhật tức thì.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- Fairness Research Section (Interactive Policies) -->
+<section class="fair" id="cong-bang">
+  <div class="wrap">
+    <div class="box rv">
+      <div class="m-glow" style="width:520px;height:420px;right:-160px;top:-160px;background:#3465e0;--o:0.22"></div>
+      <div style="position:relative">
+        <p class="eyebrow">Phần nghiên cứu của đồ án</p>
+        <h2 style="margin-top:14px">Slot hiếm được chia công bằng, không phụ thuộc vào ai nhanh tay hơn.</h2>
+        <p class="lead" id="policyDescription">Khi một slot được giải phóng, thuật toán sẽ chọn sinh viên xứng đáng nhất từ hàng đợi dựa trên chính sách phân bổ của khoa. Mọi lượt mời đều được ghi nhật ký minh bạch.</p>
+      </div>
+      <div class="pol-list" style="position:relative" id="policyList">
+        <div class="pol-card" data-policy="fifo">
+          <b>Ai đến trước <span>FIFO</span></b>
+          <small>Người vào hàng đợi sớm nhất được ưu tiên mời trước.</small>
+        </div>
+        <div class="pol-card active" data-policy="priority">
+          <b>Ưu tiên người cần hơn <span>Need-based</span></b>
+          <small>Sinh viên lâu chưa được gặp hoặc có lịch hẹn bị hủy trước đó được ưu tiên cao hơn.</small>
+        </div>
+        <div class="pol-card" data-policy="quota">
+          <b>Xoay vòng công bằng <span>Round Robin</span></b>
+          <small>Sinh viên vừa có buổi hẹn gần đây sẽ tạm nhường lượt, tránh tình trạng chiếm dụng slot.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Accordion -->
+<section class="faq" id="hoi-dap">
+  <div class="wrap grid">
+    <h2 class="rv">Hỏi đáp thường gặp</h2>
+    <div class="rv">
+      <details open>
+        <summary>Ai có thể sử dụng OfficeHours?</summary>
+        <p>Toàn bộ sinh viên và giảng viên Trường Đại học Quốc tế Miền Đông (EIU). Sinh viên đăng ký và đăng nhập bằng email trường (@eiu.edu.vn).</p>
+      </details>
+      <details>
+        <summary>Tôi có thể hủy lịch sát giờ hẹn không?</summary>
+        <p>Quy định hệ thống yêu cầu hủy hoặc đổi lịch hẹn trước giờ bắt đầu ít nhất 24 giờ. Điều này giúp hệ thống kịp gửi thông báo mời các bạn sinh viên đang chờ trong hàng đợi.</p>
+      </details>
+      <details>
+        <summary>Ứng dụng có theo dõi vị trí của tôi ngoài giờ không?</summary>
+        <p>Tuyệt đối không. Tọa độ chỉ được chia sẻ trong thời gian diễn ra buổi hẹn trực tiếp (in-person), chỉ khi cả hai bên cùng bật chia sẻ, và tự động xóa ngay khi buổi hẹn kết thúc.</p>
+      </details>
+      <details>
+        <summary>Nền tảng hỗ trợ những thiết bị nào?</summary>
+        <p>OfficeHours hoạt động tối ưu trên trình duyệt Web (cho cả Desktop và máy tính bảng) cùng ứng dụng Android native cài đặt trên điện thoại di động.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action End -->
+<section class="cta-end">
+  <div class="m-glow" style="width:620px;height:300px;left:50%;top:190px;margin-left:-310px;background:#4b47a0;--o:0.3"></div>
+  <div class="wrap" style="position:relative">
+    <h2 class="rv">Đặt buổi gặp đầu tiên trong một phút.</h2>
+    <p class="lead rv">Đăng ký bằng email trường EIU. Không cần cài đặt phần mềm phức tạp.</p>
+    <div class="row rv">
+      <a class="m-btn m-btn-primary" href="/register">Tạo tài khoản</a>
+      <a class="m-btn m-btn-ghost" href="/login">Đăng nhập</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="wrap">
+    <a class="oh-logo" href="#">
+      <span class="oh-mark"><svg><use href="#oh"/></svg></span>
+      <span>officehours</span>
+    </a>
+    <nav>
+      <a href="#tinh-nang">Tính năng</a>
+      <a href="#hoi-dap">Hỏi đáp</a>
+      <a href="/public/office-hours">Lịch công khai</a>
+    </nav>
+    <p>Đồ án CSW434 · Trường Đại học Quốc tế Miền Đông</p>
+  </div>
+</footer>
+
+<!-- ==========================================================================
+     SCRIPTS (THEME, 3D TILT, ODOMETER, ISOMETRIC MAP, POLICIES, SCROLL)
+     ========================================================================== -->
+<script>
+// --- 1. THEME SWITCHER (System, Light, Dark) ---
+(function() {
+  var html = document.documentElement;
+  var buttons = document.querySelectorAll('.theme-btn');
+  var thumb = document.getElementById('themeThumb');
+  var storedTheme = localStorage.getItem('mochy-theme') || 'system';
+
+  function applyTheme(theme, updateUI) {
+    html.setAttribute('data-mochy-theme', theme);
+    localStorage.setItem('mochy-theme', theme);
+    document.cookie = 'NEXT_THEME=' + theme + '; path=/; max-age=31536000';
+
+    if (updateUI) {
+      buttons.forEach(function(btn, index) {
+        var active = btn.getAttribute('data-theme') === theme;
+        btn.classList.toggle('active', active);
+        if (active && thumb) {
+          thumb.style.transform = 'translateX(' + (index * 34) + 'px)';
+        }
+      });
+    }
+    // Re-draw map with correct theme colors
+    if (window.renderMap) window.renderMap();
+  }
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      applyTheme(btn.getAttribute('data-theme'), true);
+    });
+  });
+
+  applyTheme(storedTheme, true);
+
+  // OS theme change listener when system is active
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+    if (html.getAttribute('data-mochy-theme') === 'system') {
+      if (window.renderMap) window.renderMap();
+    }
+  });
+})();
+
+// --- 2. SCROLL FROSTED GLASS TOPBAR ---
+(function() {
+  var nav = document.getElementById('navbar');
+  if (!nav) return;
+  function onScroll() {
+    if (window.scrollY > 24) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+
+// --- 3. MOCHY INTERACTION: 3D PHONE TILT & PARALLAX TOASTS (Press3D.kt) ---
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var stage = document.getElementById('heroStage');
+  var phone = document.getElementById('heroPhone');
+  var toastA = document.getElementById('toastA');
+  var toastB = document.getElementById('toastB');
+  if (!stage || !phone) return;
+
+  var mouseX = 0, mouseY = 0, currentX = 0, currentY = 0;
+  var isOver = false;
+
+  stage.addEventListener('mousemove', function(e) {
+    var rect = stage.getBoundingClientRect();
+    var x = (e.clientX - rect.left) / rect.width - 0.5;
+    var y = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX = x * 18;
+    mouseY = -y * 18;
+    isOver = true;
+  });
+
+  stage.addEventListener('mouseleave', function() {
+    mouseX = 0;
+    mouseY = 0;
+    isOver = false;
+  });
+
+  function tick() {
+    currentX += (mouseX - currentX) * 0.12;
+    currentY += (mouseY - currentY) * 0.12;
+
+    phone.style.transform = 'translateX(-50%) perspective(1000px) rotateX(' + currentY.toFixed(2) + 'deg) rotateY(' + currentX.toFixed(2) + 'deg) rotateZ(-3deg)';
+    if (toastA) {
+      toastA.style.transform = 'translate3d(' + (currentX * 1.4).toFixed(1) + 'px, ' + (-currentY * 1.4).toFixed(1) + 'px, 40px) rotate(3deg)';
+    }
+    if (toastB) {
+      toastB.style.transform = 'translate3d(' + (-currentX * 1.2).toFixed(1) + 'px, ' + (currentY * 1.2).toFixed(1) + 'px, 30px) rotate(-2deg)';
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+// --- 4. 3D CARD HOVER TILT FOR FEATURE CARDS ---
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var cards = document.querySelectorAll('.card[data-tilt]');
+  cards.forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = 'perspective(900px) rotateX(' + (-y * 6).toFixed(2) + 'deg) rotateY(' + (x * 6).toFixed(2) + 'deg) translateY(-4px)';
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.transform = '';
+    });
+  });
+})();
+
+// --- 5. MECHANICAL ODOMETER COUNTDOWN TIMER ---
+(function() {
+  var reels = document.querySelectorAll('.m-odo-reel');
+  var totalSeconds = 6128; // 01:42:08
+
+  function updateReels(s) {
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    var str = String(h).padStart(2, '0') + String(m).padStart(2, '0') + String(sec).padStart(2, '0');
+    reels.forEach(function(reel, i) {
+      var digit = parseInt(str[i], 10) || 0;
+      reel.style.transform = 'translateY(' + (-digit) + 'em)';
+    });
+  }
+
+  updateReels(totalSeconds);
+  setInterval(function() {
+    totalSeconds = Math.max(0, totalSeconds - 1);
+    updateReels(totalSeconds);
+  }, 1000);
+})();
+
+// --- 6. FAIRNESS RESEARCH INTERACTIVE POLICIES ---
+(function() {
+  var cards = document.querySelectorAll('.pol-card');
+  var desc = document.getElementById('policyDescription');
+  var descs = {
+    fifo: 'Chính sách Đến trước - Phục vụ trước (FIFO): Đảm bảo sự công bằng về mặt thời gian. Bất kỳ khi nào có lịch trống do hủy hẹn, hệ thống sẽ tự động gán slot cho người đăng ký sớm nhất.',
+    priority: 'Chính sách Dựa trên nhu cầu (Need-based Priority): Phân bổ ưu tiên cho sinh viên chưa có buổi gặp nào trong tuần hoặc có yêu cầu quan trọng về đề cương đồ án. Giúp tối đa hóa độ bao phủ của giảng viên.',
+    quota: 'Chính sách Hạn ngạch xoay vòng (Round Robin Quota): Ngăn chặn tình trạng một vài cá nhân chiếm trọn nhiều slot trong kỳ học. Khi vừa hoàn thành một buổi hẹn, bạn sẽ tạm nhường quyền ưu tiên cho bạn khác.'
+  };
+
+  cards.forEach(function(card) {
+    card.addEventListener('click', function() {
+      cards.forEach(function(c) { c.classList.remove('active'); });
+      card.classList.add('active');
+      var p = card.getAttribute('data-policy');
+      if (desc && descs[p]) {
+        desc.style.opacity = '0';
+        setTimeout(function() {
+          desc.textContent = descs[p];
+          desc.style.opacity = '1';
+        }, 150);
+      }
+    });
+  });
+})();
+
+// --- 7. SCROLL REVEAL OBSERVER ---
+(function() {
+  var els = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(function(e) { e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -40px 0px', threshold: 0.05 });
+  els.forEach(function(e) {
+    var rect = e.getBoundingClientRect();
+    if (rect.top < window.innerHeight) {
+      e.classList.add('in');
+    } else {
+      io.observe(e);
+    }
+  });
+})();
+
+// --- 8. ISOMETRIC CAMPUS MAP (SVG) WITH DYNAMIC THEME SUPPORT ---
+(function() {
+  window.renderMap = function() {
+    var svg = document.getElementById('iso');
+    if (!svg) return;
+    svg.innerHTML = '';
+    var NS = 'http://www.w3.org/2000/svg';
+
+    var isDark = document.documentElement.getAttribute('data-mochy-theme') === 'dark' ||
+      (document.documentElement.getAttribute('data-mochy-theme') === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    var wallA = isDark ? '#1a1a1a' : '#d4d4d8';
+    var wallB = isDark ? '#141414' : '#c4c4c8';
+    var roof = isDark ? '#262626' : '#e4e4e7';
+    var targetA = isDark ? '#ffffff' : '#18181b';
+    var targetB = isDark ? '#b0b0b0' : '#27272a';
+    var pathColor = isDark ? '#ffffff' : '#0a0a0a';
+
+    // Building definitions: [x, z, width, depth, stories, highlightFloor]
+    var B = [
+      [40, 207, 105, 60, 4],
+      [58, 148, 115, 45, 4, 3], // Block 11 with Floor 3 highlighted
+      [-85.5, 155, 60, 40, 4],
+      [-97.5, 92, 60, 40, 4],
+      [133, 105, 70, 28, 3],
+      [183, 100, 36, 46, 3],
+      [130, 260, 70, 48, 1]
+    ];
+    var c = [40, 160], s = 1.05, at = [320, 150], FH = 3.6, VS = 1.45;
+
+    function P(x, z, h) {
+      return [
+        at[0] + ((x - c[0]) - (z - c[1])) * 0.866 * s,
+        at[1] - ((x - c[0]) + (z - c[1])) * 0.5 * s - h * VS * s
+      ];
+    }
+
+    function poly(pts, fill) {
+      var p = document.createElementNS(NS, 'polygon');
+      p.setAttribute('points', pts.map(function(q) { return q.map(function(n) { return n.toFixed(1); }).join(','); }).join(' '));
+      p.setAttribute('fill', fill);
+      svg.appendChild(p);
+    }
+
+    B.sort(function(a, b) { return (b[0] + b[1]) - (a[0] + a[1]); }).forEach(function(b) {
+      var x0 = b[0] - b[2] / 2, x1 = b[0] + b[2] / 2;
+      var z0 = b[1] - b[3] / 2, z1 = b[1] + b[3] / 2;
+      var H = b[4] * FH;
+
+      poly([P(x0, z0, 0), P(x1, z0, 0), P(x1, z0, H), P(x0, z0, H)], wallA);
+      poly([P(x0, z0, 0), P(x0, z1, 0), P(x0, z1, H), P(x0, z0, H)], wallB);
+
+      if (b[5]) {
+        var h0 = (b[5] - 1) * FH, h1 = b[5] * FH;
+        poly([P(x0, z0, h0), P(x1, z0, h0), P(x1, z0, h1), P(x0, z0, h1)], targetA);
+        poly([P(x0, z0, h0), P(x0, z1, h0), P(x0, z1, h1), P(x0, z0, h1)], targetB);
+      }
+      poly([P(x0, z0, H), P(x1, z0, H), P(x1, z1, H), P(x0, z1, H)], roof);
+    });
+
+    // Walkway path to room
+    var a = P(95, 60, 0), b2 = P(60, 95, 0), d = P(32, 124, 0);
+    var pl = document.createElementNS(NS, 'polyline');
+    pl.setAttribute('points', [a, b2, d].map(function(q) { return q.map(function(n) { return n.toFixed(1); }).join(','); }).join(' '));
+    pl.setAttribute('fill', 'none');
+    pl.setAttribute('stroke', pathColor);
+    pl.setAttribute('stroke-width', '3');
+    pl.setAttribute('stroke-linecap', 'round');
+    pl.setAttribute('stroke-dasharray', '2 6');
+    svg.appendChild(pl);
+
+    // Current position dot
+    var dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', a[0].toFixed(1));
+    dot.setAttribute('cy', a[1].toFixed(1));
+    dot.setAttribute('r', '6');
+    dot.setAttribute('fill', pathColor);
+    svg.appendChild(dot);
+  };
+  window.renderMap();
+})();
+</script>
+</body>
+</html>

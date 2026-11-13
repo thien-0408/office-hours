@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · User Profile & Notifications Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 32px 24px 80px;
+  transition: background 0.3s, color 0.3s;
+}
+.container { max-width: 860px; margin: 0 auto; }
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hub-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  transition: all 0.2s;
+}
+.hub-link:hover { color: var(--m-fg); background: var(--m-s3); }
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  gap: 4px;
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  background: var(--m-s1);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--m-line);
+  margin-bottom: 28px;
+  width: fit-content;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.card {
+  background: var(--m-s1);
+  border: 1px solid var(--m-line);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--m-shadow);
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+.card-subtitle {
+  font-size: 13px;
+  color: var(--m-fg2);
+  margin-bottom: 20px;
+}
+
+/* Avatar row */
+.avatar-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.big-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  object-fit: cover;
+  background: var(--m-s2);
+}
+.avatar-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.avatar-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.avatar-thumb.selected {
+  border-color: var(--m-fg);
+  transform: scale(1.05);
+}
+
+/* Form controls */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  margin-bottom: 6px;
+}
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--m-s2);
+  border: 1px solid var(--m-line);
+  color: var(--m-fg);
+  font-size: 14px;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--m-fg);
+}
+
+.btn-save {
+  padding: 10px 24px;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  border: none;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+/* Notifications list */
+.notif-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--m-s2);
+  margin-bottom: 10px;
+  border-left: 3px solid transparent;
+}
+.notif-item.unread {
+  border-left-color: var(--m-fg);
+  background: var(--m-s1);
+  box-shadow: var(--m-shadow);
+}
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--m-fg);
+  margin-top: 6px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-nav">
+    <div class="brand-group">
+      <a href="/previews/index.html" class="hub-link">← Hub Previews</a>
+      <span style="font-weight: 700; font-size: 17px;">Profile & Notifications · Mochy Preview</span>
+    </div>
+    <div class="theme-switch">
+      <button class="theme-btn" id="btnLight">Sáng</button>
+      <button class="theme-btn active" id="btnDark">Tối</button>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('profile')">Hồ sơ</button>
+    <button class="tab-btn" onclick="switchTab('notifs')">Thông báo</button>
+  </div>
+
+  <!-- TAB 1: PROFILE -->
+  <div id="panel-profile" class="panel active">
+    <div class="card">
+      <h2 class="card-title">Hồ sơ người dùng</h2>
+      <p class="card-subtitle">Ảnh đại diện hiển thị cho sinh viên và giảng viên khác.</p>
+
+      <div class="avatar-header">
+        <img id="main-avatar" src="/avatars/real/khoa.jpg" alt="TS. Nguyễn Minh Khoa" class="big-avatar">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; letter-spacing: -0.02em;">Ảnh chân dung</div>
+          <div style="font-size: 12.5px; color: var(--m-fg3); margin: 2px 0 10px;">JPG hoặc PNG, tối đa 2 MB. Ảnh vuông, rõ mặt.</div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="hub-link" style="background: var(--m-fg); color: var(--m-bg);">Tải ảnh mới</button>
+            <button type="button" class="hub-link">Gỡ ảnh</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Họ và tên</label>
+        <input type="text" class="form-input" value="TS. Nguyễn Minh Khoa">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email trường EIU</label>
+        <input type="email" class="form-input" value="khoa.nm@eiu.edu.vn" disabled style="opacity: 0.7;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Khoa / Phòng làm việc</label>
+        <input type="text" class="form-input" value="Khoa Công nghệ Thông tin · Phòng 306.B11">
+      </div>
+
+      <button class="btn-save">Lưu thay đổi hồ sơ</button>
+    </div>
+
+    <!-- SECURITY CARD -->
+    <div class="card">
+      <h2 class="card-title">Bảo mật & Đổi mật khẩu</h2>
+      <div class="form-group" style="margin-top: 16px;">
+        <label class="form-label">Mật khẩu hiện tại</label>
+        <input type="password" class="form-input" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu mới (8–72 ký tự)</label>
+        <input type="password" class="form-input" placeholder="••••••••">
+      </div>
+      <button class="btn-save" style="background: transparent; border: 1px solid var(--m-line2); color: var(--m-fg);">Cập nhật mật khẩu</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: NOTIFICATIONS -->
+  <div id="panel-notifs" class="panel">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2 class="card-title">Trung tâm Thông báo</h2>
+          <p class="card-subtitle" style="margin-bottom: 0;">Cập nhật trạng thái buổi hẹn, hàng đợi và thông báo từ giảng viên.</p>
+        </div>
+        <button class="hub-link" style="font-size: 12px;">Đánh dấu tất cả đã đọc</button>
+      </div>
+
+      <div class="notif-item unread">
+        <div class="notif-dot"></div>
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 14px;">Lịch hẹn mới được xác nhận!</div>
+          <div style="font-size: 13px; color: var(--m-fg2); margin-top: 2px;">Sinh viên Nguyễn Văn An (2100123) đã đặt lịch hẹn lúc 14:00 hôm nay tại phòng 306.B11.</div>
+          <div style="font-size: 11.5px; color: var(--m-fg3); margin-top: 6px;">10 phút trước</div>
+        </div>
+      </div>
+
+      <div class="notif-item">
+        <div style="width: 8px;"></div>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 14px;">Lịch trình ngày mai</div>
+          <div style="font-size: 13px; color: var(--m-fg2); margin-top: 2px;">Bạn có 3 buổi tiếp sinh viên vào ngày mai Thứ Sáu từ 09:00 - 11:30.</div>
+          <div style="font-size: 11.5px; color: var(--m-fg3); margin-top: 6px;">Hôm qua lúc 18:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const html = document.documentElement;
+document.getElementById('btnLight').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'light');
+  this.classList.add('active');
+  document.getElementById('btnDark').classList.remove('active');
+});
+document.getElementById('btnDark').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'dark');
+  this.classList.add('active');
+  document.getElementById('btnLight').classList.remove('active');
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'profile') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('panel-profile').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('panel-notifs').classList.add('active');
+  }
+}
+
+function pickAvatar(src, el) {
+  document.getElementById('main-avatar').src = src;
+  document.querySelectorAll('.avatar-thumb').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

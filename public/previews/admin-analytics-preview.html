@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Admin Analytics & Research Charts Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding-bottom: 80px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--m-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 -1px 0 var(--m-line), var(--m-shadow);
+  padding: 14px 24px;
+}
+.topbar-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  color: inherit;
+}
+.mark-oh {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 3px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+}
+.theme-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+
+.main-wrap {
+  max-width: 1240px;
+  margin: 32px auto 0;
+  padding: 0 24px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.head h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+}
+.head p {
+  color: var(--m-fg2);
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 6px;
+  background: var(--m-s2);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.tab-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s var(--m-spring);
+}
+.tab-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  box-shadow: var(--m-shadow);
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  border-radius: 22px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 20px;
+}
+.kpi-card small { font-size: 12.5px; color: var(--m-fg3); font-weight: 600; display: block; }
+.kpi-card b { font-size: 34px; font-weight: 700; letter-spacing: -0.05em; display: block; margin-top: 4px; }
+.kpi-card span { font-size: 12px; color: var(--m-fg2); display: block; margin-top: 4px; }
+
+.card-box {
+  border-radius: 28px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 26px;
+  margin-bottom: 24px;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.card-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.035em; }
+
+/* 2-Column Grid for Analytics */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Horizontal Ranked Bars (BE-51) */
+.ranked-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.r-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.r-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.r-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.r-content { flex: 1; }
+.r-name-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.r-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--m-s3);
+  overflow: hidden;
+}
+.r-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  transition: width 0.6s var(--m-spring);
+}
+.r-bar-item:nth-child(n+2) .r-fill {
+  background: var(--m-s4);
+}
+
+/* Scatter Plot / Canvas Graph */
+.plot-canvas {
+  width: 100%;
+  height: 280px;
+  display: block;
+}
+
+/* Allocation Table */
+.table-wrap {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.table-wrap th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg3);
+  border-bottom: 1px solid var(--m-line2);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.table-wrap td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--m-line);
+  font-weight: 500;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.policy-badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a href="/previews/index.html" class="brand">
+      <div class="mark-oh">oh</div>
+      <span>officehours · admin</span>
+    </a>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="theme-switch">
+        <button type="button" class="theme-btn" id="tLight">Sáng</button>
+        <button type="button" class="theme-btn active" id="tDark">Tối</button>
+      </div>
+      <a href="/previews/dashboard-mochy-preview.html" style="font-size:13px; font-weight:600; color:var(--m-fg2); text-decoration:none;">Về Dashboard →</a>
+    </div>
+  </div>
+</header>
+
+<main class="main-wrap">
+  <div class="head">
+    <div>
+      <h1>Phân tích Thống kê & Nghiên cứu</h1>
+      <p>Tải tiếp sinh viên của giảng viên và đánh đổi giữa công bằng và hiệu quả</p>
+    </div>
+    <div class="tab-nav">
+      <button type="button" class="tab-btn active" id="tabAnalytics">Thống kê Giảng viên</button>
+      <button type="button" class="tab-btn" id="tabResearch">Nghiên cứu Fairness (Research)</button>
+      <button type="button" class="tab-btn" id="tabPolicy">Chính sách Phân bổ</button>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <small>Tổng lượt hẹn kỳ này</small>
+      <b>482</b>
+      <span>+18% so với kỳ trước</span>
+    </div>
+    <div class="kpi-card">
+      <small>Tỉ lệ hoàn tất (Fulfilled)</small>
+      <b>94.2%</b>
+      <span>454 buổi gặp thành công</span>
+    </div>
+    <div class="kpi-card">
+      <small>Tỉ lệ vắng mặt (No-show)</small>
+      <b>3.8%</b>
+      <span>Thấp hơn ngưỡng 5%</span>
+    </div>
+    <div class="kpi-card">
+      <small>Hệ số công bằng Gini</small>
+      <b>0.18</b>
+      <span>Phân bổ đồng đều cao</span>
+    </div>
+  </div>
+
+  <!-- VIEW 1: ANALYTICS (Advisor Load & No-show Trends) -->
+  <div id="viewAnalytics">
+    <div class="grid-2">
+      <!-- BE-51 Advisor Load Ranked Bars -->
+      <section class="card-box">
+        <div class="card-head">
+          <div>
+            <h2>Số buổi hẹn theo giảng viên</h2>
+            <p style="font-size:12.5px; color:var(--m-fg3); margin-top:2px;">Đã xác nhận, đã gặp và vắng mặt · học kỳ này</p>
+          </div>
+          <span style="font-size:12px; font-weight:700; color:var(--m-fg2); background:var(--m-s2); padding:4px 10px; border-radius:9999px;">Học kỳ 1</span>
+        </div>
+        <div class="ranked-bars">
+          <div class="r-bar-item">
+            <div class="r-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+            <div class="r-content">
+              <div class="r-name-row"><span>TS. Nguyễn Minh Khoa (CNTT)</span><span>48 buổi hẹn</span></div>
+              <div class="r-track"><div class="r-fill" style="width: 100%;"></div></div>
+            </div>
+          </div>
+          <div class="r-bar-item">
+            <div class="r-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+            <div class="r-content">
+              <div class="r-name-row"><span>TS. Trần Thu Hà (Kinh tế)</span><span>36 buổi hẹn</span></div>
+              <div class="r-track"><div class="r-fill" style="width: 75%;"></div></div>
+            </div>
+          </div>
+          <div class="r-bar-item">
+            <div class="r-avatar"><img src="/avatars/real/hoang.jpg" alt=""></div>
+            <div class="r-content">
+              <div class="r-name-row"><span>ThS. Lê Hoàng (CNTT)</span><span>28 buổi hẹn</span></div>
+              <div class="r-track"><div class="r-fill" style="width: 58%;"></div></div>
+            </div>
+          </div>
+          <div class="r-bar-item">
+            <div class="r-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+            <div class="r-content">
+              <div class="r-name-row"><span>TS. Võ Hải Đăng (Kỹ thuật)</span><span>19 buổi hẹn</span></div>
+              <div class="r-track"><div class="r-fill" style="width: 40%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- No-show & Weekly Activity Trend -->
+      <section class="card-box">
+        <div class="card-head">
+          <div>
+            <h2>Tỉ lệ Vắng mặt theo Tuần</h2>
+            <p style="font-size:12.5px; color:var(--m-fg3); margin-top:2px;">Xu hướng sinh viên và giảng viên no-show</p>
+          </div>
+          <span style="font-size:12px; font-weight:700; color:var(--m-fg2); background:var(--m-s2); padding:4px 10px; border-radius:9999px;">12 tuần gần nhất</span>
+        </div>
+        <svg class="plot-canvas" id="trendSvg" viewBox="0 0 500 240"></svg>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--m-fg3); margin-top:8px;">
+          <span>Tuần 1</span><span>Tuần 6</span><span>Tuần 12 (Hiện tại)</span>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- VIEW 2: RESEARCH CAPSTONE (Fairness vs Efficiency Pareto Frontier) -->
+  <div id="viewResearch" style="display:none;">
+    <section class="card-box">
+      <div class="card-head">
+        <div>
+          <h2>Đồ thị Pareto Frontier: Fairness vs. Efficiency</h2>
+          <p style="font-size:13px; color:var(--m-fg3); margin-top:2px;">So sánh 3 cơ chế phân bổ: FIFO, Need-based Priority và Round Robin Quota</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" style="padding:6px 14px; border-radius:9999px; background:var(--m-fg); color:var(--m-bg); font-size:12.5px; font-weight:700; border:none; cursor:pointer;">Chạy mô phỏng Monte Carlo</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1.6fr 1fr; gap:24px; align-items:center;">
+        <svg class="plot-canvas" id="paretoSvg" viewBox="0 0 540 280" style="height:320px;"></svg>
+
+        <div style="padding:20px; border-radius:20px; background:var(--m-s2); box-shadow:inset 0 0 0 1px var(--m-line);">
+          <span style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--m-fg3);">Kết quả tối ưu đề xuất</span>
+          <h3 style="font-size:18px; font-weight:700; margin-top:6px;">Chính sách Hybrid (Need-based + Quota)</h3>
+          <p style="font-size:13.5px; color:var(--m-fg2); line-height:1.5; margin-top:8px;">
+            Đạt điểm cân bằng tối ưu trên đường biên Pareto: Độ bao phủ công bằng đạt <b>0.89</b> với tỉ lệ khai dụng slot đạt <b>96.4%</b>, vượt trội hơn so với cơ chế FIFO truyền thống (dễ dẫn tới chiếm dụng slot).
+          </p>
+          <div style="margin-top:16px; border-top:1px solid var(--m-line); padding-top:12px; display:flex; justify-content:space-between; font-size:13px;">
+            <span style="color:var(--m-fg3)">Jain's Fairness Index:</span>
+            <b>0.892 / 1.0</b>
+          </div>
+          <div style="margin-top:8px; display:flex; justify-content:space-between; font-size:13px;">
+            <span style="color:var(--m-fg3)">Slot Utilization:</span>
+            <b>96.4%</b>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- VIEW 3: ALLOCATION POLICY BY DEPARTMENT -->
+  <div id="viewPolicy" style="display:none;">
+    <section class="card-box">
+      <div class="card-head">
+        <h2>Cấu hình Phân bổ Hàng đợi theo Khoa</h2>
+        <button type="button" style="padding:6px 14px; border-radius:9999px; background:var(--m-fg); color:var(--m-bg); font-size:12.5px; font-weight:700; border:none; cursor:pointer;">+ Thêm quy tắc</button>
+      </div>
+      <table class="table-wrap">
+        <thead>
+          <tr>
+            <th>Khoa</th>
+            <th>Cơ chế ưu tiên</th>
+            <th>Thời gian giữ slot</th>
+            <th>Hạn ngạch / Sinh viên</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Công nghệ Thông tin</b></td>
+            <td><span class="policy-badge">Need-based (Ưu tiên người cần)</span></td>
+            <td>2 giờ</td>
+            <td>Tối đa 2 slot / tuần</td>
+            <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:700;"><svg class="m-glyph" aria-hidden="true"><use href="#g-ok"/></svg>Đang áp dụng</span></td>
+          </tr>
+          <tr>
+            <td><b>Kinh tế & Quản lý</b></td>
+            <td><span class="policy-badge">FIFO (Ai đến trước)</span></td>
+            <td>3 giờ</td>
+            <td>Tối đa 3 slot / tuần</td>
+            <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:700;"><svg class="m-glyph" aria-hidden="true"><use href="#g-ok"/></svg>Đang áp dụng</span></td>
+          </tr>
+          <tr>
+            <td><b>Kỹ thuật - Điện tử</b></td>
+            <td><span class="policy-badge">Round Robin (Xoay vòng)</span></td>
+            <td>2 giờ</td>
+            <td>Tối đa 1 slot / tuần</td>
+            <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:700;"><svg class="m-glyph" aria-hidden="true"><use href="#g-ok"/></svg>Đang áp dụng</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</main>
+
+<script>
+// Theme Switcher
+const html = document.documentElement;
+document.getElementById('tLight').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'light');
+  document.getElementById('tLight').classList.add('active');
+  document.getElementById('tDark').classList.remove('active');
+  renderCharts();
+});
+document.getElementById('tDark').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'dark');
+  document.getElementById('tDark').classList.add('active');
+  document.getElementById('tLight').classList.remove('active');
+  renderCharts();
+});
+
+// Tab Switching
+const tabA = document.getElementById('tabAnalytics');
+const tabR = document.getElementById('tabResearch');
+const tabP = document.getElementById('tabPolicy');
+const viewA = document.getElementById('viewAnalytics');
+const viewR = document.getElementById('viewResearch');
+const viewP = document.getElementById('viewPolicy');
+
+tabA.addEventListener('click', () => {
+  tabA.classList.add('active'); tabR.classList.remove('active'); tabP.classList.remove('active');
+  viewA.style.display = 'block'; viewR.style.display = 'none'; viewP.style.display = 'none';
+});
+tabR.addEventListener('click', () => {
+  tabR.classList.add('active'); tabA.classList.remove('active'); tabP.classList.remove('active');
+  viewA.style.display = 'none'; viewR.style.display = 'block'; viewP.style.display = 'none';
+  renderPareto();
+});
+tabP.addEventListener('click', () => {
+  tabP.classList.add('active'); tabA.classList.remove('active'); tabR.classList.remove('active');
+  viewA.style.display = 'none'; viewR.style.display = 'none'; viewP.style.display = 'block';
+});
+
+// Monochrome Trend Line Render
+function renderTrend() {
+  const svg = document.getElementById('trendSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  const isDark = html.getAttribute('data-mochy-theme') === 'dark';
+  const strokeColor = isDark ? '#ffffff' : '#0a0a0a';
+  const fillColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const gridLine = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+  // Guideline line
+  svg.innerHTML += `<line x1="0" y1="200" x2="500" y2="200" stroke="${gridLine}" stroke-width="1" />`;
+  svg.innerHTML += `<line x1="0" y1="120" x2="500" y2="120" stroke="${gridLine}" stroke-width="1" stroke-dasharray="3 3" />`;
+  svg.innerHTML += `<line x1="0" y1="40" x2="500" y2="40" stroke="${gridLine}" stroke-width="1" stroke-dasharray="3 3" />`;
+
+  // Trend points (percentages)
+  const pts = [
+    [20, 150], [60, 160], [100, 140], [140, 170], [180, 130],
+    [220, 110], [260, 120], [300, 90], [340, 100], [380, 75],
+    [420, 60], [480, 50]
+  ];
+  const dPath = 'M ' + pts.map(p => p.join(',')).join(' L ');
+  const dArea = dPath + ` L 480,200 L 20,200 Z`;
+
+  svg.innerHTML += `<path d="${dArea}" fill="${fillColor}" />`;
+  svg.innerHTML += `<path d="${dPath}" fill="none" stroke="${strokeColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />`;
+
+  pts.forEach((p, idx) => {
+    if (idx === pts.length - 1) {
+      // Highlight last point
+      svg.innerHTML += `<circle cx="${p[0]}" cy="${p[1]}" r="6" fill="${strokeColor}" />`;
+      svg.innerHTML += `<text x="${p[0] - 25}" y="${p[1] - 12}" fill="${strokeColor}" font-size="12" font-weight="700">3.8%</text>`;
+    } else {
+      svg.innerHTML += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${strokeColor}" opacity="0.4" />`;
+    }
+  });
+}
+
+// Pareto Frontier Scatter Plot Render
+function renderPareto() {
+  const svg = document.getElementById('paretoSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  const isDark = html.getAttribute('data-mochy-theme') === 'dark';
+  const fg = isDark ? '#ffffff' : '#0a0a0a';
+  const grid = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+
+  // Axes
+  svg.innerHTML += `<line x1="50" y1="240" x2="510" y2="240" stroke="${fg}" stroke-width="1.5" />`;
+  svg.innerHTML += `<line x1="50" y1="30" x2="50" y2="240" stroke="${fg}" stroke-width="1.5" />`;
+  svg.innerHTML += `<text x="510" y="235" fill="${fg}" font-size="11" font-weight="700" text-anchor="end">Fairness Index →</text>`;
+  svg.innerHTML += `<text x="58" y="42" fill="${fg}" font-size="11" font-weight="700">↑ Efficiency (%)</text>`;
+
+  // Pareto Frontier smooth curve
+  svg.innerHTML += `<path d="M 80,180 Q 220,110 380,70 T 490,55" fill="none" stroke="${fg}" stroke-width="2.5" stroke-dasharray="4 4" />`;
+
+  // Scatter dots
+  const points = [
+    { x: 120, y: 190, label: "FIFO", desc: "Thấp cả 2" },
+    { x: 260, y: 125, label: "Priority (Need)", desc: "Công bằng cao" },
+    { x: 340, y: 105, label: "Quota", desc: "Hiệu quả cao" },
+    { x: 420, y: 65, label: "Hybrid (Đề xuất)", desc: "Điểm Pareto tối ưu", highlight: true }
+  ];
+
+  points.forEach(p => {
+    if (p.highlight) {
+      svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="8" fill="var(--m-fg)" />`;
+      svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="14" fill="none" stroke="var(--m-fg)" stroke-width="1.5" stroke-dasharray="2 2" />`;
+      svg.innerHTML += `<text x="${p.x + 16}" y="${p.y + 4}" fill="${fg}" font-size="12" font-weight="700">${p.label}</text>`;
+    } else {
+      svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${fg}" opacity="0.6" />`;
+      svg.innerHTML += `<text x="${p.x + 10}" y="${p.y + 4}" fill="${fg}" font-size="11" opacity="0.7">${p.label}</text>`;
+    }
+  });
+}
+
+function renderCharts() {
+  renderTrend();
+  renderPareto();
+}
+
+renderCharts();
+</script>
+</body>
+</html>

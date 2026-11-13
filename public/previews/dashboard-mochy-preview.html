@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Dashboard & Monochrome Charts Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding-bottom: 80px;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ==========================================================================
+   APP SHELL / TOP NAV
+   ========================================================================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--m-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 -1px 0 var(--m-line), var(--m-shadow);
+  padding: 14px 24px;
+}
+.topbar-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  color: inherit;
+}
+.mark-oh {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+.nav-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-pill {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-pill:hover, .nav-pill.active {
+  background: var(--m-glass-hi);
+  color: var(--m-fg);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.role-badge {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--m-glass-hi);
+  box-shadow: inset 0 0 0 1px var(--m-line2);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 3px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--m-s3);
+  overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ==========================================================================
+   MAIN DASHBOARD CONTENT
+   ========================================================================== */
+.main-wrap {
+  max-width: 1240px;
+  margin: 32px auto 0;
+  padding: 0 24px;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.page-header h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+.page-header p {
+  color: var(--m-fg2);
+  font-size: 15px;
+  margin-top: 4px;
+}
+.view-switch {
+  display: flex;
+  gap: 6px;
+  background: var(--m-s2);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.view-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s var(--m-spring);
+}
+.view-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  box-shadow: var(--m-shadow);
+}
+
+/* 3 STATS KPI CARDS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  border-radius: 24px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 22px;
+  transition: transform 0.3s var(--m-spring);
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg3);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stat-val {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1.1;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.stat-desc {
+  font-size: 13px;
+  color: var(--m-fg2);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   2-COLUMN DASHBOARD GRID
+   ========================================================================== */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+}
+
+/* Section Box */
+.box {
+  border-radius: 28px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 26px;
+  margin-bottom: 24px;
+}
+.box-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.box-head h2 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+/* ==========================================================================
+   MONOCHROME MOCHY CHARTS (ActivityChart Redesign)
+   ========================================================================== */
+.chart-style-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--m-s2);
+  padding: 3px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.c-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.c-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+
+/* Style 1: 7-Day Monochrome Bars */
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 190px;
+  padding: 20px 8px 10px;
+  gap: 12px;
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.bar-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--m-fg3);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.bar-col.today .bar-val, .bar-col:hover .bar-val {
+  color: var(--m-fg);
+}
+.bar-fill {
+  width: 100%;
+  max-width: 44px;
+  border-radius: 10px;
+  background: var(--m-s3);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  transition: height 0.5s var(--m-spring), background 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.bar-col.today .bar-fill {
+  background: var(--m-fg);
+  box-shadow: none;
+}
+.bar-col:hover .bar-fill {
+  transform: scaleY(1.04);
+}
+.bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg3);
+}
+.bar-col.today .bar-label {
+  color: var(--m-fg);
+  font-weight: 700;
+}
+
+/* Style 2: Ranked Horizontal Bars (BE-51 Advisor Load) */
+.ranked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+}
+.ranked-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+}
+.ranked-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ranked-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ranked-info { flex: 1; }
+.ranked-name-flex {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.ranked-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--m-s3);
+  overflow: hidden;
+}
+.ranked-prog {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  transition: width 0.6s var(--m-spring);
+}
+.ranked-row:nth-child(n+2) .ranked-prog {
+  background: var(--m-s4);
+}
+
+/* ==========================================================================
+   NEXT BOOKING ELEVATED CARD
+   ========================================================================== */
+.next-booking {
+  border-radius: 24px;
+  background: var(--m-s2);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  padding: 20px;
+}
+.nb-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.nb-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.nb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.nb-meta h3 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.nb-meta p {
+  font-size: 12.5px;
+  color: var(--m-fg2);
+  margin-top: 2px;
+}
+.countdown-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.odo-num {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.btn-meet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  border-radius: 9999px;
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 14px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.3s var(--m-spring), background 0.2s;
+}
+.btn-meet:active { transform: scale(0.97); }
+
+/* LECTURER SHELF */
+.shelf {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.shelf-card {
+  width: 120px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s var(--m-spring);
+}
+.shelf-card:hover { transform: translateY(-3px); }
+.shelf-avatar {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  background: var(--m-s3);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.shelf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.shelf-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shelf-open {
+  font-size: 11.5px;
+  color: var(--m-fg3);
+  margin-top: 2px;
+}
+
+/* RECENT BOOKINGS LIST WITH STATUS GLYPHS */
+.book-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--m-line);
+}
+.book-row:last-child { border-bottom: none; }
+.book-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.book-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.book-info { flex: 1; }
+.book-info b { font-size: 14px; font-weight: 700; display: block; }
+.book-info small { font-size: 12px; color: var(--m-fg3); }
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+.status-pill.confirmed { color: var(--m-fg); }
+
+@media (max-width: 960px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .topbar-wrap { flex-direction: column; align-items: stretch; }
+  .nav-pills { overflow-x: auto; padding-bottom: 4px; }
+}
+</style>
+</head>
+<body>
+<!-- Topbar Navigation Shell -->
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a href="/previews/index.html" class="brand">
+      <div class="mark-oh">oh</div>
+      <span>officehours</span>
+    </a>
+
+    <nav class="nav-pills">
+      <a href="#" class="nav-pill active">Dashboard</a>
+      <a href="/previews/schedule-timetable-preview.html" class="nav-pill">Thời khóa biểu</a>
+      <a href="/previews/booking-detail-chat-preview.html" class="nav-pill">Lịch hẹn</a>
+      <a href="/previews/admin-analytics-preview.html" class="nav-pill">Admin & Charts</a>
+      <a href="/previews/public-office-hours-preview.html" class="nav-pill">Lịch công khai</a>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="theme-switch">
+        <button type="button" class="theme-btn" id="tLight">Sáng</button>
+        <button type="button" class="theme-btn active" id="tDark">Tối</button>
+      </div>
+      <div class="role-badge" id="roleBadge">Sinh viên</div>
+      <div class="user-avatar">
+        <img src="/avatars/real/hoang.jpg" alt="User">
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main-wrap">
+  <!-- Page Header & Persona Switcher -->
+  <div class="page-header">
+    <div>
+      <h1 id="greeting">Chào An, tuần này có 3 lịch hẹn</h1>
+      <p id="greetingSub">Học kỳ 1 · 2026-2027 · Đại học Quốc tế Miền Đông</p>
+    </div>
+    <div class="view-switch" role="radiogroup" aria-label="Vai trò">
+      <button type="button" class="view-btn active" id="btnStudent">Góc nhìn Sinh viên</button>
+      <button type="button" class="view-btn" id="btnLecturer">Góc nhìn Giảng viên</button>
+    </div>
+  </div>
+
+  <!-- 3 Stats KPI Cards -->
+  <section class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-label"><span>Lịch hẹn tuần này</span></div>
+      <div class="stat-val" id="stat1">3</div>
+      <div class="stat-desc" id="statDesc1">2 trực tiếp · 1 trực tuyến</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span>Chờ giảng viên duyệt</span></div>
+      <div class="stat-val" id="stat2">1</div>
+      <div class="stat-desc" id="statDesc2">Thầy Đăng · Đề tài IoT</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span>Trong hàng đợi giữ chỗ</span></div>
+      <div class="stat-val" id="stat3">2</div>
+      <div class="stat-desc" id="statDesc3">Khoa CNTT · Ưu tiên vị trí #1</div>
+    </div>
+  </section>
+
+  <!-- 2-Column Dashboard Grid -->
+  <div class="dash-grid">
+    <!-- LEFT COLUMN: CHARTS & SCHEDULE -->
+    <div>
+      <!-- Monochrome Activity Chart Box -->
+      <section class="box">
+        <div class="box-head">
+          <div>
+            <h2 id="chartTitle">Hoạt động tiếp sinh viên trong tuần</h2>
+            <p style="font-size:13px; color:var(--m-fg3); margin-top:2px;">Số buổi hẹn mỗi ngày, tuần này</p>
+          </div>
+          <div class="chart-style-toggle">
+            <button type="button" class="c-btn active" id="btnStyleBars">Cột tuần</button>
+            <button type="button" class="c-btn" id="btnStyleRanked">Theo giảng viên</button>
+          </div>
+        </div>
+
+        <!-- Style 1: 7-Day Monochrome Column Chart -->
+        <div id="chartBarsContainer">
+          <div class="chart-bars">
+            <div class="bar-col">
+              <span class="bar-val">1</span>
+              <div class="bar-fill" style="height: 35%;"></div>
+              <span class="bar-label">T2</span>
+            </div>
+            <div class="bar-col">
+              <span class="bar-val">2</span>
+              <div class="bar-fill" style="height: 60%;"></div>
+              <span class="bar-label">T3</span>
+            </div>
+            <div class="bar-col today">
+              <span class="bar-val">4</span>
+              <div class="bar-fill" style="height: 95%;"></div>
+              <span class="bar-label">T4</span>
+            </div>
+            <div class="bar-col">
+              <span class="bar-val">1</span>
+              <div class="bar-fill" style="height: 35%;"></div>
+              <span class="bar-label">T5</span>
+            </div>
+            <div class="bar-col">
+              <span class="bar-val">3</span>
+              <div class="bar-fill" style="height: 75%;"></div>
+              <span class="bar-label">T6</span>
+            </div>
+            <div class="bar-col">
+              <span class="bar-val">0</span>
+              <div class="bar-fill" style="height: 8%;"></div>
+              <span class="bar-label">T7</span>
+            </div>
+            <div class="bar-col">
+              <span class="bar-val">0</span>
+              <div class="bar-fill" style="height: 8%;"></div>
+              <span class="bar-label">CN</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Style 2: Ranked Horizontal Bars (BE-51 Advisor Load) -->
+        <div id="chartRankedContainer" style="display:none;">
+          <div class="ranked-list">
+            <div class="ranked-row">
+              <div class="ranked-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+              <div class="ranked-info">
+                <div class="ranked-name-flex"><span>TS. Nguyễn Minh Khoa</span><span>14 buổi hẹn</span></div>
+                <div class="ranked-track"><div class="ranked-prog" style="width: 95%;"></div></div>
+              </div>
+            </div>
+            <div class="ranked-row">
+              <div class="ranked-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+              <div class="ranked-info">
+                <div class="ranked-name-flex"><span>TS. Trần Thu Hà</span><span>10 buổi hẹn</span></div>
+                <div class="ranked-track"><div class="ranked-prog" style="width: 70%;"></div></div>
+              </div>
+            </div>
+            <div class="ranked-row">
+              <div class="ranked-avatar"><img src="/avatars/real/hoang.jpg" alt=""></div>
+              <div class="ranked-info">
+                <div class="ranked-name-flex"><span>ThS. Lê Hoàng</span><span>8 buổi hẹn</span></div>
+                <div class="ranked-track"><div class="ranked-prog" style="width: 55%;"></div></div>
+              </div>
+            </div>
+            <div class="ranked-row">
+              <div class="ranked-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+              <div class="ranked-info">
+                <div class="ranked-name-flex"><span>TS. Võ Hải Đăng</span><span>5 buổi hẹn</span></div>
+                <div class="ranked-track"><div class="ranked-prog" style="width: 35%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Suggested Lecturers Shelf -->
+      <section class="box">
+        <div class="box-head">
+          <h2>Giảng viên còn slot trống hôm nay</h2>
+          <a href="/previews/public-office-hours-preview.html" style="font-size:13px; font-weight:600; color:var(--m-fg2); text-decoration:none;">Xem tất cả →</a>
+        </div>
+        <div class="shelf">
+          <a href="#" class="shelf-card">
+            <div class="shelf-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+            <div class="shelf-name">TS. Nguyễn M. Khoa</div>
+            <div class="shelf-open">3 slot rảnh</div>
+          </a>
+          <a href="#" class="shelf-card">
+            <div class="shelf-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+            <div class="shelf-name">TS. Trần Thu Hà</div>
+            <div class="shelf-open">2 slot rảnh</div>
+          </a>
+          <a href="#" class="shelf-card">
+            <div class="shelf-avatar"><img src="/avatars/real/hoang.jpg" alt=""></div>
+            <div class="shelf-name">ThS. Lê Hoàng</div>
+            <div class="shelf-open">5 slot rảnh</div>
+          </a>
+          <a href="#" class="shelf-card">
+            <div class="shelf-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+            <div class="shelf-name">TS. Võ Hải Đăng</div>
+            <div class="shelf-open">1 slot rảnh</div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: UPCOMING BOOKING & LIST -->
+    <div>
+      <!-- Next Booking Elevated Card -->
+      <section class="box" style="padding: 22px;">
+        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--m-fg3);">Buổi hẹn kế tiếp</span>
+        <div class="next-booking" style="margin-top:12px;">
+          <div class="nb-top">
+            <div class="nb-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+            <div class="nb-meta">
+              <h3>TS. Nguyễn Minh Khoa</h3>
+              <p>Đề cương đồ án tốt nghiệp</p>
+              <span style="display:inline-block; margin-top:4px; font-size:11.5px; font-weight:600; color:var(--m-fg3);">Hôm nay 14:00 – 14:20 · Phòng 306.B11</span>
+            </div>
+          </div>
+          <div class="countdown-box">
+            <span style="font-size:12.5px; font-weight:600; color:var(--m-fg3);">Bắt đầu sau</span>
+            <div class="odo-num" id="odoTimer">01:41:05</div>
+          </div>
+          <a href="/previews/booking-detail-chat-preview.html" class="btn-meet">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Chỉ đường tới phòng
+          </a>
+        </div>
+      </section>
+
+      <!-- Recent Bookings List -->
+      <section class="box">
+        <div class="box-head">
+          <h2>Danh sách lịch hẹn</h2>
+          <a href="/previews/booking-detail-chat-preview.html" style="font-size:13px; font-weight:600; color:var(--m-fg2); text-decoration:none;">Chi tiết →</a>
+        </div>
+        <div>
+          <div class="book-row">
+            <div class="book-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+            <div class="book-info">
+              <b>TS. Nguyễn Minh Khoa</b>
+              <small>Hôm nay 14:00 · Phòng 306.B11</small>
+            </div>
+            <span class="status-pill confirmed">
+              <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="m8 12 3 3 5-6" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+              Đã duyệt
+            </span>
+          </div>
+
+          <div class="book-row">
+            <div class="book-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+            <div class="book-info">
+              <b>TS. Võ Hải Đăng</b>
+              <small>Thứ Sáu 09:30 · Trực tuyến</small>
+            </div>
+            <span class="status-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 7v5l3 2" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+              Chờ duyệt
+            </span>
+          </div>
+
+          <div class="book-row">
+            <div class="book-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+            <div class="book-info">
+              <b>TS. Trần Thu Hà</b>
+              <small>Hàng đợi · Vị trí #1</small>
+            </div>
+            <span class="status-pill">
+              <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8 9h8M8 12h8M8 15h5" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+              Hàng đợi
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+// Theme Switcher
+const html = document.documentElement;
+document.getElementById('tLight').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'light');
+  document.getElementById('tLight').classList.add('active');
+  document.getElementById('tDark').classList.remove('active');
+});
+document.getElementById('tDark').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'dark');
+  document.getElementById('tDark').classList.add('active');
+  document.getElementById('tLight').classList.remove('active');
+});
+
+// Chart Style Toggle (7-day bars vs Ranked Advisor Load)
+const btnBars = document.getElementById('btnStyleBars');
+const btnRanked = document.getElementById('btnStyleRanked');
+const cBars = document.getElementById('chartBarsContainer');
+const cRanked = document.getElementById('chartRankedContainer');
+
+btnBars.addEventListener('click', () => {
+  btnBars.classList.add('active');
+  btnRanked.classList.remove('active');
+  cBars.style.display = 'block';
+  cRanked.style.display = 'none';
+});
+btnRanked.addEventListener('click', () => {
+  btnRanked.classList.add('active');
+  btnBars.classList.remove('active');
+  cBars.style.display = 'none';
+  cRanked.style.display = 'block';
+});
+
+// Persona View Switcher (Student vs Lecturer)
+const btnStudent = document.getElementById('btnStudent');
+const btnLecturer = document.getElementById('btnLecturer');
+const roleBadge = document.getElementById('roleBadge');
+const greeting = document.getElementById('greeting');
+const stat1 = document.getElementById('stat1');
+const statDesc1 = document.getElementById('statDesc1');
+const stat2 = document.getElementById('stat2');
+const statDesc2 = document.getElementById('statDesc2');
+const stat3 = document.getElementById('stat3');
+const statDesc3 = document.getElementById('statDesc3');
+
+btnStudent.addEventListener('click', () => {
+  btnStudent.classList.add('active');
+  btnLecturer.classList.remove('active');
+  roleBadge.textContent = 'Sinh viên';
+  greeting.textContent = 'Chào An, tuần này có 3 lịch hẹn';
+  stat1.textContent = '3';
+  statDesc1.textContent = '2 trực tiếp · 1 trực tuyến';
+  stat2.textContent = '1';
+  statDesc2.textContent = 'Thầy Đăng · Đề tài IoT';
+  stat3.textContent = '2';
+  statDesc3.textContent = 'Khoa CNTT · Ưu tiên vị trí #1';
+});
+
+btnLecturer.addEventListener('click', () => {
+  btnLecturer.classList.add('active');
+  btnStudent.classList.remove('active');
+  roleBadge.textContent = 'Giảng viên';
+  greeting.textContent = 'Chào TS. Khoa, hôm nay có 4 sinh viên hẹn gặp';
+  stat1.textContent = '14';
+  statDesc1.textContent = 'Tổng lượt hẹn tuần này';
+  stat2.textContent = '4';
+  statDesc2.textContent = 'Đang chờ duyệt hôm nay';
+  stat3.textContent = '0';
+  statDesc3.textContent = 'Tỉ lệ vắng mặt (0% no-show)';
+});
+
+// Live Countdown
+let sec = 6065;
+setInterval(() => {
+  sec = Math.max(0, sec - 1);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  document.getElementById('odoTimer').textContent =
+    String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}, 1000);
+</script>
+</body>
+</html>

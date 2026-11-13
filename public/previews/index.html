@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · UI Previews Hub (Mochy Style)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 40px 24px 80px;
+  transition: background 0.3s, color 0.3s;
+}
+.wrap { max-width: 1160px; margin: 0 auto; }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.mark-oh {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  gap: 4px;
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+.title-area {
+  margin-bottom: 36px;
+}
+.title-area h1 {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.15;
+}
+.title-area p {
+  color: var(--m-fg2);
+  font-size: 16px;
+  margin-top: 10px;
+  max-width: 760px;
+  line-height: 1.5;
+}
+.badge-count {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--m-s2);
+  border-radius: 9999px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 44px 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--m-line);
+}
+.section-head h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.section-head .sec-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--m-s2);
+  color: var(--m-fg2);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s var(--m-spring), box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: inset 0 0 0 1px var(--m-line2), var(--m-shadow-card);
+}
+.card .tag-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.card .tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  color: var(--m-fg2);
+}
+.card .tag.mochy {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+.card .tag.archive {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--m-line2);
+  color: var(--m-fg3);
+}
+.card .badge-route {
+  font-size: 11.5px;
+  color: var(--m-fg3);
+  font-family: monospace;
+}
+.card h3 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.3;
+}
+.card p {
+  font-size: 13.5px;
+  color: var(--m-fg2);
+  line-height: 1.5;
+  margin-top: 8px;
+  flex: 1;
+}
+.card .features-list {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.card .chip {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--m-s2);
+  color: var(--m-fg2);
+  font-weight: 500;
+}
+.card .url {
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--m-fg3);
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--m-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card .arrow {
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+.card:hover .arrow {
+  transform: translateX(4px);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">
+      <div class="mark-oh">oh</div>
+      <span>OfficeHours · UI Previews Hub</span>
+    </div>
+    <div class="theme-switch">
+      <button class="theme-btn" id="btnLight">Sáng</button>
+      <button class="theme-btn active" id="btnDark">Tối</button>
+    </div>
+  </div>
+
+  <div class="title-area">
+    <h1>Kho lưu trữ bản xem trước giao diện <span class="badge-count">12 màn hình</span></h1>
+    <p>Các route chính của web theo style Mochy, cho khách, sinh viên, giảng viên và quản trị. Dùng làm bản tham chiếu khi port sang TSX; token lấy chung từ <code>_shared/mochy.css</code>, khớp 1:1 với <code>app/globals.css</code>. Thêm <code>?theme=light</code> vào URL để mở sẵn chế độ sáng.</p>
+  </div>
+
+  <!-- SECTION: APP SHELL & NAVIGATION -->
+  <div class="section-head">
+    <h2>Kiến trúc Điều hướng & App Shell (Mới)</h2>
+    <span class="sec-tag">Mochy Shell</span>
+  </div>
+  <div class="grid">
+    <!-- NEW SIDEBAR PREVIEW -->
+    <a href="/previews/sidebar-mochy-preview.html" class="card" style="border: 2px solid var(--m-fg);">
+      <div class="tag-row">
+        <span class="tag mochy">Mới nhất</span>
+        <span class="badge-route">AppShell · Navigation</span>
+      </div>
+      <h3>Mochy Sidebar & Navigation Architecture</h3>
+      <p>Thanh điều hướng kính nổi (Floating Glass), hỗ trợ thu gọn thanh ray 82px (Icon Rail), chuyển đổi role tức thì (Student/Lecturer/Admin), thẻ đếm ngược buổi hẹn tiếp theo và avatar đa nguồn.</p>
+      <div class="features-list">
+        <span class="chip">Floating Glass</span>
+        <span class="chip">Icon Rail 82px</span>
+        <span class="chip">Role-Swapping</span>
+        <span class="chip">Mini Countdown</span>
+      </div>
+      <div class="url"><span>/previews/sidebar-mochy-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: GUEST / PUBLIC -->
+  <div class="section-head">
+    <h2>1. Public & Guest Routes (Khách & Đăng nhập)</h2>
+    <span class="sec-tag">3 màn hình</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/landing-mochy-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Public</span><span class="badge-route">/</span></div>
+      <h3>Landing Page Preview</h3>
+      <p>Trang đích hoàn chỉnh với Press3D tilt, Ghost marquee trôi dạt, Odometer cơ học và bản đồ campus isometric.</p>
+      <div class="url"><span>/previews/landing-mochy-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/showcase-avatar-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Auth</span><span class="badge-route">/(auth)/*</span></div>
+      <h3>Showcase & Avatar Comparison</h3>
+      <p>Thẻ bay xếp lớp đa tầng 3D (Phương án A) cùng bộ điều khiển so sánh tức thì giữa Ảnh thật, 3D Studio và Memoji.</p>
+      <div class="url"><span>/previews/showcase-avatar-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/public-office-hours-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Public</span><span class="badge-route">/public/office-hours</span></div>
+      <h3>Public Office Hours Directory</h3>
+      <p>Cổng tra cứu lịch tiếp sinh viên công khai cho khách, lọc theo khoa và chip chọn slot hẹn nhanh.</p>
+      <div class="url"><span>/previews/public-office-hours-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: STUDENT ROLE -->
+  <div class="section-head">
+    <h2>2. Student Role (Sinh viên)</h2>
+    <span class="sec-tag">Đầy đủ 5 route chính</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/dashboard-mochy-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Student</span><span class="badge-route">/dashboard</span></div>
+      <h3>Student Dashboard</h3>
+      <p>Màn hình tổng quan với 3 thẻ số lớn KPI (thay thế biểu đồ cầu vồng), cột tuần hôm nay màu trắng nổi bật, đếm ngược cuộc hẹn kế tiếp.</p>
+      <div class="url"><span>/previews/dashboard-mochy-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/student-lecturers-waitlist-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Student</span><span class="badge-route">/dashboard/lecturers · /waitlist</span></div>
+      <h3>Lecturers Directory & Waitlist Queue</h3>
+      <p>Tìm kiếm giảng viên theo khoa, chọn khung giờ trống tức thì và thẻ nhận slot giải phóng ưu tiên có countdown 15 phút.</p>
+      <div class="url"><span>/previews/student-lecturers-waitlist-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/booking-detail-chat-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Student</span><span class="badge-route">/dashboard/bookings/[id]</span></div>
+      <h3>My Bookings & In-person Chat</h3>
+      <p>Chi tiết cuộc hẹn với thanh định vị tầng 3 phòng 306.B11, nút Meet 1 chạm, và danh sách 8 glyph trạng thái Mochy.</p>
+      <div class="url"><span>/previews/booking-detail-chat-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/schedule-timetable-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Student</span><span class="badge-route">/dashboard/schedule</span></div>
+      <h3>Student Timetable Grid</h3>
+      <p>Thời khóa biểu tuần tự động chặn xung đột với lịch học EIU, đồng bộ tệp PDF thời khóa biểu sinh viên.</p>
+      <div class="url"><span>/previews/schedule-timetable-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: LECTURER ROLE -->
+  <div class="section-head">
+    <h2>3. Lecturer Role (Giảng viên)</h2>
+    <span class="sec-tag">Đầy đủ 4 route chính</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/lecturer-availability-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Lecturer</span><span class="badge-route">/dashboard/availability</span></div>
+      <h3>Availability Setup & Exceptions</h3>
+      <p>Cấu hình khung giờ tiếp sinh viên định kỳ trong tuần, hình thức gặp (306.B11 / Meet), và quản lý ngày nghỉ ngoại lệ (họp, công tác).</p>
+      <div class="url"><span>/previews/lecturer-availability-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/dashboard-mochy-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Lecturer</span><span class="badge-route">/dashboard</span></div>
+      <h3>Lecturer Dashboard & Today Slots</h3>
+      <p>Theo dõi các buổi hẹn trong ngày, thanh xếp hạng tải giảng viên và danh sách sinh viên sắp tiếp.</p>
+      <div class="url"><span>/previews/dashboard-mochy-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/booking-detail-chat-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Lecturer</span><span class="badge-route">/dashboard/bookings</span></div>
+      <h3>Review Bookings & Mark Attendance</h3>
+      <p>Duyệt yêu cầu hẹn, bấm xác nhận "Đã gặp" / "Vắng mặt" (No-show) và trò chuyện trực tiếp với sinh viên.</p>
+      <div class="url"><span>/previews/booking-detail-chat-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/schedule-timetable-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Lecturer</span><span class="badge-route">/dashboard/schedule</span></div>
+      <h3>Master Teaching & Office Hours Grid</h3>
+      <p>Thời khóa biểu kết hợp giữa giờ lên lớp chính quy và giờ tiếp sinh viên ngoài giờ.</p>
+      <div class="url"><span>/previews/schedule-timetable-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: ADMIN ROLE -->
+  <div class="section-head">
+    <h2>4. Admin Role (Quản trị viên)</h2>
+    <span class="sec-tag">Đầy đủ 5 route chính</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/admin-analytics-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Admin</span><span class="badge-route">/admin/analytics · /research</span></div>
+      <h3>Analytics & Capstone Research Dataviz</h3>
+      <p>Biểu đồ đơn sắc xếp hạng tải giảng viên, phân tích vắng mặt, và đồ thị Pareto Frontier (Fairness vs Efficiency).</p>
+      <div class="url"><span>/previews/admin-analytics-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/admin-users-allocation-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Admin</span><span class="badge-route">/admin/users · /allocation</span></div>
+      <h3>User Management & Allocation Policies</h3>
+      <p>Quản lý tài khoản toàn trường, phân quyền Role, và điều chỉnh trọng số thuật toán Hybrid Pareto (Need/Wait/Fairness).</p>
+      <div class="url"><span>/previews/admin-users-allocation-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: SHARED ACCOUNT -->
+  <div class="section-head">
+    <h2>5. Shared User Routes (Tài khoản & Cài đặt)</h2>
+    <span class="sec-tag">2 route dùng chung</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/user-profile-notifications-preview.html" class="card">
+      <div class="tag-row"><span class="tag mochy">Shared</span><span class="badge-route">/dashboard/profile · /notifications</span></div>
+      <h3>Profile, 3D Avatar & Notifications</h3>
+      <p>Tùy chọn phong cách avatar (Ảnh thật / 3D Studio Fluent / 2D Memoji), đổi mật khẩu an toàn và trung tâm thông báo thời gian thực.</p>
+      <div class="url"><span>/previews/user-profile-notifications-preview.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+
+  <!-- SECTION: ARCHIVE -->
+  <div class="section-head">
+    <h2>Kho lưu trữ mẫu nghiên cứu cũ (Archive)</h2>
+    <span class="sec-tag">5 bản mẫu đối chiếu</span>
+  </div>
+  <div class="grid">
+    <a href="/previews/chart-style-previews.html" class="card">
+      <div class="tag-row"><span class="tag archive">Archive</span><span class="badge-route">Charts</span></div>
+      <h3>Chart Style Previews (Pastel Palette)</h3>
+      <p>Bản so sánh các kiểu biểu đồ 4 màu pastel trước khi chuyển sang Monochrome.</p>
+      <div class="url"><span>/previews/chart-style-previews.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/student-dashboard-layout-previews.html" class="card">
+      <div class="tag-row"><span class="tag archive">Archive</span><span class="badge-route">Layout</span></div>
+      <h3>Student Dashboard Layouts (Initial)</h3>
+      <p>Các phương án bố cục màn hình Dashboard ban đầu.</p>
+      <div class="url"><span>/previews/student-dashboard-layout-previews.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/booking-flow-preview.html" class="card">
+      <div class="tag-row"><span class="tag archive">Archive</span><span class="badge-route">Wizard</span></div>
+      <h3>Booking Flow (Multi-step Wizard)</h3>
+      <p>Quy trình đặt lịch 4 bước cũ.</p>
+      <div class="url"><span>/previews/booking-flow-preview.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/route-previews.html" class="card">
+      <div class="tag-row"><span class="tag archive">Archive</span><span class="badge-route">Map</span></div>
+      <h3>Route Previews & Map</h3>
+      <p>Mẫu sơ đồ vị trí các tòa nhà khuôn viên trường.</p>
+      <div class="url"><span>/previews/route-previews.html</span><span class="arrow">→</span></div>
+    </a>
+    <a href="/previews/sidebar-previews.html" class="card">
+      <div class="tag-row"><span class="tag archive">Archive</span><span class="badge-route">Nav Cũ</span></div>
+      <h3>Sidebar Navigation Previews (Bản cũ 3 Concept)</h3>
+      <p>Các biến thể thanh điều hướng sidebar pastel trước đây.</p>
+      <div class="url"><span>/previews/sidebar-previews.html</span><span class="arrow">→</span></div>
+    </a>
+  </div>
+</div>
+
+<script>
+const html = document.documentElement;
+document.getElementById('btnLight').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'light');
+  this.classList.add('active');
+  document.getElementById('btnDark').classList.remove('active');
+});
+document.getElementById('btnDark').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'dark');
+  this.classList.add('active');
+  document.getElementById('btnLight').classList.remove('active');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Preview Phương án A & So sánh Nguồn Avatar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 32px 24px 80px;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+.m-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: calc(var(--o, 0.3) * var(--m-glow));
+}
+.m-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  opacity: var(--m-grain);
+  mix-blend-mode: var(--m-grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   TOP CONTROL BAR
+   ========================================================================== */
+.control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  background: var(--m-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow);
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+.brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mark-oh {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--m-glass-hi);
+  padding: 4px;
+  border-radius: 9999px;
+  gap: 4px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.seg-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: background 0.25s var(--m-spring), color 0.2s, transform 0.2s;
+  user-select: none;
+}
+.seg-btn:hover { color: var(--m-fg); }
+.seg-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  box-shadow: var(--m-shadow);
+}
+.seg-btn:active {
+  transform: scale(0.96);
+}
+
+/* ==========================================================================
+   SHOWCASE PREVIEW GRID
+   ========================================================================== */
+.showcase-stage {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 60px;
+}
+.info-col h1 {
+  font-size: clamp(38px, 4.5vw, 56px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+}
+.info-col h1 span { color: var(--m-fg3); }
+.info-col p.lead {
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--m-fg2);
+  max-width: 480px;
+}
+.badge-tech {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--m-glass-hi);
+  box-shadow: inset 0 0 0 1px var(--m-line2);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--m-fg2);
+}
+.dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--m-fg);
+  box-shadow: 0 0 0 3px var(--m-fg4);
+}
+
+/* ==========================================================================
+   OPTION A: LAYERED FLOATING STACK CANVAS
+   ========================================================================== */
+.floating-canvas {
+  position: relative;
+  height: 580px;
+  perspective: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Background Drift Ghost Words */
+.ghost-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.24;
+  overflow: hidden;
+}
+.ghost-row {
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--m-line2);
+  white-space: nowrap;
+  line-height: 0.9;
+}
+
+/* Common Card Styles */
+.f-card {
+  position: absolute;
+  border-radius: 26px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: transform 0.45s var(--m-spring), box-shadow 0.3s;
+  cursor: pointer;
+}
+.f-card:hover {
+  box-shadow: inset 0 0 0 1px var(--m-line2), 0 24px 60px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* 1. HERO FEATURED CARD (CENTER - TS. NGUYỄN MINH KHOA) */
+.hero-card {
+  width: 380px;
+  padding: 24px;
+  z-index: 10;
+  top: 130px;
+  left: 60px;
+  transform: rotateZ(-2deg);
+}
+.hero-card:hover {
+  transform: rotateZ(0deg) scale(1.02) !important;
+}
+.hero-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.hero-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: var(--m-s3);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-meta h3 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+.hero-meta .dept {
+  font-size: 13px;
+  color: var(--m-fg3);
+  font-weight: 500;
+  margin-top: 3px;
+}
+.hero-meta .room-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--m-s2);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+
+.hero-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--m-s2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg);
+}
+.slot-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.slot-pill {
+  flex: 1;
+  height: 38px;
+  border-radius: 9999px;
+  background: var(--m-s3);
+  border: 1px solid var(--m-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: transform 0.3s var(--m-spring), background 0.2s, color 0.2s;
+}
+.slot-pill:hover, .slot-pill.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  border-color: transparent;
+  transform: translateY(-2px);
+}
+
+/* 2. COMPANION CARD TOP RIGHT (TS. TRẦN THU HÀ) */
+.comp-card-top {
+  width: 300px;
+  padding: 18px;
+  z-index: 5;
+  top: 30px;
+  right: 20px;
+  transform: rotateZ(4.5deg);
+}
+.comp-card-top:hover {
+  transform: rotateZ(0deg) scale(1.03) !important;
+  z-index: 20;
+}
+
+/* 3. COMPANION CARD BOTTOM LEFT (THS. LÊ HOÀNG) */
+.comp-card-bottom {
+  width: 290px;
+  padding: 16px;
+  z-index: 4;
+  bottom: 50px;
+  left: 20px;
+  transform: rotateZ(-4deg);
+}
+.comp-card-bottom:hover {
+  transform: rotateZ(0deg) scale(1.03) !important;
+  z-index: 20;
+}
+
+.comp-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.comp-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--m-s3);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.comp-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.comp-info b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.comp-info small {
+  display: block;
+  font-size: 12px;
+  color: var(--m-fg3);
+  margin-top: 2px;
+}
+.comp-slots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg);
+}
+
+/* 4. TOAST CONFIRMED CARD (BOTTOM RIGHT) */
+.toast-anchor {
+  position: absolute;
+  right: 24px;
+  bottom: 80px;
+  z-index: 15;
+  width: 320px;
+  padding: 14px 18px;
+  border-radius: 9999px;
+  background: var(--m-glass);
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: rotateZ(2deg);
+  transition: transform 0.4s var(--m-spring);
+}
+.toast-anchor:hover {
+  transform: rotateZ(0deg) scale(1.02);
+}
+.toast-check {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.toast-text b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.toast-text small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--m-fg2);
+}
+
+/* ==========================================================================
+   COMPARISON GALLERY (REAL PHOTOS vs 3D AVATARS)
+   ========================================================================== */
+.gallery-section {
+  border-top: 1px solid var(--m-line2);
+  padding-top: 50px;
+  margin-top: 30px;
+}
+.gallery-section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+.gallery-section p.sub {
+  color: var(--m-fg2);
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+
+.grid-comparison {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.compare-col {
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  border-radius: 24px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s var(--m-spring);
+}
+.compare-col:hover {
+  transform: translateY(-4px);
+}
+.compare-img-box {
+  width: 140px;
+  height: 140px;
+  border-radius: 28px;
+  background: var(--m-s3);
+  margin: 0 auto 16px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.compare-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--m-spring);
+}
+.compare-col:hover .compare-img-box img {
+  transform: scale(1.08);
+}
+.compare-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.compare-dept {
+  font-size: 12.5px;
+  color: var(--m-fg3);
+  margin-top: 3px;
+}
+.compare-tag {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+
+@media (max-width: 960px) {
+  .showcase-stage { grid-template-columns: 1fr; }
+  .floating-canvas { height: 480px; }
+  .grid-comparison { grid-template-columns: repeat(2, 1fr); }
+  .hero-card { width: 320px; left: 20px; }
+  .comp-card-top { right: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="m-grain"></div>
+
+<div class="container">
+  <!-- Top Control Bar -->
+  <header class="control-bar">
+    <div class="brand-title">
+      <div class="mark-oh">oh</div>
+      <span>OfficeHours · So sánh Avatar & Phương án A</span>
+    </div>
+
+    <!-- Toggle Avatar Source -->
+    <div class="segmented" role="radiogroup" aria-label="Nguồn avatar">
+      <button type="button" class="seg-btn" data-source="3d" id="btn3D">
+        Avatar 3D Studio
+      </button>
+      <button type="button" class="seg-btn active" data-source="real" id="btnReal">
+        Ảnh Chân Dung Thực Tế
+      </button>
+      <button type="button" class="seg-btn" data-source="memoji" id="btnMemoji">
+        Memoji Cũ
+      </button>
+    </div>
+
+    <!-- Theme Switcher -->
+    <div class="segmented" role="radiogroup" aria-label="Theme">
+      <button type="button" class="seg-btn" data-theme="light" id="themeLight">Sáng</button>
+      <button type="button" class="seg-btn active" data-theme="dark" id="themeDark">Tối</button>
+    </div>
+  </header>
+
+  <!-- Interactive Showcase with Option A (Floating Layered Cards) -->
+  <section class="showcase-stage">
+    <div class="info-col">
+      <div class="badge-tech">
+        <span class="dot-green"></span>
+        <span id="activeSourceLabel">Nguồn: Avatar 3D Studio (Microsoft 3D Fluent Characters)</span>
+      </div>
+      <h1>Giờ tiếp sinh viên,<br><span>không cần email qua lại.</span></h1>
+      <p class="lead">
+        Bố cục <b>Phương án A</b>: Các thẻ bay đa tầng với góc nghiêng thị sai (parallax 3D). Thẻ giảng viên chính nổi bật ở trung tâm với lịch rảnh trực tiếp, các thẻ đồng nghiệp lơ lửng xung quanh tạo chiều sâu không gian sống động.
+      </p>
+      <div style="margin-top: 28px; display: flex; gap: 12px;">
+        <div style="padding: 12px 18px; border-radius: 16px; background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line);">
+          <b style="font-size: 18px; display: block;">100%</b>
+          <small style="color: var(--m-fg3); font-size: 12px;">Không bị cắt chữ</small>
+        </div>
+        <div style="padding: 12px 18px; border-radius: 16px; background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line);">
+          <b style="font-size: 18px; display: block;">3D Tilt</b>
+          <small style="color: var(--m-fg3); font-size: 12px;">Phản hồi con trỏ</small>
+        </div>
+        <div style="padding: 12px 18px; border-radius: 16px; background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line);">
+          <b style="font-size: 18px; display: block;">Tự nhiên</b>
+          <small style="color: var(--m-fg3); font-size: 12px;">Góc xoay phá cách</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Canvas -->
+    <div class="floating-canvas" id="tiltCanvas">
+      <div class="m-glow" style="width: 480px; height: 380px; top: 80px; left: 60px; background: #3465e0; --o: 0.28;"></div>
+      <div class="m-glow" style="width: 400px; height: 320px; bottom: 40px; right: 20px; background: #2f6b52; --o: 0.24;"></div>
+
+      <!-- Ghost Wordmark Background -->
+      <div class="ghost-bg">
+        <div class="ghost-row">officehours officehours</div>
+        <div class="ghost-row" style="margin-left: -60px;">office hours office</div>
+      </div>
+
+      <!-- CARD 2: COMPANION TOP-RIGHT (TS. TRẦN THU HÀ) -->
+      <div class="f-card comp-card-top" id="compCardTop">
+        <div class="comp-flex">
+          <div class="comp-avatar">
+            <img src="/avatars/3d/ha.png" id="imgHa" alt="TS. Trần Thu Hà">
+          </div>
+          <div class="comp-info">
+            <b>TS. Trần Thu Hà</b>
+            <small>Khoa Kinh tế & Quản lý</small>
+            <div class="comp-slots">
+              <span class="dot-green" style="width: 6px; height: 6px;"></span>
+              2 slot rảnh hôm nay
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 1: HERO FEATURED CARD (TS. NGUYỄN MINH KHOA) -->
+      <div class="f-card hero-card" id="heroCard">
+        <div class="hero-top">
+          <div class="hero-avatar">
+            <img src="/avatars/3d/khoa.png" id="imgKhoa" alt="TS. Nguyễn Minh Khoa">
+          </div>
+          <div class="hero-meta">
+            <h3>TS. Nguyễn Minh Khoa</h3>
+            <p class="dept">Khoa Công nghệ Thông tin</p>
+            <span class="room-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              Phòng 306.B11
+            </span>
+          </div>
+        </div>
+
+        <div class="hero-status">
+          <span class="dot-green"></span>
+          <span>Đang mở lịch tiếp sinh viên hôm nay</span>
+        </div>
+
+        <div class="slot-row">
+          <div class="slot-pill active">14:00</div>
+          <div class="slot-pill">14:30</div>
+          <div class="slot-pill">15:15</div>
+        </div>
+      </div>
+
+      <!-- CARD 3: COMPANION BOTTOM-LEFT (THS. LÊ HOÀNG) -->
+      <div class="f-card comp-card-bottom" id="compCardBottom">
+        <div class="comp-flex">
+          <div class="comp-avatar">
+            <img src="/avatars/3d/hoang.png" id="imgHoang" alt="ThS. Lê Hoàng">
+          </div>
+          <div class="comp-info">
+            <b>ThS. Lê Hoàng</b>
+            <small>Kỹ thuật Phần mềm</small>
+            <div class="comp-slots">
+              <span class="dot-green" style="width: 6px; height: 6px;"></span>
+              5 slot rảnh
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4: TOAST CONFIRMED CARD -->
+      <div class="toast-anchor" id="toastCard">
+        <div class="toast-check">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div class="toast-text">
+          <b>Đã xác nhận gặp</b>
+          <small>14:00 hôm nay · Phòng 306.B11</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Side-by-side Avatar Comparison Gallery -->
+  <section class="gallery-section">
+    <h2>So sánh trực quan 4 Giảng viên mẫu</h2>
+    <p class="sub">Xem trực tiếp diện mạo của 4 giảng viên qua 2 nguồn ảnh: Chân dung thực tế và 3D Studio.</p>
+
+    <div class="grid-comparison">
+      <div class="compare-col">
+        <div class="compare-img-box">
+          <img src="/avatars/3d/khoa.png" id="galKhoa" alt="">
+        </div>
+        <p class="compare-name">TS. Nguyễn Minh Khoa</p>
+        <p class="compare-dept">Khoa Công nghệ Thông tin</p>
+        <span class="compare-tag">Trưởng bộ môn</span>
+      </div>
+
+      <div class="compare-col">
+        <div class="compare-img-box">
+          <img src="/avatars/3d/ha.png" id="galHa" alt="">
+        </div>
+        <p class="compare-name">TS. Trần Thu Hà</p>
+        <p class="compare-dept">Khoa Kinh tế & Quản lý</p>
+        <span class="compare-tag">Phó Trưởng khoa</span>
+      </div>
+
+      <div class="compare-col">
+        <div class="compare-img-box">
+          <img src="/avatars/3d/hoang.png" id="galHoang" alt="">
+        </div>
+        <p class="compare-name">ThS. Lê Hoàng</p>
+        <p class="compare-dept">Kỹ thuật Phần mềm</p>
+        <span class="compare-tag">Giảng viên chính</span>
+      </div>
+
+      <div class="compare-col">
+        <div class="compare-img-box">
+          <img src="/avatars/3d/dang.png" id="galDang" alt="">
+        </div>
+        <p class="compare-name">TS. Võ Hải Đăng</p>
+        <p class="compare-dept">Khoa Kỹ thuật - Điện tử</p>
+        <span class="compare-tag">Cố vấn học tập</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// Avatar Data Sources
+const SOURCES = {
+  real: {
+    label: "Nguồn: Ảnh Chân Dung Thực Tế (Unsplash Academic Headshots)",
+    khoa: "/avatars/real/khoa.jpg",
+    ha: "/avatars/real/ha.jpg",
+    hoang: "/avatars/real/hoang.jpg",
+    dang: "/avatars/real/dang.jpg"
+  },
+  "3d": {
+    label: "Nguồn: Avatar 3D Studio (Microsoft 3D Fluent Characters)",
+    khoa: "/avatars/3d/khoa.png",
+    ha: "/avatars/3d/ha.png",
+    hoang: "/avatars/3d/hoang.png",
+    dang: "/avatars/3d/dang.png"
+  },
+  memoji: {
+    label: "Nguồn: Memoji Cũ 2D (public/memoji/*.png)",
+    khoa: "/memoji/12.png",
+    ha: "/memoji/23.png",
+    hoang: "/memoji/7.png",
+    dang: "/memoji/31.png"
+  }
+};
+
+let currentSource = (new URLSearchParams(window.location.search).get("src")) || "real";
+window.addEventListener("DOMContentLoaded", () => setAvatarSource(currentSource));
+
+function setAvatarSource(srcKey) {
+  currentSource = srcKey;
+  const data = SOURCES[srcKey];
+  if (!data) return;
+
+  document.getElementById("activeSourceLabel").textContent = data.label;
+
+  // Update floating cards
+  document.getElementById("imgKhoa").src = data.khoa;
+  document.getElementById("imgHa").src = data.ha;
+  document.getElementById("imgHoang").src = data.hoang;
+
+  // Update gallery
+  document.getElementById("galKhoa").src = data.khoa;
+  document.getElementById("galHa").src = data.ha;
+  document.getElementById("galHoang").src = data.hoang;
+  document.getElementById("galDang").src = data.dang;
+
+  // Update buttons
+  document.querySelectorAll("[data-source]").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-source") === srcKey);
+  });
+}
+
+document.querySelectorAll("[data-source]").forEach(btn => {
+  btn.addEventListener("click", () => setAvatarSource(btn.getAttribute("data-source")));
+});
+
+// Theme switcher
+const html = document.documentElement;
+document.getElementById("themeLight").addEventListener("click", () => {
+  html.setAttribute("data-mochy-theme", "light");
+  document.getElementById("themeLight").classList.add("active");
+  document.getElementById("themeDark").classList.remove("active");
+});
+document.getElementById("themeDark").addEventListener("click", () => {
+  html.setAttribute("data-mochy-theme", "dark");
+  document.getElementById("themeDark").classList.add("active");
+  document.getElementById("themeLight").classList.remove("active");
+});
+
+// Interactive Slot Pills
+document.querySelectorAll(".slot-pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    document.querySelectorAll(".slot-pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+  });
+});
+
+// 3D Parallax Tilt on Hover
+const canvas = document.getElementById("tiltCanvas");
+const heroCard = document.getElementById("heroCard");
+const compTop = document.getElementById("compCardTop");
+const compBottom = document.getElementById("compCardBottom");
+const toastCard = document.getElementById("toastCard");
+
+if (canvas && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  let mouseX = 0, mouseY = 0, curX = 0, curY = 0;
+
+  canvas.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) / rect.width - 0.5;
+    mouseY = (e.clientY - rect.top) / rect.height - 0.5;
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    mouseX = 0;
+    mouseY = 0;
+  });
+
+  function tick() {
+    curX += (mouseX - curX) * 0.1;
+    curY += (mouseY - curY) * 0.1;
+
+    if (heroCard) {
+      heroCard.style.transform = `rotateZ(-2deg) translate3d(${curX * 18}px, ${curY * 18}px, 40px) rotateX(${-curY * 12}deg) rotateY(${curX * 12}deg)`;
+    }
+    if (compTop) {
+      compTop.style.transform = `rotateZ(4.5deg) translate3d(${curX * 30}px, ${curY * 30}px, 20px) rotateX(${-curY * 15}deg) rotateY(${curX * 15}deg)`;
+    }
+    if (compBottom) {
+      compBottom.style.transform = `rotateZ(-4deg) translate3d(${curX * 24}px, ${curY * 24}px, 15px) rotateX(${-curY * 10}deg) rotateY(${curX * 10}deg)`;
+    }
+    if (toastCard) {
+      toastCard.style.transform = `rotateZ(2deg) translate3d(${-curX * 22}px, ${-curY * 22}px, 50px)`;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>

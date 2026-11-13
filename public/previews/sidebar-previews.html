@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Sidebar concepts — OfficeHours</title>
+    <style>
+      /* Standalone preview snapshot of the existing tokens in docs/DESIGN.md. */
+      :root {
+        --brand-50: #eff4ff;
+        --brand-100: #dce7ff;
+        --brand-200: #b7ceff;
+        --brand-300: #8fb0ff;
+        --brand-500: #3465e0;
+        --brand-600: #274fc0;
+        --brand-700: #1d3b98;
+        --brand-800: #142a6e;
+        --brand-900: #0b1b49;
+        --paper-0: #ffffff;
+        --paper-50: #f6f8fc;
+        --paper-100: #edf1f8;
+        --paper-200: #dce2ed;
+        --ink-400: #8d96aa;
+        --ink-500: #6b7488;
+        --ink-600: #4e566a;
+        --ink-700: #383f52;
+        --ink-900: #171a26;
+        --ink-950: #0b0d14;
+        --coral-100: #ffedd5;
+        --coral-500: #f97316;
+        --coral-700: #c2410c;
+        --mint-100: #dcfce7;
+        --mint-500: #22c55e;
+        --mint-700: #15803d;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink-900);
+        background: var(--paper-50);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      :focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+      ::selection { background: var(--brand-200); color: var(--brand-900); }
+
+      .studio { max-width: 1460px; margin: 0 auto; padding: 38px clamp(16px, 3.6vw, 52px) 48px; }
+      .studio-header { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 28px; }
+      .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; color: var(--brand-700); font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+      .eyebrow::before { content: ""; width: 19px; height: 2px; border-radius: 9px; background: var(--brand-500); }
+      h1 { margin: 0; font-size: clamp(28px, 3vw, 42px); line-height: 1.08; letter-spacing: -.055em; font-weight: 760; }
+      .studio-subtitle { max-width: 640px; margin: 12px 0 0; color: var(--ink-600); font-size: 14px; line-height: 1.6; }
+      .studio-tag { flex: none; align-self: start; padding: 8px 12px; border: 1px solid var(--paper-200); border-radius: 999px; background: var(--paper-0); color: var(--ink-600); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+      .controls { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 16px; }
+      .concepts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: min(760px, 100%); }
+      .concept { min-height: 88px; padding: 13px 16px; text-align: left; border: 1px solid var(--paper-200); border-radius: 15px; background: var(--paper-0); color: var(--ink-900); box-shadow: 0 4px 15px color-mix(in srgb, var(--ink-950) 3%, transparent); transition: border-color .18s, background .18s, transform .18s, box-shadow .18s; }
+      .concept:hover { transform: translateY(-2px); border-color: var(--brand-300); box-shadow: 0 7px 22px color-mix(in srgb, var(--brand-900) 8%, transparent); }
+      .concept[aria-pressed="true"] { border-color: var(--brand-500); background: var(--brand-50); box-shadow: inset 0 0 0 1px var(--brand-500); }
+      .concept-number { display: block; color: var(--brand-600); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+      .concept-name { display: block; margin-top: 7px; font-size: 14px; font-weight: 750; letter-spacing: -.025em; }
+      .concept-note { display: block; margin-top: 2px; color: var(--ink-500); font-size: 11px; line-height: 1.3; }
+      .viewport-controls { flex: none; display: flex; gap: 3px; padding: 4px; border: 1px solid var(--paper-200); border-radius: 12px; background: var(--paper-100); }
+      .viewport-controls button { min-height: 35px; padding: 0 13px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-600); font-size: 12px; font-weight: 700; }
+      .viewport-controls button:hover { color: var(--brand-700); }
+      .viewport-controls button[aria-pressed="true"] { background: var(--paper-0); color: var(--brand-700); box-shadow: 0 1px 4px color-mix(in srgb, var(--ink-950) 9%, transparent); }
+
+      .preview-ground { padding: clamp(8px, 1.3vw, 18px); border: 1px solid var(--paper-200); border-radius: 24px; background: var(--paper-100); background-image: radial-gradient(circle at 12% 7%, var(--brand-100), transparent 34%); }
+      .stage { position: relative; display: flex; width: 100%; height: min(710px, 74vh); min-height: 600px; margin: 0 auto; overflow: hidden; border: 1px solid var(--paper-200); border-radius: 17px; background: var(--paper-50); box-shadow: 0 20px 55px color-mix(in srgb, var(--ink-950) 12%, transparent); transition: width .3s ease; }
+      .stage.is-mobile { width: min(390px, 100%); height: 720px; max-height: 76vh; min-height: 560px; }
+      .sidebar { z-index: 2; display: flex; flex: none; flex-direction: column; width: 264px; min-width: 0; height: calc(100% - 28px); margin: 14px 0 14px 14px; padding: 20px 13px 13px; border: 1px solid var(--paper-200); border-radius: 18px; background: var(--paper-0); box-shadow: 0 8px 25px color-mix(in srgb, var(--ink-950) 5%, transparent); transition: width .25s ease, background .25s ease, border-color .25s ease, transform .25s ease; }
+      .sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 3px 11px 26px; }
+      .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--brand-700); white-space: nowrap; }
+      .brand-mark { flex: none; width: 31px; height: 31px; }
+      .brand-word { font-size: 14px; font-weight: 800; letter-spacing: -.055em; }
+      .brand-word span { font-weight: 460; }
+      .sidebar-top-kicker { color: var(--ink-400); font-size: 10px; font-weight: 750; letter-spacing: .1em; }
+      .nav-heading { margin: 0 12px 10px; color: var(--ink-400); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+      .nav-links { display: grid; gap: 4px; }
+      .nav-link { position: relative; display: flex; align-items: center; gap: 12px; min-height: 45px; padding: 0 13px; border-radius: 11px; color: var(--ink-600); font-size: 13px; font-weight: 650; text-decoration: none; white-space: nowrap; transition: background .16s, color .16s, transform .16s; }
+      .nav-link:hover { background: var(--paper-100); color: var(--brand-700); transform: translateX(2px); }
+      .nav-link[aria-current="page"] { background: var(--brand-50); color: var(--brand-700); }
+      .nav-link[aria-current="page"]::before { position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 5px 5px 0; background: var(--brand-500); content: ""; }
+      .nav-icon { display: grid; flex: none; place-items: center; width: 28px; height: 28px; border-radius: 8px; }
+      .nav-icon svg { width: 18px; height: 18px; }
+      .nav-link[aria-current="page"] .nav-icon { background: var(--brand-100); }
+      .nav-label { overflow: hidden; text-overflow: ellipsis; }
+      .nav-after { margin-left: auto; color: var(--ink-400); font-size: 10px; font-weight: 750; }
+      .sidebar-spacer { flex: 1; min-height: 20px; }
+      .next-session { position: relative; margin: 0 4px 14px; padding: 14px 14px 14px 16px; overflow: hidden; border: 1px solid var(--brand-100); border-radius: 13px; background: var(--brand-50); }
+      .next-session::before { position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 5px 5px 0; background: var(--brand-500); content: ""; }
+      .session-kicker { margin: 0 0 7px; color: var(--brand-700); font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+      .session-time { margin: 0; color: var(--ink-900); font-size: 14px; font-weight: 750; letter-spacing: -.025em; }
+      .session-name { margin: 4px 0 0; color: var(--ink-600); font-size: 11px; }
+      .profile { display: flex; align-items: center; gap: 10px; padding: 12px 10px 0; border-top: 1px solid var(--paper-200); }
+      .avatar { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--brand-100); color: var(--brand-700); font-size: 11px; font-weight: 800; }
+      .profile-copy { min-width: 0; }
+      .profile-name { margin: 0; overflow: hidden; color: var(--ink-900); font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+      .profile-role { margin: 2px 0 0; color: var(--ink-500); font-size: 11px; }
+      .profile-caret { width: 15px; height: 15px; margin-left: auto; color: var(--ink-400); transform: rotate(90deg); }
+
+      .main-area { display: flex; flex: 1; flex-direction: column; min-width: 0; overflow: auto; scrollbar-color: var(--paper-200) transparent; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 69px; padding: 0 29px; border-bottom: 1px solid var(--paper-200); background: color-mix(in srgb, var(--paper-0) 78%, transparent); }
+      .topbar-left { display: flex; align-items: center; gap: 12px; }
+      .mobile-menu { display: none; place-items: center; width: 36px; height: 36px; border: 1px solid var(--paper-200); border-radius: 10px; background: var(--paper-0); color: var(--ink-700); }
+      .mobile-menu:hover { background: var(--brand-50); color: var(--brand-700); }
+      .topbar-location { color: var(--ink-600); font-size: 12px; font-weight: 650; }
+      .topbar-location strong { color: var(--ink-900); }
+      .topbar-search { display: flex; align-items: center; gap: 8px; width: min(340px, 40%); height: 36px; padding: 0 13px; border: 1px solid var(--paper-200); border-radius: 999px; background: var(--paper-0); color: var(--ink-400); font-size: 11px; }
+      .topbar-search svg { width: 15px; height: 15px; }
+      .topbar-end { display: flex; align-items: center; gap: 14px; color: var(--ink-500); }
+      .topbar-end svg { width: 18px; height: 18px; }
+      .topbar-date { font-size: 11px; font-weight: 650; }
+      .content { padding: clamp(22px, 3.1vw, 46px); }
+      .welcome-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; color: var(--brand-700); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+      .welcome-kicker::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--mint-500); }
+      .content h2 { margin: 0; font-size: clamp(27px, 3vw, 39px); line-height: 1.1; letter-spacing: -.05em; font-weight: 760; }
+      .welcome-copy { margin: 9px 0 26px; color: var(--ink-600); font-size: 13px; line-height: 1.5; }
+      .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+      .summary-card { min-height: 120px; padding: 17px 19px; border: 1px solid var(--paper-200); border-radius: 15px; background: var(--paper-0); }
+      .summary-label { margin: 0; color: var(--ink-600); font-size: 11px; font-weight: 650; }
+      .summary-value { margin: 16px 0 3px; color: var(--ink-900); font-size: 28px; line-height: 1; font-weight: 780; letter-spacing: -.05em; }
+      .summary-foot { margin: 0; color: var(--ink-500); font-size: 10px; }
+      .summary-card:first-child .summary-value { color: var(--brand-700); }
+      .summary-card:nth-child(2) .summary-value { color: var(--coral-700); }
+      .summary-card:nth-child(3) .summary-value { color: var(--mint-700); }
+      .content-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(210px, 1fr); gap: 14px; margin-top: 14px; }
+      .surface { min-width: 0; padding: 20px; border: 1px solid var(--paper-200); border-radius: 16px; background: var(--paper-0); }
+      .surface-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+      .surface-heading h3 { margin: 0; font-size: 14px; font-weight: 750; letter-spacing: -.025em; }
+      .surface-heading span { color: var(--ink-500); font-size: 10px; white-space: nowrap; }
+      .meeting { display: flex; align-items: center; gap: 13px; padding: 12px 0; border-top: 1px solid var(--paper-100); }
+      .meeting-date { display: grid; flex: none; place-items: center; width: 42px; height: 42px; border-radius: 11px; background: var(--brand-50); color: var(--brand-700); font-size: 14px; font-weight: 800; }
+      .meeting-date small { display: block; margin-top: -9px; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+      .meeting-text { min-width: 0; }
+      .meeting-text strong { display: block; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+      .meeting-text span { display: block; margin-top: 4px; color: var(--ink-500); font-size: 10px; }
+      .meeting-status { margin-left: auto; padding: 5px 7px; border-radius: 6px; background: var(--mint-100); color: var(--mint-700); font-size: 9px; font-weight: 750; }
+      .agenda-row { display: flex; align-items: start; gap: 10px; padding: 11px 0; border-top: 1px solid var(--paper-100); }
+      .agenda-time { flex: none; width: 44px; color: var(--ink-500); font-size: 10px; font-weight: 700; }
+      .agenda-line { width: 3px; align-self: stretch; min-height: 30px; border-radius: 9px; background: var(--brand-300); }
+      .agenda-row:nth-child(3) .agenda-line { background: var(--coral-500); }
+      .agenda-text strong { display: block; font-size: 10px; }
+      .agenda-text span { display: block; margin-top: 3px; color: var(--ink-500); font-size: 9px; }
+      .drawer-backdrop { display: none; }
+
+      /* Concept 02: a deep brand sidebar with the same restrained app content. */
+      .stage[data-variant="navy"] .sidebar { border-color: var(--brand-800); background: var(--brand-900); box-shadow: 0 10px 28px color-mix(in srgb, var(--brand-900) 24%, transparent); }
+      .stage[data-variant="navy"] .brand { color: var(--paper-0); }
+      .stage[data-variant="navy"] .sidebar-top-kicker,
+      .stage[data-variant="navy"] .nav-heading { color: var(--brand-300); }
+      .stage[data-variant="navy"] .nav-link { color: var(--brand-200); }
+      .stage[data-variant="navy"] .nav-link:hover { background: var(--brand-800); color: var(--paper-0); }
+      .stage[data-variant="navy"] .nav-link[aria-current="page"] { background: var(--brand-800); color: var(--paper-0); }
+      .stage[data-variant="navy"] .nav-link[aria-current="page"]::before { background: var(--brand-300); }
+      .stage[data-variant="navy"] .nav-link[aria-current="page"] .nav-icon { background: var(--brand-700); }
+      .stage[data-variant="navy"] .nav-after { color: var(--brand-300); }
+      .stage[data-variant="navy"] .next-session { border-color: var(--brand-700); background: var(--brand-800); }
+      .stage[data-variant="navy"] .next-session::before { background: var(--brand-300); }
+      .stage[data-variant="navy"] .session-kicker { color: var(--brand-300); }
+      .stage[data-variant="navy"] .session-time { color: var(--paper-0); }
+      .stage[data-variant="navy"] .session-name { color: var(--brand-200); }
+      .stage[data-variant="navy"] .profile { border-color: var(--brand-800); }
+      .stage[data-variant="navy"] .avatar { background: var(--brand-700); color: var(--paper-0); }
+      .stage[data-variant="navy"] .profile-name { color: var(--paper-0); }
+      .stage[data-variant="navy"] .profile-role,
+      .stage[data-variant="navy"] .profile-caret { color: var(--brand-200); }
+
+      /* Concept 03: the same navigation compressed into a deliberate icon rail. */
+      .stage[data-variant="rail"] .sidebar { width: 78px; padding-inline: 10px; }
+      .stage[data-variant="rail"] .sidebar-top { justify-content: center; padding-inline: 0; }
+      .stage[data-variant="rail"] .brand-word,
+      .stage[data-variant="rail"] .sidebar-top-kicker,
+      .stage[data-variant="rail"] .nav-heading,
+      .stage[data-variant="rail"] .nav-label,
+      .stage[data-variant="rail"] .nav-after,
+      .stage[data-variant="rail"] .next-session,
+      .stage[data-variant="rail"] .profile-copy,
+      .stage[data-variant="rail"] .profile-caret { display: none; }
+      .stage[data-variant="rail"] .nav-link { justify-content: center; height: 48px; padding-inline: 0; }
+      .stage[data-variant="rail"] .nav-icon { width: 35px; height: 35px; border-radius: 10px; }
+      .stage[data-variant="rail"] .nav-icon svg { width: 20px; height: 20px; }
+      .stage[data-variant="rail"] .nav-link[aria-current="page"]::before { top: 11px; bottom: 11px; }
+      .stage[data-variant="rail"] .profile { justify-content: center; padding: 12px 0 0; }
+      .stage[data-variant="rail"] .avatar { width: 36px; height: 36px; }
+      .stage[data-variant="rail"] .nav-link::after { position: absolute; z-index: 5; left: calc(100% + 12px); top: 50%; padding: 8px 10px; border-radius: 8px; background: var(--ink-900); color: var(--paper-0); font-size: 11px; font-weight: 700; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(-4px, -50%); transition: opacity .14s, transform .14s; content: attr(data-tooltip); }
+      .stage[data-variant="rail"] .nav-link:hover::after,
+      .stage[data-variant="rail"] .nav-link:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+
+      /* The mobile preview uses the app's full-width drawer pattern for every concept. */
+      .stage.is-mobile .sidebar { position: absolute; z-index: 6; top: 0; bottom: 0; left: 0; width: min(278px, 87%); height: 100%; margin: 0; border-radius: 0 17px 17px 0; transform: translateX(-105%); }
+      .stage.is-mobile.drawer-open .sidebar { transform: translateX(0); }
+      .stage.is-mobile .sidebar-top { justify-content: space-between; padding-inline: 11px; }
+      .stage.is-mobile .brand-word,
+      .stage.is-mobile .sidebar-top-kicker,
+      .stage.is-mobile .nav-label,
+      .stage.is-mobile .nav-after { display: inline; }
+      .stage.is-mobile .nav-heading,
+      .stage.is-mobile .next-session,
+      .stage.is-mobile .profile-copy,
+      .stage.is-mobile .profile-caret { display: block; }
+      .stage.is-mobile .nav-links { display: grid; }
+      .stage.is-mobile .nav-link { justify-content: flex-start; height: 45px; padding-inline: 13px; }
+      .stage.is-mobile .nav-icon { width: 28px; height: 28px; }
+      .stage.is-mobile .nav-icon svg { width: 18px; height: 18px; }
+      .stage.is-mobile .nav-link::after { display: none; }
+      .stage.is-mobile .profile { justify-content: flex-start; padding: 12px 10px 0; }
+      .stage.is-mobile .avatar { width: 34px; height: 34px; }
+      .stage.is-mobile .drawer-backdrop { position: absolute; z-index: 5; inset: 0; display: block; border: 0; background: color-mix(in srgb, var(--ink-950) 44%, transparent); opacity: 0; pointer-events: none; transition: opacity .2s; }
+      .stage.is-mobile.drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+      .stage.is-mobile .mobile-menu { display: grid; }
+      .stage.is-mobile .topbar { min-height: 61px; padding: 0 18px; }
+      .stage.is-mobile .topbar-search,
+      .stage.is-mobile .topbar-date { display: none; }
+      .stage.is-mobile .content { padding: 25px 19px; }
+      .stage.is-mobile .content h2 { font-size: 30px; }
+      .stage.is-mobile .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stage.is-mobile .summary-card { min-height: 108px; padding: 14px; }
+      .stage.is-mobile .summary-card:last-child { grid-column: 1 / -1; min-height: 92px; }
+      .stage.is-mobile .summary-value { margin-top: 12px; font-size: 25px; }
+      .stage.is-mobile .content-grid { grid-template-columns: 1fr; }
+      .stage.is-mobile .surface { padding: 16px; }
+      .stage.is-mobile[data-variant="rail"] .sidebar { padding-inline: 13px; }
+
+      .preview-footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 14px; color: var(--ink-500); font-size: 11px; line-height: 1.5; }
+      .preview-footer strong { color: var(--ink-700); }
+      @media (max-width: 900px) { .controls { align-items: stretch; flex-direction: column; } .concepts { width: 100%; } .viewport-controls { align-self: flex-end; } .studio-tag { display: none; } }
+      @media (max-width: 650px) { .studio { padding: 25px 12px 32px; } .studio-header { margin-bottom: 23px; } .concepts { grid-template-columns: 1fr; } .concept { min-height: 64px; } .concept-note { display: none; } .preview-ground { padding: 6px; } .stage:not(.is-mobile) .sidebar { width: 225px; } .stage:not(.is-mobile) .summary-grid { grid-template-columns: 1fr; } .preview-footer { flex-direction: column; gap: 4px; } }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+      <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m16 16 4.2 4.2"/></symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2"/></symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+      <symbol id="icon-book" viewBox="0 0 24 24"><path d="M12 5.5c-2.3-1.3-5.7-1.5-9-1v14c3.4-.5 6.7-.3 9 1 2.3-1.3 5.6-1.5 9-1v-14c-3.4-.5-6.7-.3-9 1ZM12 5.5v14"/></symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    </svg>
+
+    <div class="studio">
+      <header class="studio-header">
+        <div>
+          <p class="eyebrow">OfficeHours / Navigation study</p>
+          <h1>Three ways to feel at home.</h1>
+          <p class="studio-subtitle">Compare the sidebar in a real dashboard setting. Switch a style, try the navigation, and open the mobile drawer.</p>
+        </div>
+        <span class="studio-tag">Interactive preview</span>
+      </header>
+
+      <div class="controls">
+        <div class="concepts" aria-label="Sidebar styles">
+          <button class="concept" type="button" data-style="light" aria-pressed="true">
+            <span class="concept-number">01 / RECOMMENDED</span><span class="concept-name">Refined light</span><span class="concept-note">Calm surface, clear hierarchy</span>
+          </button>
+          <button class="concept" type="button" data-style="navy" aria-pressed="false">
+            <span class="concept-number">02 / CONTRAST</span><span class="concept-name">Deep navy</span><span class="concept-note">Confident campus identity</span>
+          </button>
+          <button class="concept" type="button" data-style="rail" aria-pressed="false">
+            <span class="concept-number">03 / SPACE</span><span class="concept-name">Compact rail</span><span class="concept-note">More room for schedules</span>
+          </button>
+        </div>
+        <div class="viewport-controls" aria-label="Preview size">
+          <button type="button" data-size="desktop" aria-pressed="true">Desktop</button>
+          <button type="button" data-size="mobile" aria-pressed="false">Mobile</button>
+        </div>
+      </div>
+
+      <div class="preview-ground">
+        <div class="stage" id="stage" data-variant="light">
+          <button class="drawer-backdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
+          <aside class="sidebar" id="preview-sidebar" aria-label="Main navigation">
+            <div class="sidebar-top">
+              <div class="brand" aria-label="OfficeHours">
+                <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true"><circle cx="14" cy="18" r="8"/><circle cx="22" cy="18" r="8"/><path d="M14 13v10M22 13v10"/></svg>
+                <span class="brand-word">Office<span>Hours</span></span>
+              </div>
+              <span class="sidebar-top-kicker">EIU</span>
+            </div>
+            <p class="nav-heading">Workspace</p>
+            <nav class="nav-links" aria-label="Student pages">
+              <a class="nav-link" href="#dashboard" data-page="Dashboard" data-tooltip="Dashboard" aria-current="page" aria-label="Dashboard"><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-grid"/></svg></span><span class="nav-label">Dashboard</span></a>
+              <a class="nav-link" href="#lecturers" data-page="Find a Lecturer" data-tooltip="Find a Lecturer" aria-label="Find a Lecturer"><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-search"/></svg></span><span class="nav-label">Find a Lecturer</span></a>
+              <a class="nav-link" href="#bookings" data-page="My Bookings" data-tooltip="My Bookings" aria-label="My Bookings"><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-calendar"/></svg></span><span class="nav-label">My Bookings</span><span class="nav-after">2</span></a>
+              <a class="nav-link" href="#waitlist" data-page="My Waitlist" data-tooltip="My Waitlist" aria-label="My Waitlist"><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-clock"/></svg></span><span class="nav-label">My Waitlist</span></a>
+              <a class="nav-link" href="#schedule" data-page="My Schedule" data-tooltip="My Schedule" aria-label="My Schedule"><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-book"/></svg></span><span class="nav-label">My Schedule</span></a>
+            </nav>
+            <div class="sidebar-spacer"></div>
+            <div class="next-session">
+              <p class="session-kicker">Next office hour</p>
+              <p class="session-time">Today · 2:00 PM</p>
+              <p class="session-name">Dr. Amara Chen · Room B204</p>
+            </div>
+            <div class="profile">
+              <span class="avatar" aria-hidden="true">MN</span>
+              <div class="profile-copy"><p class="profile-name">Minh Nguyen</p><p class="profile-role">Student · Computer Science</p></div>
+              <svg class="profile-caret" aria-hidden="true"><use href="#icon-chevron"/></svg>
+            </div>
+          </aside>
+
+          <div class="main-area">
+            <div class="topbar">
+              <div class="topbar-left">
+                <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="preview-sidebar"><svg aria-hidden="true"><use href="#icon-menu"/></svg></button>
+                <span class="topbar-location">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb-page">Dashboard</strong></span>
+              </div>
+              <div class="topbar-search" aria-hidden="true"><svg><use href="#icon-search"/></svg><span>Search lecturers, departments...</span></div>
+              <div class="topbar-end"><span class="topbar-date">Tuesday, 29 September</span><svg aria-hidden="true"><use href="#icon-bell"/></svg></div>
+            </div>
+            <main class="content" id="main-content">
+              <p class="welcome-kicker">Your semester, at a glance</p>
+              <h2 id="page-heading">Good afternoon, Minh.</h2>
+              <p class="welcome-copy" id="page-description">Your office hours, classes, and requests in one place.</p>
+              <div class="summary-grid" aria-label="Overview">
+                <div class="summary-card"><p class="summary-label">Upcoming bookings</p><p class="summary-value">02</p><p class="summary-foot">Your next meeting is today</p></div>
+                <div class="summary-card"><p class="summary-label">Waitlist requests</p><p class="summary-value">01</p><p class="summary-foot">One lecturer is in demand</p></div>
+                <div class="summary-card"><p class="summary-label">Conflict-free slots</p><p class="summary-value">08</p><p class="summary-foot">Available this week</p></div>
+              </div>
+              <div class="content-grid">
+                <section class="surface" aria-label="Upcoming meetings">
+                  <div class="surface-heading"><h3>Upcoming meetings</h3><span>This week</span></div>
+                  <div class="meeting"><div class="meeting-date">29<small>Sep</small></div><div class="meeting-text"><strong>Project guidance · Dr. Amara Chen</strong><span>2:00–2:30 PM · Room B204</span></div><span class="meeting-status">Confirmed</span></div>
+                  <div class="meeting"><div class="meeting-date">02<small>Oct</small></div><div class="meeting-text"><strong>Research check-in · Prof. David Tran</strong><span>10:30–11:00 AM · Online</span></div><span class="meeting-status">Confirmed</span></div>
+                </section>
+                <section class="surface" aria-label="Today's classes">
+                  <div class="surface-heading"><h3>Today's classes</h3><span>Tuesday</span></div>
+                  <div class="agenda-row"><span class="agenda-time">08:30</span><span class="agenda-line"></span><span class="agenda-text"><strong>Data Structures</strong><span>Lecture hall A301</span></span></div>
+                  <div class="agenda-row"><span class="agenda-time">11:00</span><span class="agenda-line"></span><span class="agenda-text"><strong>Software Engineering</strong><span>Room C102</span></span></div>
+                </section>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+      <div class="preview-footer"><span><strong id="style-caption">Refined light</strong> · A soft surface and a useful session card make the sidebar feel purposeful.</span><span>Click the links to preview active states.</span></div>
+    </div>
+
+    <script>
+      const stage = document.getElementById("stage");
+      const menuButton = document.getElementById("mobile-menu");
+      const styleCaption = document.getElementById("style-caption");
+      const pageHeading = document.getElementById("page-heading");
+      const pageDescription = document.getElementById("page-description");
+      const breadcrumbPage = document.getElementById("breadcrumb-page");
+      const styleDescriptions = {
+        light: ["Refined light", "A soft surface and a useful session card make the sidebar feel purposeful."],
+        navy: ["Deep navy", "Brand color gives navigation a confident edge while content stays calm."],
+        rail: ["Compact rail", "A focused icon system gives more width to schedules and booking details."]
+      };
+      const pageCopy = {
+        "Dashboard": ["Good afternoon, Minh.", "Your office hours, classes, and requests in one place."],
+        "Find a Lecturer": ["Find a lecturer.", "Browse available advisors and choose a time that fits your classes."],
+        "My Bookings": ["My bookings.", "Keep track of upcoming meetings and booking requests."],
+        "My Waitlist": ["My waitlist.", "See where you stand for high-demand office hours."],
+        "My Schedule": ["My schedule.", "View your classes and open windows for office hours."]
+      };
+
+      function closeDrawer(restoreFocus = false) {
+        stage.classList.remove("drawer-open");
+        menuButton.setAttribute("aria-expanded", "false");
+        if (restoreFocus && stage.classList.contains("is-mobile")) menuButton.focus();
+      }
+
+      document.querySelectorAll(".concept").forEach((button) => {
+        button.addEventListener("click", () => {
+          const style = button.dataset.style;
+          stage.dataset.variant = style;
+          document.querySelectorAll(".concept").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+          styleCaption.textContent = styleDescriptions[style][0];
+          styleCaption.parentElement.replaceChildren(styleCaption, document.createTextNode(" · " + styleDescriptions[style][1]));
+          closeDrawer();
+        });
+      });
+
+      document.querySelectorAll(".viewport-controls button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const mobile = button.dataset.size === "mobile";
+          stage.classList.toggle("is-mobile", mobile);
+          document.querySelectorAll(".viewport-controls button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+          closeDrawer();
+        });
+      });
+
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          document.querySelectorAll(".nav-link").forEach((item) => item.removeAttribute("aria-current"));
+          link.setAttribute("aria-current", "page");
+          const page = link.dataset.page;
+          breadcrumbPage.textContent = page;
+          pageHeading.textContent = pageCopy[page][0];
+          pageDescription.textContent = pageCopy[page][1];
+          document.title = page + " — OfficeHours sidebar concepts";
+          closeDrawer(true);
+        });
+      });
+
+      menuButton.addEventListener("click", () => {
+        const open = !stage.classList.contains("drawer-open");
+        stage.classList.toggle("drawer-open", open);
+        menuButton.setAttribute("aria-expanded", String(open));
+        if (open) stage.querySelector(".nav-link[aria-current='page']").focus();
+      });
+      document.querySelector(".drawer-backdrop").addEventListener("click", () => closeDrawer(true));
+      document.addEventListener("keydown", (event) => {
+        if (!stage.classList.contains("drawer-open")) return;
+        if (event.key === "Escape") {
+          closeDrawer(true);
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const links = [...stage.querySelectorAll(".nav-link")];
+        if (event.shiftKey && document.activeElement === links[0]) {
+          event.preventDefault();
+          links[links.length - 1].focus();
+        } else if (!event.shiftKey && document.activeElement === links[links.length - 1]) {
+          event.preventDefault();
+          links[0].focus();
+        }
+      });
+
+      if (window.matchMedia("(max-width: 650px)").matches) {
+        stage.classList.add("is-mobile");
+        document.querySelector('[data-size="desktop"]').setAttribute("aria-pressed", "false");
+        document.querySelector('[data-size="mobile"]').setAttribute("aria-pressed", "true");
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Lecturer Availability & Exceptions Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 32px 24px 80px;
+  transition: background 0.3s, color 0.3s;
+}
+.container { max-width: 980px; margin: 0 auto; }
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hub-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  transition: all 0.2s;
+}
+.hub-link:hover { color: var(--m-fg); background: var(--m-s3); }
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  gap: 4px;
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  background: var(--m-s1);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--m-line);
+  margin-bottom: 28px;
+  width: fit-content;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.card {
+  background: var(--m-s1);
+  border: 1px solid var(--m-line);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--m-shadow);
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+.card-subtitle {
+  font-size: 13px;
+  color: var(--m-fg2);
+  margin-bottom: 20px;
+}
+
+/* Slots rule item */
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--m-s2);
+  border: 1px solid var(--m-line);
+  margin-bottom: 12px;
+}
+.rule-day {
+  font-weight: 700;
+  font-size: 15px;
+}
+.rule-time {
+  font-size: 13px;
+  color: var(--m-fg2);
+  font-family: monospace;
+  margin-top: 2px;
+}
+.rule-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--m-s3);
+  color: var(--m-fg);
+}
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: opacity 0.2s;
+}
+.btn-add:hover { opacity: 0.9; }
+
+/* Exception list */
+.exc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--m-s2);
+  margin-bottom: 10px;
+  box-shadow: inset 3px 0 0 var(--m-fg);
+}
+.exc-reason { font-weight: 600; font-size: 14px; }
+.exc-date { font-size: 12.5px; color: var(--m-fg3); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-nav">
+    <div class="brand-group">
+      <a href="/previews/index.html" class="hub-link">← Hub Previews</a>
+      <span style="font-weight: 700; font-size: 17px;">Lecturer Availability Setup · Mochy Preview</span>
+    </div>
+    <div class="theme-switch">
+      <button class="theme-btn" id="btnLight">Sáng</button>
+      <button class="theme-btn active" id="btnDark">Tối</button>
+    </div>
+  </div>
+
+  <!-- RULES CARD -->
+  <div class="card">
+    <h2 class="card-title">Khung giờ tiếp sinh viên định kỳ (Weekly Rules)</h2>
+    <p class="card-subtitle">Hệ thống sẽ tự động đối soát lịch giảng dạy EIU để mở các slot hẹn tiếp sinh viên an toàn không bị trùng lịch.</p>
+
+    <div class="rule-item">
+      <div>
+        <div class="rule-day">Thứ Hai hàng tuần</div>
+        <div class="rule-time">14:00 – 16:30 (5 slot · 30 phút/slot)</div>
+      </div>
+      <div class="rule-meta">
+        <span class="chip">Phòng 306.B11</span>
+        <span class="chip">Trực tiếp (In-person)</span>
+        <button class="hub-link" style="padding: 4px 10px; font-size: 12px;">Sửa</button>
+      </div>
+    </div>
+
+    <div class="rule-item">
+      <div>
+        <div class="rule-day">Thứ Năm hàng tuần</div>
+        <div class="rule-time">09:00 – 11:00 (4 slot · 30 phút/slot)</div>
+      </div>
+      <div class="rule-meta">
+        <span class="chip">Google Meet</span>
+        <span class="chip">Trực tuyến (Online)</span>
+        <button class="hub-link" style="padding: 4px 10px; font-size: 12px;">Sửa</button>
+      </div>
+    </div>
+
+    <button class="btn-add">+ Thêm khung giờ tiếp sinh viên</button>
+  </div>
+
+  <!-- EXCEPTIONS CARD -->
+  <div class="card">
+    <h2 class="card-title">Ngoại lệ & Nghỉ phép (Availability Exceptions)</h2>
+    <p class="card-subtitle">Khi có lịch họp đột xuất, chấm thi hoặc công tác, các slot trong khoảng thời gian này sẽ tự động đóng và thông báo tới sinh viên trong hàng đợi.</p>
+
+    <div class="exc-item">
+      <div>
+        <div class="exc-reason">Họp Hội đồng Khoa học CNTT</div>
+        <div class="exc-date">Thứ Hai, 18/11/2026 · Cả buổi chiều (13:30 – 17:00)</div>
+      </div>
+      <button class="hub-link" style="padding: 4px 10px; font-size: 12px; color: var(--m-err);">Huỷ ngoại lệ</button>
+    </div>
+
+    <div class="exc-item">
+      <div>
+        <div class="exc-reason">Hội thảo Quốc tế IEEE Capstone tại TP.HCM</div>
+        <div class="exc-date">Thứ Năm, 28/11/2026 · Cả ngày</div>
+      </div>
+      <button class="hub-link" style="padding: 4px 10px; font-size: 12px; color: var(--m-err);">Huỷ ngoại lệ</button>
+    </div>
+
+    <button class="btn-add" style="background: transparent; border: 1px solid var(--m-line2); color: var(--m-fg); margin-top: 10px;">+ Thêm ngày nghỉ ngoại lệ</button>
+  </div>
+</div>
+
+<script>
+const html = document.documentElement;
+document.getElementById('btnLight').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'light');
+  this.classList.add('active');
+  document.getElementById('btnDark').classList.remove('active');
+});
+document.getElementById('btnDark').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'dark');
+  this.classList.add('active');
+  document.getElementById('btnLight').classList.remove('active');
+});
+</script>
+</body>
+</html>

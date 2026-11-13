@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Student Lecturers Directory & Waitlist Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 32px 24px 80px;
+  transition: background 0.3s, color 0.3s;
+}
+.container { max-width: 1080px; margin: 0 auto; }
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hub-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  transition: all 0.2s;
+}
+.hub-link:hover { color: var(--m-fg); background: var(--m-s3); }
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 4px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  gap: 4px;
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  background: var(--m-s1);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--m-line);
+  margin-bottom: 28px;
+  width: fit-content;
+}
+.tab-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active { background: var(--m-fg); color: var(--m-bg); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Lecturer cards grid */
+.lecturer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.lecturer-card {
+  background: var(--m-s1);
+  border: 1px solid var(--m-line);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--m-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.avatar-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: var(--m-s2);
+}
+.lecturer-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.lecturer-sub {
+  font-size: 12.5px;
+  color: var(--m-fg2);
+  margin-top: 2px;
+}
+.slots-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.slot-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--m-s2);
+  color: var(--m-fg);
+  border: 1px solid var(--m-line);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.slot-pill:hover {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+
+/* Waitlist offer banner */
+.offer-banner {
+  background: var(--m-s1);
+  border: 2px solid var(--m-fg);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--m-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.offer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.countdown-box {
+  background: var(--m-s2);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.05em;
+  color: var(--m-fg);
+}
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.btn-accept {
+  padding: 10px 24px;
+  border-radius: 9999px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  border: none;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.btn-decline {
+  padding: 10px 20px;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--m-fg2);
+  border: 1px solid var(--m-line2);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-nav">
+    <div class="brand-group">
+      <a href="/previews/index.html" class="hub-link">← Hub Previews</a>
+      <span style="font-weight: 700; font-size: 17px;">Student Booking & Waitlist · Mochy Preview</span>
+    </div>
+    <div class="theme-switch">
+      <button class="theme-btn" id="btnLight">Sáng</button>
+      <button class="theme-btn active" id="btnDark">Tối</button>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('lecturers')">Tìm giảng viên</button>
+    <button class="tab-btn" onclick="switchTab('waitlist')">Hàng đợi <span style="background: var(--m-fg); color: var(--m-bg); padding: 2px 6px; border-radius: 9999px; font-size: 10px; margin-left: 4px;">1 lời mời</span></button>
+  </div>
+
+  <!-- TAB 1: LECTURERS -->
+  <div id="panel-lecturers" class="panel active">
+    <div style="margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+      <input type="text" placeholder="Tìm theo tên giảng viên, môn học..." style="flex: 1; min-width: 280px; background: var(--m-s1); border: 1px solid var(--m-line); border-radius: 12px; padding: 12px 16px; font-size: 14px; color: var(--m-fg); outline: none;">
+      <div style="display: flex; gap: 6px;">
+        <button class="hub-link" style="background: var(--m-fg); color: var(--m-bg);">Tất cả khoa</button>
+        <button class="hub-link">CNTT</button>
+        <button class="hub-link">Kinh tế</button>
+        <button class="hub-link">Kỹ thuật</button>
+      </div>
+    </div>
+
+    <div class="lecturer-grid">
+      <!-- Lecturer 1 -->
+      <div class="lecturer-card">
+        <div class="card-top">
+          <img src="/avatars/real/khoa.jpg" alt="TS. Nguyễn Minh Khoa" class="avatar-img">
+          <div>
+            <div class="lecturer-name">TS. Nguyễn Minh Khoa</div>
+            <div class="lecturer-sub">Khoa CNTT · Phòng 306.B11</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--m-fg3); margin-bottom: 8px; font-weight: 600;">Còn trống hôm nay</div>
+          <div class="slots-container">
+            <span class="slot-pill">14:00 - 14:30</span>
+            <span class="slot-pill">14:30 - 15:00</span>
+            <span class="slot-pill">15:30 - 16:00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer 2 -->
+      <div class="lecturer-card">
+        <div class="card-top">
+          <img src="/avatars/real/ha.jpg" alt="TS. Trần Thu Hà" class="avatar-img">
+          <div>
+            <div class="lecturer-name">TS. Trần Thu Hà</div>
+            <div class="lecturer-sub">Khoa Kinh tế · Phòng 204.B11</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--m-fg3); margin-bottom: 8px; font-weight: 600;">Còn trống hôm nay</div>
+          <div class="slots-container">
+            <span class="slot-pill">09:30 - 10:00</span>
+            <span class="slot-pill">10:00 - 10:30</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer 3 -->
+      <div class="lecturer-card">
+        <div class="card-top">
+          <img src="/avatars/real/hoang.jpg" alt="ThS. Lê Hoàng" class="avatar-img">
+          <div>
+            <div class="lecturer-name">ThS. Lê Hoàng</div>
+            <div class="lecturer-sub">Khoa CNTT · Trực tuyến</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: var(--m-fg3); margin-bottom: 8px; font-weight: 600;">Còn trống hôm nay</div>
+          <div class="slots-container">
+            <span class="slot-pill">15:00 - 15:30</span>
+            <span class="slot-pill">16:00 - 16:30</span>
+            <span class="slot-pill">16:30 - 17:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: WAITLIST -->
+  <div id="panel-waitlist" class="panel">
+    <!-- OFFER BANNER -->
+    <div class="offer-banner">
+      <div class="offer-head">
+        <div>
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--m-fg); color: var(--m-bg); padding: 4px 10px; border-radius: 9999px;">Lời mời từ hàng đợi</span>
+          <h2 style="font-size: 20px; font-weight: 800; margin-top: 8px; letter-spacing: -0.03em;">Một slot hẹn vừa được giải phóng!</h2>
+          <p style="font-size: 13.5px; color: var(--m-fg2); margin-top: 4px;">TS. Nguyễn Minh Khoa · Hôm nay 14:30 – 15:00 · Phòng 306.B11. Slot được giữ cho bạn trong 2 giờ, sau đó chuyển cho người kế tiếp.</p>
+        </div>
+        <div class="countdown-box" id="timer">1:42:08</div>
+      </div>
+      <div class="action-row">
+        <button class="btn-accept">Nhận slot hẹn này ngay</button>
+        <button class="btn-decline">Nhường cho bạn tiếp theo</button>
+      </div>
+    </div>
+
+    <!-- WAITLIST QUEUE -->
+    <div style="background: var(--m-s1); border: 1px solid var(--m-line); border-radius: 20px; padding: 24px;">
+      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Bạn đang chờ</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 12px; background: var(--m-s2);">
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">ThS. Lê Hoàng · Đồ án Chuyên ngành CNTT</div>
+          <div style="font-size: 12.5px; color: var(--m-fg3); margin-top: 2px;">Đã đăng ký lúc 08:30 sáng nay</div>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--m-fg);">Vị trí #2</span>
+          <div style="font-size: 11.5px; color: var(--m-fg3);">Đang chờ sinh viên trước huỷ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const html = document.documentElement;
+document.getElementById('btnLight').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'light');
+  this.classList.add('active');
+  document.getElementById('btnDark').classList.remove('active');
+});
+document.getElementById('btnDark').addEventListener('click', function() {
+  html.setAttribute('data-mochy-theme', 'dark');
+  this.classList.add('active');
+  document.getElementById('btnLight').classList.remove('active');
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'lecturers') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('panel-lecturers').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('panel-waitlist').classList.add('active');
+  }
+}
+
+// Countdown simulation
+let sec = 1 * 3600 + 42 * 60 + 8;
+setInterval(() => {
+  if (sec > 0) {
+    sec--;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    const el = document.getElementById('timer');
+    if (el) el.innerText = `${Math.floor(sec / 3600)}:${(m % 60).toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+}, 1000);
+</script>
+</body>
+</html>

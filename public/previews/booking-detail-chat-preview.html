@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Booking Detail & Live Chat Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--m-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 -1px 0 var(--m-line), var(--m-shadow);
+  padding: 14px 24px;
+}
+.topbar-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  color: inherit;
+}
+.mark-oh {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 3px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+}
+.theme-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+
+.main-layout {
+  max-width: 1240px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  height: calc(100vh - 110px);
+}
+
+/* Left Pane: Bookings List */
+.list-pane {
+  border-radius: 26px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pane-head {
+  padding: 20px;
+  border-bottom: 1px solid var(--m-line);
+}
+.pane-head h2 { font-size: 18px; font-weight: 700; }
+.search-input {
+  width: 100%;
+  height: 40px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  border: 1px solid var(--m-line);
+  padding: 0 16px;
+  font-size: 13px;
+  color: var(--m-fg);
+  margin-top: 12px;
+  outline: none;
+}
+.bookings-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.b-card {
+  padding: 14px;
+  border-radius: 18px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s;
+}
+.b-card:hover { background: var(--m-s2); }
+.b-card.active {
+  background: var(--m-s2);
+  box-shadow: inset 0 0 0 1.5px var(--m-fg);
+}
+.b-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.b-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.b-meta { flex: 1; min-width: 0; }
+.b-meta b { font-size: 14px; font-weight: 700; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-meta small { font-size: 12px; color: var(--m-fg3); display: block; margin-top: 2px; }
+.b-status-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* Right Pane: Active Booking & In-Person Chat */
+.chat-pane {
+  border-radius: 26px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--m-line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ch-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ch-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--m-s3);
+  overflow: hidden;
+}
+.ch-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ch-title b { font-size: 16px; font-weight: 700; display: block; }
+.ch-title small { font-size: 12.5px; color: var(--m-fg3); }
+
+.ch-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-action {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s var(--m-spring), background 0.2s;
+}
+.btn-action.primary {
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+}
+.btn-action.ghost {
+  background: var(--m-s2);
+  color: var(--m-fg);
+}
+
+/* Stream / Message Area */
+.chat-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.time-sep {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg3);
+  margin: 12px 0;
+}
+.msg {
+  max-width: 70%;
+  padding: 12px 18px;
+  border-radius: 22px;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.msg.them {
+  background: var(--m-s2);
+  color: var(--m-fg);
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+.msg.me {
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+}
+
+/* Action Bar in Meeting */
+.action-box {
+  margin: 16px 24px;
+  padding: 14px 18px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.location-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--m-fg);
+}
+.dot-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--m-fg);
+  box-shadow: 0 0 0 3px var(--m-fg4);
+  animation: live 1.8s ease-in-out infinite;
+}
+
+/* Chat Input Bar */
+@keyframes live { 50% { box-shadow: 0 0 0 6px transparent; } }
+.chat-input-bar {
+  padding: 16px 24px;
+  border-top: 1px solid var(--m-line);
+  display: flex;
+  gap: 10px;
+}
+.chat-input {
+  flex: 1;
+  height: 48px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  border: 1px solid var(--m-line);
+  padding: 0 20px;
+  font-size: 14px;
+  color: var(--m-fg);
+  outline: none;
+}
+.btn-send {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.2s var(--m-spring);
+}
+.btn-send:active { transform: scale(0.92); }
+
+@media (max-width: 960px) {
+  .main-layout { grid-template-columns: 1fr; height: auto; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a href="/previews/index.html" class="brand">
+      <div class="mark-oh">oh</div>
+      <span>officehours · bookings</span>
+    </a>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="theme-switch">
+        <button type="button" class="theme-btn" id="tLight">Sáng</button>
+        <button type="button" class="theme-btn active" id="tDark">Tối</button>
+      </div>
+      <a href="/previews/dashboard-mochy-preview.html" style="font-size:13px; font-weight:600; color:var(--m-fg2); text-decoration:none;">Về Dashboard →</a>
+    </div>
+  </div>
+</header>
+
+<div class="main-layout">
+  <!-- Left Column: Bookings Directory -->
+  <aside class="list-pane">
+    <div class="pane-head">
+      <h2>Lịch hẹn của bạn</h2>
+      <input type="text" class="search-input" placeholder="Tìm giảng viên, mã phòng...">
+    </div>
+    <div class="bookings-scroll">
+      <!-- Item 1 (Active) -->
+      <div class="b-card active">
+        <div class="b-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+        <div class="b-meta">
+          <b>TS. Nguyễn Minh Khoa</b>
+          <small>Hôm nay 14:00 · Phòng 306.B11</small>
+        </div>
+        <svg class="b-status-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="m8 12 3 3 5-6" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="b-card">
+        <div class="b-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+        <div class="b-meta">
+          <b>TS. Võ Hải Đăng</b>
+          <small>Thứ Sáu 09:30 · Trực tuyến</small>
+        </div>
+        <svg class="b-status-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M12 7v5l3 2" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="b-card">
+        <div class="b-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+        <div class="b-meta">
+          <b>TS. Trần Thu Hà</b>
+          <small>Hàng đợi · Vị trí #1</small>
+        </div>
+        <svg class="b-status-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M8 9h8M8 12h8M8 15h5" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+
+      <!-- Item 4 (Completed) -->
+      <div class="b-card">
+        <div class="b-avatar"><img src="/avatars/real/hoang.jpg" alt=""></div>
+        <div class="b-meta">
+          <b>ThS. Lê Hoàng</b>
+          <small>Tuần trước · Đã hoàn tất</small>
+        </div>
+        <svg class="b-status-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="var(--m-s4)"/><path d="m8 12 3 3 5-6" stroke="var(--m-bg)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Column: Active In-Person Meeting & Chat -->
+  <main class="chat-pane">
+    <div class="chat-header">
+      <div class="ch-left">
+        <div class="ch-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+        <div class="ch-title">
+          <b>TS. Nguyễn Minh Khoa</b>
+          <small>Đề tài: Đề cương đồ án tốt nghiệp · Phòng 306.B11</small>
+        </div>
+      </div>
+      <div class="ch-acts">
+        <button type="button" class="btn-action ghost">Hủy lịch</button>
+        <button type="button" class="btn-action primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Xem bản đồ</button>
+      </div>
+    </div>
+
+    <!-- Meeting In-Person Live Action Bar -->
+    <div class="action-box">
+      <div class="location-notice">
+        <span class="dot-live"></span>
+        <span>Bạn đang chia sẻ vị trí · Block 11, tầng 3</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" style="padding:6px 14px; border-radius:9999px; background:var(--m-s3); color:var(--m-fg); border:none; font-size:12.5px; font-weight:700; cursor:pointer;">Dừng chia sẻ</button>
+      </div>
+    </div>
+
+    <!-- Chat Message Stream -->
+    <div class="chat-stream">
+      <div class="time-sep">Hôm nay 13:50</div>
+      <div class="msg them">Chào An, thầy đang có mặt tại phòng 306. Em tới sớm thì cứ vào nhé.</div>
+      <div class="msg me">Dạ em đang ở sảnh Block 11 rồi ạ, em lên tầng 3 ngay ạ.</div>
+      <div class="msg them">Ok em, cửa văn phòng đang mở sẵn.</div>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <form class="chat-input-bar" onsubmit="event.preventDefault();">
+      <input type="text" class="chat-input" placeholder="Nhập tin nhắn với giảng viên...">
+      <button type="submit" class="btn-send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </form>
+  </main>
+</div>
+
+<script>
+const html = document.documentElement;
+document.getElementById('tLight').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'light');
+  document.getElementById('tLight').classList.add('active');
+  document.getElementById('tDark').classList.remove('active');
+});
+document.getElementById('tDark').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'dark');
+  document.getElementById('tDark').classList.add('active');
+  document.getElementById('tLight').classList.remove('active');
+});
+
+// Card Selection
+document.querySelectorAll('.b-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.b-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

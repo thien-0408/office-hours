@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Thời khóa biểu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<!--
+  Port target: app/(dashboard)/dashboard/schedule/page.tsx + components/dashboard/Timetable{Grid,Agenda,Import}.tsx.
+  Same content and behaviour as the current page, restyled to Mochy:
+  header (print, add event) · tabs Timetable / Import AAO PDF · 4 weekly stats · layout/days/shift bar ·
+  week grid 07:30–20:30 in 30-min rows with shift labels · agenda view · block detail sheet ·
+  click or drag an empty range to add · add / delete dialogs · import preview + history.
+  Data = getMockStudentScheduleBlocks() / getMockScheduleBlocks() in lib/office-hours/mock-data.ts.
+-->
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--m-bg); color: var(--m-fg); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; padding-bottom: 80px; }
+svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Preview chrome (topbar) */
+.topbar { position: sticky; top: 0; z-index: 50; padding: 12px 24px; background: var(--m-glass); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 -1px 0 var(--m-line); }
+.topbar-wrap { max-width: 1320px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: -0.05em; }
+.mark-oh { width: 32px; height: 32px; border-radius: 10px; background: var(--m-fg); color: var(--m-bg); display: grid; place-items: center; font-weight: 800; font-size: 13.5px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 9999px; background: var(--m-glass-hi); box-shadow: inset 0 0 0 1px var(--m-line); }
+.seg button { height: 30px; padding: 0 13px; border-radius: 9999px; font-size: 12.5px; font-weight: 600; color: var(--m-fg2); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: background .2s, color .2s; }
+.seg button:hover { color: var(--m-fg); }
+.seg button.active { background: var(--m-fg); color: var(--m-bg); }
+.seg.lg button { height: 36px; padding: 0 16px; font-size: 13.5px; }
+.chrome-right { display: flex; align-items: center; gap: 10px; }
+.chrome-link { font-size: 13px; font-weight: 600; color: var(--m-fg2); }
+.chrome-link:hover { color: var(--m-fg); }
+
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 24px 0; }
+
+/* Header */
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.eyebrow { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--m-fg3); margin-bottom: 8px; }
+.eyebrow b { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+.eyebrow i { width: 3px; height: 3px; border-radius: 9px; background: var(--m-fg4); }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.055em; line-height: 1.1; }
+.lead { color: var(--m-fg2); font-size: 15px; font-weight: 500; margin-top: 6px; max-width: 620px; }
+.acts { display: flex; gap: 8px; }
+.btn { height: 42px; padding: 0 18px; border-radius: 9999px; font-size: 13.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.02em; transition: transform .42s var(--m-spring), background .2s; }
+.btn:active { transform: scale(0.96); transition: transform .12s ease-out; }
+.btn.primary { background: var(--m-primary); color: var(--m-on-primary); }
+.btn.primary:hover { background: var(--m-primary-hover); }
+.btn.ghost { background: var(--m-glass-hi); color: var(--m-fg); }
+.btn.ghost:hover { background: var(--m-glass-hi2); }
+.btn.sm { height: 36px; padding: 0 14px; font-size: 12.5px; }
+.btn.danger { background: var(--m-err); color: var(--m-bg); }
+
+.tabs { margin-top: 24px; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+.stat { border-radius: 22px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.stat-ic { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: var(--m-glass-hi); color: var(--m-fg); }
+.stat-ic svg.i { width: 19px; height: 19px; }
+.stat small { display: block; font-size: 12px; font-weight: 600; color: var(--m-fg3); }
+.stat b { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.stat b span { font-size: 12.5px; font-weight: 600; color: var(--m-fg3); letter-spacing: 0; margin-left: 3px; }
+
+/* Utility bar */
+.bar { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px; border-radius: 9999px; background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line); }
+.bar-group { display: flex; align-items: center; gap: 8px; }
+.bar-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-fg3); padding-left: 8px; }
+.bar-right { display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* Timetable card */
+.tt { margin-top: 12px; border-radius: 28px; overflow: hidden; }
+.tt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 22px; box-shadow: inset 0 -1px 0 var(--m-line); }
+.tt-head h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.035em; }
+.tt-head p { font-size: 12.5px; font-weight: 500; color: var(--m-fg3); margin-top: 2px; }
+.tt-sum { font-size: 12.5px; font-weight: 600; color: var(--m-fg3); font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 14px; font-size: 12px; font-weight: 600; color: var(--m-fg2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 5px; }
+
+.scroll { overflow-x: auto; }
+.grid { min-width: 960px; }
+.days { display: grid; position: sticky; top: 0; z-index: 3; background: var(--m-s1); box-shadow: inset 0 -1px 0 var(--m-line); }
+.days > div { height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--m-fg2); }
+.days > div:first-child { justify-content: flex-start; padding-left: 16px; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--m-fg3); }
+.days .d-date { font-weight: 600; color: var(--m-fg3); font-variant-numeric: tabular-nums; }
+.days .today { color: var(--m-fg); }
+.days .today .d-num { background: var(--m-fg); color: var(--m-bg); border-radius: 9999px; padding: 3px 9px; }
+.body { display: grid; position: relative; }
+.tcol { position: relative; box-shadow: inset -1px 0 0 var(--m-line); }
+.tlabel { position: absolute; right: 12px; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: var(--m-fg3); font-variant-numeric: tabular-nums; background: var(--m-s1); padding: 0 3px; }
+.shift { position: absolute; left: 6px; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; margin-left: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--m-fg3); white-space: nowrap; }
+.day { position: relative; box-shadow: inset -1px 0 0 var(--m-line); cursor: crosshair; touch-action: none; }
+.day:last-child { box-shadow: none; }
+.day.today { background: var(--m-hover); }
+.hline { position: absolute; left: 0; right: 0; height: 1px; background: var(--m-line); pointer-events: none; }
+.hline.shift-edge { background: none; border-top: 1px dashed var(--m-line2); }
+.now { position: absolute; left: 0; right: 0; height: 2px; background: var(--m-fg); z-index: 2; pointer-events: none; }
+.now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 9px; background: var(--m-fg); }
+
+.blk { position: absolute; left: 4px; right: 4px; z-index: 1; display: flex; flex-direction: column; justify-content: flex-start; border-radius: 14px; padding: 8px 10px; overflow: hidden; cursor: pointer; text-align: left; background: var(--m-s3); box-shadow: inset 0 0 0 1px var(--m-line); transition: transform .42s var(--m-spring), box-shadow .2s; }
+.blk:hover { box-shadow: inset 0 0 0 1px var(--m-line2), var(--m-shadow); }
+.blk:active { transform: scale(0.97); transition: transform .12s ease-out; }
+.blk.LAB { background: repeating-linear-gradient(135deg, var(--m-s3) 0 8px, var(--m-s2) 8px 16px); }
+.blk.ONLINE { background: var(--m-s1); box-shadow: inset 0 0 0 1.5px var(--m-line2); }
+.blk.MANUAL { background: var(--m-fg); color: var(--m-bg); box-shadow: none; }
+.blk .b-top { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; }
+.blk .b-top span:last-child { font-weight: 600; opacity: 0.6; font-variant-numeric: tabular-nums; }
+.blk .b-name { margin-top: 3px; font-size: 12.5px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.blk .b-meta { margin-top: 4px; font-size: 11px; font-weight: 500; opacity: 0.68; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk.compact .b-name { -webkit-line-clamp: 1; }
+.sel { position: absolute; left: 4px; right: 4px; z-index: 2; border-radius: 14px; background: var(--m-glass-hi2); box-shadow: inset 0 0 0 1.5px var(--m-focus); display: grid; place-items: center; font-size: 12px; font-weight: 700; pointer-events: none; font-variant-numeric: tabular-nums; }
+.tt-foot { padding: 12px 22px; font-size: 12px; font-weight: 500; color: var(--m-fg3); box-shadow: inset 0 1px 0 var(--m-line); }
+
+/* Agenda */
+.agenda { padding: 8px 12px 12px; }
+.ag-day { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 14px 10px; box-shadow: inset 0 -1px 0 var(--m-line); }
+.ag-day:last-child { box-shadow: none; }
+.ag-day h3 { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+.ag-day h3 small { display: block; font-size: 12px; font-weight: 600; color: var(--m-fg3); margin-top: 2px; }
+.ag-list { display: flex; flex-direction: column; gap: 4px; }
+.ag-item { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 16px; text-align: left; width: 100%; }
+.ag-time { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ag-time small { display: block; font-size: 11.5px; font-weight: 600; color: var(--m-fg3); }
+.ag-name { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+.ag-name small { display: block; font-size: 12.5px; font-weight: 500; color: var(--m-fg2); margin-top: 2px; }
+.tag { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 9999px; background: var(--m-glass-hi); color: var(--m-fg2); white-space: nowrap; }
+.tag.inv { background: var(--m-fg); color: var(--m-bg); }
+.ag-empty { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 13px; font-weight: 500; color: var(--m-fg3); }
+
+/* Import tab */
+.imp { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; margin-top: 20px; align-items: start; }
+.panel { border-radius: 28px; padding: 22px; }
+.panel h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.035em; }
+.panel > p { font-size: 13px; font-weight: 500; color: var(--m-fg2); margin-top: 4px; line-height: 1.5; }
+.drop { margin-top: 16px; border-radius: 22px; padding: 30px 20px; text-align: center; background: var(--m-s2); box-shadow: inset 0 0 0 1.5px var(--m-line2); border: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: background .2s, box-shadow .2s; }
+.drop:hover, .drop.over { background: var(--m-s3); box-shadow: inset 0 0 0 1.5px var(--m-focus); }
+.drop .d-ic { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--m-fg); color: var(--m-bg); }
+.drop b { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+.drop small { font-size: 12.5px; font-weight: 500; color: var(--m-fg3); }
+.note { margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; font-weight: 500; color: var(--m-fg2); line-height: 1.5; }
+.preview { margin-top: 18px; display: none; }
+.preview.on { display: block; }
+.pv-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pv-head h3 { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-fg3); padding: 8px 10px; box-shadow: inset 0 -1px 0 var(--m-line); }
+td { padding: 10px; box-shadow: inset 0 -1px 0 var(--m-line); font-weight: 500; color: var(--m-fg2); vertical-align: top; }
+td b { color: var(--m-fg); font-weight: 700; display: block; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pv-foot { margin-top: 14px; display: flex; justify-content: flex-end; }
+.hist { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+.hist-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; }
+.hist-row b { font-size: 13.5px; font-weight: 700; display: block; }
+.hist-row small { font-size: 12px; font-weight: 500; color: var(--m-fg3); }
+.empty { margin-top: 14px; padding: 26px 16px; border-radius: 20px; text-align: center; background: var(--m-s2); font-size: 13px; font-weight: 500; color: var(--m-fg3); }
+
+/* Sheet / dialog */
+.scrim { position: fixed; inset: 0; z-index: 80; background: var(--m-scrim); display: none; align-items: center; justify-content: center; padding: 16px; }
+.scrim.on { display: flex; animation: fade .2s ease-out; }
+.sheet { width: 100%; max-width: 440px; border-radius: 28px; padding: 22px; background: var(--m-sheet); box-shadow: inset 0 1px 0 var(--m-line2), var(--m-shadow); animation: pop .42s var(--m-sheet-ease); }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(18px) scale(0.96); } }
+.sh-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.sh-head h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.2; }
+.sh-head p { font-size: 12.5px; font-weight: 600; color: var(--m-fg3); margin-top: 4px; }
+.x { width: 36px; height: 36px; border-radius: 9999px; display: grid; place-items: center; background: var(--m-glass-hi); flex: none; }
+.x:hover { background: var(--m-glass-hi2); }
+.facts { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.fact { display: flex; align-items: center; gap: 12px; padding: 10px 4px; font-size: 14px; font-weight: 600; box-shadow: inset 0 -1px 0 var(--m-line); }
+.fact:last-child { box-shadow: none; }
+.fact svg.i { color: var(--m-fg3); }
+.fact small { color: var(--m-fg3); font-weight: 500; margin-left: 4px; }
+.sh-foot { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
+form.f { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld label { font-size: 13px; font-weight: 600; color: var(--m-fg2); }
+.fld input, .fld select { height: 48px; padding: 0 16px; border-radius: 16px; background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line); font-size: 14.5px; font-weight: 500; color: var(--m-fg); outline: none; }
+.fld input::placeholder { color: var(--m-fg3); }
+.fld input:focus, .fld select:focus { background: var(--m-s2); box-shadow: inset 0 0 0 1.5px var(--m-focus); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 90; transform: translate(-50%, calc(100% + 40px)); opacity: 0; padding: 12px 18px; border-radius: 9999px; display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; transition: transform .5s var(--m-spring), opacity .2s; }
+.toast.on { transform: translate(-50%, 0); opacity: 1; }
+
+[hidden] { display: none !important; }
+@media (max-width: 960px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .imp { grid-template-columns: 1fr; }
+  .bar { border-radius: 24px; }
+  .chrome-link { display: none; }
+}
+@media print {
+  body > *:not(#printRoot) { display: none !important; }
+  #printRoot { display: block !important; }
+  #printRoot .tt { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a href="/previews/index.html" class="brand"><div class="mark-oh">oh</div><span>officehours</span></a>
+    <div class="chrome-right">
+      <div class="seg" role="group" aria-label="Vai trò xem thử">
+        <button type="button" class="active" data-role="STUDENT">Sinh viên</button>
+        <button type="button" data-role="LECTURER">Giảng viên</button>
+      </div>
+      <div class="seg" role="group" aria-label="Giao diện">
+        <button type="button" data-theme-set="light">Sáng</button>
+        <button type="button" data-theme-set="dark">Tối</button>
+      </div>
+      <a href="/previews/dashboard-mochy-preview.html" class="chrome-link">Về Dashboard →</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap m-page">
+  <div class="head">
+    <div>
+      <div class="eyebrow"><b>Thời khóa biểu</b><i></i><span>Bắt đầu 07:30</span></div>
+      <h1 id="title">Lịch học của tôi</h1>
+      <p class="lead" id="lead">Lịch học trong tuần, nhập từ file PDF của Phòng Đào tạo. Giờ tiếp sinh viên chỉ mở vào khoảng trống của cả hai bên.</p>
+    </div>
+    <div class="acts" id="viewActs">
+      <button type="button" class="btn ghost" id="btnPrint"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>In</button>
+      <button type="button" class="btn primary" id="btnAdd"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm sự kiện</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="seg lg" role="tablist">
+      <button type="button" class="active" data-tab="VIEW" id="tabView">Thời khóa biểu</button>
+      <button type="button" data-tab="IMPORT">Nhập PDF từ Phòng Đào tạo</button>
+    </div>
+  </div>
+
+  <!-- VIEW -->
+  <section id="paneView">
+    <div class="stats">
+      <div class="stat m-card"><div class="stat-ic"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><small>Tải trong tuần</small><b id="sHours">0<span>giờ</span></b></div></div>
+      <div class="stat m-card"><div class="stat-ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div><div><small>Số buổi</small><b id="sSessions">0<span>buổi</span></b></div></div>
+      <div class="stat m-card"><div class="stat-ic"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div><small>Thực hành (lab)</small><b id="sLabs">0<span>buổi</span></b></div></div>
+      <div class="stat m-card"><div class="stat-ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg></div><div><small>Lý thuyết / trực tuyến</small><b id="sRooms">0<span>buổi</span></b></div></div>
+    </div>
+
+    <div class="bar">
+      <div class="bar-group">
+        <span class="bar-label">Bố cục</span>
+        <div class="seg" id="segView">
+          <button type="button" class="active" data-v="GRID"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tuần</button>
+          <button type="button" data-v="AGENDA"><svg class="i" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Danh sách</button>
+        </div>
+      </div>
+      <div class="bar-right">
+        <div class="bar-group">
+          <span class="bar-label">Ngày</span>
+          <div class="seg" id="segDays">
+            <button type="button" data-d="WORKDAYS">T2–T6</button>
+            <button type="button" class="active" data-d="PLUS_SAT">T2–T7</button>
+            <button type="button" data-d="FULL_WEEK">Cả tuần</button>
+          </div>
+        </div>
+        <div class="bar-group" id="shiftGroup">
+          <span class="bar-label">Ca</span>
+          <div class="seg" id="segShift">
+            <button type="button" class="active" data-s="ALL">Tất cả</button>
+            <button type="button" data-s="MORNING">Sáng</button>
+            <button type="button" data-s="AFTERNOON">Chiều</button>
+            <button type="button" data-s="EVENING">Tối</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="tt m-card" id="printArea">
+      <div class="tt-head">
+        <div>
+          <h2 id="ttTitle">Thời khóa biểu tuần</h2>
+          <p id="ttSub">Bấm vào môn để xem chi tiết. Kéo trên ô trống để thêm sự kiện.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+          <div class="legend">
+            <span><i class="sw" style="background:var(--m-s3); box-shadow: inset 0 0 0 1px var(--m-line2)"></i>Lý thuyết</span>
+            <span><i class="sw" style="background:repeating-linear-gradient(135deg,var(--m-s3) 0 4px,var(--m-s1) 4px 8px); box-shadow: inset 0 0 0 1px var(--m-line2)"></i>Lab</span>
+            <span><i class="sw" style="box-shadow: inset 0 0 0 1.5px var(--m-line2)"></i>Trực tuyến</span>
+            <span><i class="sw" style="background:var(--m-fg)"></i>Tự thêm</span>
+          </div>
+          <span class="tt-sum" id="ttSum"></span>
+        </div>
+      </div>
+      <div id="gridWrap" class="scroll"></div>
+      <div id="agendaWrap" class="agenda" hidden></div>
+      <div class="tt-foot" id="ttFoot">Kéo dọc trong một ngày để chọn khoảng giờ. Bấm một lần để tạo slot 30 phút.</div>
+    </section>
+  </section>
+
+  <!-- IMPORT -->
+  <section id="paneImport" hidden>
+    <div class="imp">
+      <div class="panel m-card">
+        <h2>Tải lên PDF thời khóa biểu</h2>
+        <p>Đọc file “lịch học” xuất từ cổng Phòng Đào tạo EIU, ngay trên trình duyệt: nhận mã môn, nhóm, phòng và ca học từ 07:30.</p>
+        <button type="button" class="drop" id="drop">
+          <span class="d-ic"><svg class="i" viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></span>
+          <b>Kéo thả file PDF vào đây</b>
+          <small>hoặc bấm để chọn file · nhiều file cùng lúc · tối đa 10 MB</small>
+        </button>
+        <div class="note"><svg class="m-glyph" aria-hidden="true"><use href="#g-ok"/></svg>File không rời khỏi máy bạn. Chỉ các buổi học được lưu vào thời khóa biểu.</div>
+
+        <div class="preview" id="preview">
+          <div class="pv-head">
+            <h3>Xem trước &amp; cách nhập</h3>
+            <div class="seg" id="segStrategy">
+              <button type="button" class="active" data-st="REPLACE">Thay bản cũ</button>
+              <button type="button" data-st="MERGE">Gộp &amp; bỏ trùng</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Môn</th><th>Nhóm</th><th>Thứ</th><th>Giờ</th><th>Phòng</th></tr></thead>
+            <tbody id="pvRows"></tbody>
+          </table>
+          <div class="pv-foot"><button type="button" class="btn primary" id="btnConfirm">Xác nhận nhập</button></div>
+        </div>
+      </div>
+
+      <div class="panel m-card">
+        <h2>Lịch sử nhập</h2>
+        <p>Mỗi lần nhập ghi lại tên file, số buổi và cách nhập.</p>
+        <div id="hist"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Block detail -->
+<div class="scrim" id="dlgBlock" role="dialog" aria-modal="true" aria-labelledby="bTitle">
+  <div class="sheet">
+    <div class="sh-head">
+      <div><p id="bKicker" style="margin:0 0 6px"></p><h2 id="bTitle"></h2></div>
+      <button type="button" class="x" data-close aria-label="Đóng"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="facts" id="bFacts"></div>
+    <div class="sh-foot" id="bFoot"></div>
+  </div>
+</div>
+
+<!-- Add event -->
+<div class="scrim" id="dlgAdd" role="dialog" aria-modal="true" aria-labelledby="aTitle">
+  <div class="sheet">
+    <div class="sh-head">
+      <div><h2 id="aTitle">Thêm sự kiện</h2><p>Khoảng giờ này sẽ không mở slot tiếp sinh viên.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <form class="f" id="addForm">
+      <div class="fld"><label for="fTitle">Tên sự kiện / môn</label><input id="fTitle" required placeholder="VD: Họp hội đồng khoa, Bảo vệ đồ án"></div>
+      <div class="fld"><label for="fDay">Thứ</label><select id="fDay"></select></div>
+      <div class="row2">
+        <div class="fld"><label for="fStart">Bắt đầu</label><select id="fStart"></select></div>
+        <div class="fld"><label for="fEnd">Kết thúc</label><select id="fEnd"></select></div>
+      </div>
+      <div class="fld"><label for="fRoom">Phòng (không bắt buộc)</label><input id="fRoom" placeholder="VD: 402.B11, Online"></div>
+      <div class="fld"><label for="fNotes">Ghi chú (không bắt buộc)</label><input id="fNotes" placeholder="VD: Hội đồng chấm đồ án"></div>
+      <div class="sh-foot"><button type="button" class="btn ghost sm" data-close>Hủy</button><button type="submit" class="btn primary sm">Thêm vào lịch</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="scrim" id="dlgDel" role="alertdialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="sheet" style="max-width:400px">
+    <div class="sh-head"><div><h2 id="dTitle">Xóa sự kiện này?</h2><p style="font-weight:500; color:var(--m-fg2); font-size:13.5px; line-height:1.5">Sự kiện biến mất khỏi thời khóa biểu, và sinh viên lại đặt được slot trong khoảng giờ này.</p></div></div>
+    <div class="sh-foot"><button type="button" class="btn ghost sm" data-close>Hủy</button><button type="button" class="btn danger sm" id="btnDelOk">Xóa</button></div>
+  </div>
+</div>
+
+<div class="toast m-glass" id="toast" role="status"><svg class="m-glyph" aria-hidden="true"><use href="#g-ok"/></svg><span id="toastText"></span></div>
+
+<script>
+// ---- data (mirrors lib/office-hours/mock-data.ts) ----
+const DATES = { 1: "13/07", 2: "14/07", 3: "15/07", 4: "16/07", 5: "17/07", 6: "18/07", 7: "19/07" };
+const DAY = { 1: ["T2", "Thứ 2"], 2: ["T3", "Thứ 3"], 3: ["T4", "Thứ 4"], 4: ["T5", "Thứ 5"], 5: ["T6", "Thứ 6"], 6: ["T7", "Thứ 7"], 7: ["CN", "Chủ nhật"] };
+const TODAY = 3, NOW = "10:40"; // fixed so the preview is stable
+const b = (o) => Object.assign({ source: "IMPORTED", type: "ROOM" }, o);
+const STUDENT = [
+  b({ code: "CSW 437", name: "Thiết kế trải nghiệm người dùng", group: "E1", room: "213.B08", lecturer: "Anirban Mitra", day: 1, start: "09:30", end: "11:30" }),
+  b({ code: "CSW 430", name: "Phát triển ứng dụng di động", group: "01", room: "Online 3", lecturer: "Trần Văn Tài", type: "ONLINE", day: 1, start: "16:30", end: "18:30" }),
+  b({ code: "CSE 422", name: "Kỹ năng lập trình chuyên nghiệp", group: "E", room: "221.B08", lecturer: "Rohit Kumar Kasera", day: 2, start: "16:30", end: "18:30" }),
+  b({ code: "CSW 430", name: "Phát triển ứng dụng di động (Lab)", group: "01", room: "LAB405.B08", lecturer: "Nguyễn Hoàng Lý", type: "LAB", day: 4, start: "07:30", end: "11:30" }),
+  b({ code: "CSE 422", name: "Kỹ năng lập trình chuyên nghiệp (Lab)", group: "E", room: "LAB403.B08", lecturer: "Rohit Kumar Kasera", type: "LAB", day: 6, start: "07:30", end: "11:30" }),
+];
+const LECTURER = [
+  b({ code: "CSW 437", name: "Thiết kế trải nghiệm người dùng", group: "E1", room: "213.B08", day: 1, start: "09:30", end: "11:30" }),
+  b({ code: "CS 301", name: "Thuật toán", group: "02", room: "302.B08", day: 1, start: "11:30", end: "13:00" }),
+  b({ code: "CSW 430", name: "Phát triển ứng dụng di động", group: "01", room: "Online 3", type: "ONLINE", day: 1, start: "16:30", end: "18:30" }),
+  b({ code: "CS 410", name: "Seminar đồ án", group: "01", room: "105.B08", day: 2, start: "09:00", end: "10:30" }),
+  b({ code: "CSE 422", name: "Kỹ năng lập trình chuyên nghiệp", group: "E", room: "221.B08", day: 2, start: "16:30", end: "18:30" }),
+  b({ code: "CSW 437", name: "Thiết kế trải nghiệm người dùng", group: "E1", room: "213.B08", day: 3, start: "09:30", end: "11:30" }),
+  b({ code: "CS 301", name: "Thuật toán", group: "02", room: "302.B08", day: 3, start: "11:30", end: "13:00" }),
+  b({ code: "CSW 430", name: "Phát triển ứng dụng di động (Lab)", group: "01", room: "LAB405.B08", type: "LAB", day: 4, start: "07:30", end: "11:30" }),
+  b({ name: "Họp hội đồng khoa", room: "Phòng họp B02", source: "MANUAL", day: 4, start: "14:00", end: "15:00", notes: "Rà soát chương trình và kế hoạch phân bổ" }),
+  b({ code: "CSE 422", name: "Kỹ năng lập trình chuyên nghiệp", group: "E", room: "221.B08", day: 4, start: "16:30", end: "18:30" }),
+  b({ name: "Hội đồng bảo vệ đồ án", room: "402.B11", source: "MANUAL", day: 5, start: "13:00", end: "14:00", notes: "Chấm đồ án tốt nghiệp đại học" }),
+  b({ code: "CSE 422", name: "Kỹ năng lập trình chuyên nghiệp (Lab)", group: "E", room: "LAB403.B08", type: "LAB", day: 6, start: "07:30", end: "11:30" }),
+  b({ code: "CSW 437", name: "Thiết kế trải nghiệm người dùng (Studio)", group: "E1", room: "LAB405.B08", type: "LAB", day: 6, start: "12:30", end: "16:30" }),
+];
+
+// ---- time helpers (TimetableGrid.tsx) ----
+const SLOTS = []; for (let m = 7 * 60 + 30; m <= 20 * 60 + 30; m += 30) SLOTS.push(m);
+const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const fmt = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const dur = (s, e) => { const h = (toMin(e) - toMin(s)) / 60; return (h % 1 ? h.toFixed(1) : h) + " giờ"; };
+const shiftOf = (t) => { const m = toMin(t); return m < 750 ? "Ca sáng" : m < 990 ? "Ca chiều" : "Ca tối"; };
+const SHIFTS = { ALL: [450, 1230], MORNING: [450, 750], AFTERNOON: [750, 990], EVENING: [990, 1230] };
+const BANDS = [[450, 750, "Ca sáng"], [750, 990, "Ca chiều"], [990, 1230, "Ca tối"]];
+const DAYSETS = { WORKDAYS: [1, 2, 3, 4, 5], PLUS_SAT: [1, 2, 3, 4, 5, 6], FULL_WEEK: [1, 2, 3, 4, 5, 6, 7] };
+const ROW = 36;
+
+const st = { role: "STUDENT", tab: "VIEW", view: "GRID", days: "PLUS_SAT", shift: "ALL", blocks: STUDENT.map((x, i) => ({ ...x, id: i + 1 })), history: [], pendingDel: null, strategy: "REPLACE" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function seg(id, attr, on) {
+  $(id).querySelectorAll("button").forEach((btn) => btn.addEventListener("click", () => {
+    $(id).querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === btn));
+    on(btn.dataset[attr]);
+  }));
+}
+
+function stats() {
+  let min = 0, labs = 0, rooms = 0;
+  st.blocks.forEach((x) => { min += toMin(x.end) - toMin(x.start); x.type === "LAB" ? labs++ : rooms++; });
+  const h = (min / 60).toFixed(1);
+  $("sHours").innerHTML = h + "<span>giờ</span>";
+  $("sSessions").innerHTML = st.blocks.length + "<span>buổi</span>";
+  $("sLabs").innerHTML = labs + "<span>buổi</span>";
+  $("sRooms").innerHTML = rooms + "<span>buổi</span>";
+  $("ttSum").textContent = st.blocks.length + " buổi · " + h + " giờ";
+}
+
+function renderGrid() {
+  const days = DAYSETS[st.days], [lo, hi] = SHIFTS[st.shift];
+  const rows = (hi - lo) / 30, cols = "76px repeat(" + days.length + ", minmax(0, 1fr))";
+  const y = (m) => ((m - lo) / 30) * ROW;
+  let h = '<div class="grid"><div class="days" style="grid-template-columns:' + cols + '"><div>Giờ</div>';
+  days.forEach((d) => {
+    h += '<div class="' + (d === TODAY ? "today" : "") + '"><span class="d-num">' + DAY[d][0] + '</span><span class="d-date">' + DATES[d] + "</span></div>";
+  });
+  h += '</div><div class="body" style="grid-template-columns:' + cols + "; height:" + rows * ROW + 'px"><div class="tcol">';
+  SLOTS.filter((m) => m > lo && m < hi && m % 60 === 0).forEach((m) => { h += '<span class="tlabel" style="top:' + y(m) + 'px">' + fmt(m) + "</span>"; });
+  BANDS.forEach(([s, e, label]) => {
+    const a = Math.max(s, lo), z = Math.min(e, hi);
+    if (z - a >= 90) h += '<span class="shift" style="top:' + y((a + z) / 2) + 'px">' + label + "</span>";
+  });
+  h += "</div>";
+  days.forEach((d) => {
+    h += '<div class="day' + (d === TODAY ? " today" : "") + '" data-day="' + d + '">';
+    for (let m = lo + 30; m < hi; m += 30) {
+      const edge = (m === 750 || m === 990) ? " shift-edge" : "";
+      if (m % 60 === 0 || edge) h += '<div class="hline' + edge + '" style="top:' + y(m) + 'px"></div>';
+    }
+    if (d === TODAY && toMin(NOW) > lo && toMin(NOW) < hi) h += '<div class="now" style="top:' + y(toMin(NOW)) + 'px" title="Bây giờ ' + NOW + '"></div>';
+    st.blocks.filter((x) => x.day === d).forEach((x) => {
+      const s = Math.max(toMin(x.start), lo), e = Math.min(toMin(x.end), hi);
+      if (e <= s) return;
+      const ht = ((e - s) / 30) * ROW - 4, compact = ht < 70;
+      const cls = "blk m-press " + (x.source === "MANUAL" ? "MANUAL" : x.type) + (compact ? " compact" : "");
+      h += '<button type="button" class="' + cls + '" data-id="' + x.id + '" style="top:' + (y(s) + 2) + "px; height:" + ht + 'px" title="' + esc(x.name) + " · " + x.start + "–" + x.end + '">' +
+        '<div class="b-top"><span>' + esc(x.code || "Tự thêm") + (x.group ? " · " + esc(x.group) : "") + "</span><span>" + x.start + "</span></div>" +
+        '<div class="b-name">' + esc(x.name) + "</div>" +
+        (compact ? "" : '<div class="b-meta">' + x.start + "–" + x.end + " · " + esc(x.room || "") + "</div>") +
+        (!compact && x.lecturer && ht > 110 ? '<div class="b-meta">' + esc(x.lecturer) + "</div>" : "") + "</button>";
+    });
+    h += "</div>";
+  });
+  h += "</div></div>";
+  $("gridWrap").innerHTML = h;
+
+  // Click or drag on an empty range -> add dialog with the range filled in.
+  $("gridWrap").querySelectorAll(".day").forEach((col) => {
+    let startRow = null, sel = null;
+    const rowAt = (ev) => Math.max(0, Math.min(rows - 1, Math.floor((ev.clientY - col.getBoundingClientRect().top) / ROW)));
+    col.addEventListener("pointerdown", (ev) => {
+      if (ev.target.closest(".blk")) return;
+      startRow = rowAt(ev); col.setPointerCapture(ev.pointerId);
+      sel = document.createElement("div"); sel.className = "sel"; col.appendChild(sel); draw(startRow);
+    });
+    col.addEventListener("pointermove", (ev) => { if (startRow !== null) draw(rowAt(ev)); });
+    col.addEventListener("pointerup", (ev) => {
+      if (startRow === null) return;
+      const r = rowAt(ev), a = Math.min(startRow, r), z = Math.max(startRow, r) + 1;
+      startRow = null; sel.remove();
+      openAdd(+col.dataset.day, lo + a * 30, lo + z * 30);
+    });
+    function draw(r) {
+      const a = Math.min(startRow, r), z = Math.max(startRow, r) + 1;
+      sel.style.top = a * ROW + 2 + "px"; sel.style.height = (z - a) * ROW - 4 + "px";
+      sel.textContent = fmt(lo + a * 30) + " – " + fmt(lo + z * 30);
+    }
+  });
+  $("gridWrap").querySelectorAll(".blk").forEach((el) => el.addEventListener("click", () => openBlock(+el.dataset.id)));
+}
+
+function renderAgenda() {
+  let h = "";
+  DAYSETS[st.days].forEach((d) => {
+    const list = st.blocks.filter((x) => x.day === d).sort((p, q) => toMin(p.start) - toMin(q.start));
+    h += '<div class="ag-day"><h3>' + DAY[d][1] + "<small>" + DATES[d] + (d === TODAY ? " · Hôm nay" : "") + '</small></h3><div class="ag-list">';
+    if (!list.length) h += '<div class="ag-empty">Không có lịch<button type="button" class="btn ghost sm" data-add-day="' + d + '">Thêm</button></div>';
+    list.forEach((x) => {
+      const tag = x.source === "MANUAL" ? '<span class="tag inv">Tự thêm</span>' : x.type === "LAB" ? '<span class="tag">Lab</span>' : x.type === "ONLINE" ? '<span class="tag">Trực tuyến</span>' : '<span class="tag">Lý thuyết</span>';
+      h += '<button type="button" class="ag-item m-hl" data-id="' + x.id + '"><span class="ag-time">' + x.start + "–" + x.end + "<small>" + dur(x.start, x.end) + '</small></span><span class="ag-name">' + esc(x.name) +
+        "<small>" + [x.code, x.group && "Nhóm " + x.group, x.room, x.lecturer].filter(Boolean).map(esc).join(" · ") + "</small></span>" + tag + "</button>";
+    });
+    h += "</div></div>";
+  });
+  $("agendaWrap").innerHTML = h;
+  $("agendaWrap").querySelectorAll(".ag-item").forEach((el) => el.addEventListener("click", () => openBlock(+el.dataset.id)));
+  $("agendaWrap").querySelectorAll("[data-add-day]").forEach((el) => el.addEventListener("click", () => openAdd(+el.dataset.addDay, 450, 570)));
+}
+
+function render() {
+  stats();
+  const grid = st.view === "GRID";
+  $("gridWrap").hidden = !grid; $("agendaWrap").hidden = grid; $("shiftGroup").hidden = !grid; $("ttFoot").hidden = !grid;
+  $("ttTitle").textContent = grid ? "Thời khóa biểu tuần" : "Danh sách theo ngày";
+  $("ttSub").textContent = grid ? "Bấm vào môn để xem chi tiết. Kéo trên ô trống để thêm sự kiện." : "Các buổi học xếp theo ngày và giờ.";
+  grid ? renderGrid() : renderAgenda();
+}
+
+// ---- dialogs ----
+function open(id) { $(id).classList.add("on"); }
+function closeAll() { document.querySelectorAll(".scrim").forEach((s) => s.classList.remove("on")); }
+document.querySelectorAll(".scrim").forEach((s) => s.addEventListener("click", (e) => { if (e.target === s || e.target.closest("[data-close]")) closeAll(); }));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+
+const ICON = {
+  clock: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  pin: '<svg class="i" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  group: '<svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  user: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  note: '<svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+};
+function openBlock(id) {
+  const x = st.blocks.find((q) => q.id === id); if (!x) return;
+  $("bKicker").textContent = [x.code, x.source === "MANUAL" ? "Tự thêm" : "Nhập từ Phòng Đào tạo"].filter(Boolean).join(" · ");
+  $("bTitle").textContent = x.name;
+  const f = [
+    [ICON.clock, DAY[x.day][1] + ", " + DATES[x.day] + " · " + x.start + " – " + x.end, dur(x.start, x.end) + " · " + shiftOf(x.start)],
+    [ICON.pin, x.room || "Phòng trong trường", x.type === "LAB" ? "Lab" : x.type === "ONLINE" ? "Trực tuyến" : ""],
+    x.group && [ICON.group, "Nhóm " + x.group, ""],
+    x.lecturer && [ICON.user, x.lecturer, ""],
+    x.notes && [ICON.note, x.notes, ""],
+  ].filter(Boolean);
+  $("bFacts").innerHTML = f.map(([i, t, s]) => '<div class="fact">' + i + "<span>" + esc(t) + (s ? "<small>" + esc(s) + "</small>" : "") + "</span></div>").join("");
+  $("bFoot").innerHTML = x.source === "MANUAL"
+    ? '<button type="button" class="btn ghost sm" data-close>Đóng</button><button type="button" class="btn danger sm" id="bDel">Xóa sự kiện</button>'
+    : '<span style="flex:1; font-size:12.5px; font-weight:500; color:var(--m-fg3); align-self:center">Buổi nhập từ PDF chỉ đổi được bằng cách nhập lại.</span><button type="button" class="btn ghost sm" data-close>Đóng</button>';
+  const del = $("bDel"); if (del) del.addEventListener("click", () => { st.pendingDel = id; closeAll(); open("dlgDel"); });
+  open("dlgBlock");
+}
+
+(function fillSelects() {
+  $("fDay").innerHTML = Object.keys(DAY).map((d) => '<option value="' + d + '">' + DAY[d][1] + "</option>").join("");
+  $("fStart").innerHTML = SLOTS.slice(0, -1).map((m) => "<option value=" + m + ">" + fmt(m) + "</option>").join("");
+  $("fEnd").innerHTML = SLOTS.slice(1).map((m) => "<option value=" + m + ">" + fmt(m) + "</option>").join("");
+})();
+function openAdd(day, s, e) {
+  $("fDay").value = day || 1; $("fStart").value = s || 450; $("fEnd").value = e || (s ? s + 120 : 570);
+  $("fTitle").value = ""; $("fRoom").value = ""; $("fNotes").value = "";
+  open("dlgAdd"); setTimeout(() => $("fTitle").focus(), 50);
+}
+$("addForm").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const s = +$("fStart").value, e = +$("fEnd").value;
+  if (e <= s) { $("fEnd").focus(); return; }
+  const room = $("fRoom").value.trim();
+  st.blocks.push({ id: Math.max(0, ...st.blocks.map((x) => x.id)) + 1, name: $("fTitle").value.trim(), day: +$("fDay").value, start: fmt(s), end: fmt(e), room, notes: $("fNotes").value.trim(), source: "MANUAL", type: /online/i.test(room) ? "ONLINE" : "ROOM" });
+  closeAll(); render(); toast("Đã thêm vào thời khóa biểu");
+});
+$("btnDelOk").addEventListener("click", () => { st.blocks = st.blocks.filter((x) => x.id !== st.pendingDel); st.pendingDel = null; closeAll(); render(); toast("Đã xóa sự kiện"); });
+
+let toastTimer;
+function toast(text) { $("toastText").textContent = text; $("toast").classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.remove("on"), 2400); }
+
+// ---- import ----
+function renderHistory() {
+  $("hist").innerHTML = st.history.length
+    ? '<div class="hist">' + st.history.map((r) => '<div class="hist-row m-hl"><svg class="m-glyph" aria-hidden="true"><use href="#g-done"/></svg><div style="flex:1; min-width:0"><b>' + esc(r.file) + "</b><small>" + r.rows + " buổi · " + r.mode + " · " + r.at + '</small></div></div>').join("") + "</div>"
+    : '<div class="empty">Chưa có lần nhập nào. Tài khoản mới bắt đầu trống cho đến khi bạn tải file của mình lên.</div>';
+}
+$("drop").addEventListener("click", () => {
+  const src = st.role === "STUDENT" ? STUDENT : LECTURER.filter((x) => x.source !== "MANUAL");
+  $("pvRows").innerHTML = src.map((x) => "<tr><td><b>" + esc(x.code) + "</b>" + esc(x.name) + "</td><td>" + esc(x.group) + "</td><td>" + DAY[x.day][1] + '</td><td class="num">' + x.start + "–" + x.end + "</td><td>" + esc(x.room) + "</td></tr>").join("");
+  $("btnConfirm").textContent = "Xác nhận nhập (" + src.length + " buổi)";
+  $("preview").classList.add("on");
+  $("drop").querySelector("b").textContent = "lich-hoc-HK1-2026.pdf";
+  $("drop").querySelector("small").textContent = "Đọc xong · " + src.length + " buổi · bấm để chọn file khác";
+});
+["dragover", "dragleave", "drop"].forEach((t) => $("drop").addEventListener(t, (e) => { e.preventDefault(); $("drop").classList.toggle("over", t === "dragover"); if (t === "drop") $("drop").click(); }));
+seg("segStrategy", "st", (v) => { st.strategy = v; });
+$("btnConfirm").addEventListener("click", () => {
+  const n = $("pvRows").children.length;
+  st.history.unshift({ file: "lich-hoc-HK1-2026.pdf", rows: n, mode: st.strategy === "REPLACE" ? "Thay bản cũ" : "Gộp & bỏ trùng", at: "Vừa xong" });
+  renderHistory(); toast("Đã nhập " + n + " buổi vào thời khóa biểu");
+  $("btnConfirm").textContent = "Đã nhập vào thời khóa biểu";
+});
+
+// ---- controls ----
+seg("segView", "v", (v) => { st.view = v; render(); });
+seg("segDays", "d", (v) => { st.days = v; render(); });
+seg("segShift", "s", (v) => { st.shift = v; render(); });
+document.querySelectorAll("[data-tab]").forEach((btn) => btn.addEventListener("click", () => {
+  document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x === btn));
+  st.tab = btn.dataset.tab;
+  $("paneView").hidden = st.tab !== "VIEW"; $("paneImport").hidden = st.tab !== "IMPORT"; $("viewActs").hidden = st.tab !== "VIEW";
+}));
+document.querySelectorAll("[data-role]").forEach((btn) => btn.addEventListener("click", () => {
+  document.querySelectorAll("[data-role]").forEach((x) => x.classList.toggle("active", x === btn));
+  st.role = btn.dataset.role;
+  const src = st.role === "STUDENT" ? STUDENT : LECTURER;
+  st.blocks = src.map((x, i) => ({ ...x, id: i + 1 }));
+  $("title").textContent = st.role === "STUDENT" ? "Lịch học của tôi" : "Lịch giảng dạy";
+  $("lead").textContent = st.role === "STUDENT"
+    ? "Lịch học trong tuần, nhập từ file PDF của Phòng Đào tạo. Giờ tiếp sinh viên chỉ mở vào khoảng trống của cả hai bên."
+    : "Lịch dạy và lịch họp trong tuần. Slot tiếp sinh viên không bao giờ mở chồng lên các khoảng này.";
+  document.querySelector('[data-tab="VIEW"]').textContent = st.role === "STUDENT" ? "Thời khóa biểu" : "Lịch giảng dạy";
+  $("preview").classList.remove("on");
+  render();
+}));
+$("btnAdd").addEventListener("click", () => openAdd());
+$("btnPrint").addEventListener("click", () => {
+  // Same trick as printTimetable(): print a clone of the timetable card only.
+  const root = document.createElement("div"); root.id = "printRoot"; root.style.display = "none";
+  root.appendChild($("printArea").cloneNode(true)); document.body.appendChild(root);
+  const done = () => { root.remove(); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done); window.print();
+});
+
+render(); renderHistory();
+</script>
+</body>
+</html>

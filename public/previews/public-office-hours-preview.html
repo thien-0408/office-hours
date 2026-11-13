@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="vi" data-mochy-theme="dark" class="mochy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficeHours · Public Office Hours Directory Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/previews/_shared/mochy.css">
+<script src="/previews/_shared/preview.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding-bottom: 80px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--m-glass);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 -1px 0 var(--m-line), var(--m-shadow);
+  padding: 14px 24px;
+}
+.topbar-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  color: inherit;
+}
+.mark-oh {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--m-fg);
+  color: var(--m-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+}
+.theme-switch {
+  display: flex;
+  background: var(--m-glass-hi);
+  padding: 3px;
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.theme-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+}
+.theme-btn.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+
+.main-wrap {
+  max-width: 1240px;
+  margin: 36px auto 0;
+  padding: 0 24px;
+}
+
+.hero-box {
+  margin-bottom: 36px;
+}
+.hero-box h1 { font-size: 38px; font-weight: 700; letter-spacing: -0.055em; }
+.hero-box p { color: var(--m-fg2); font-size: 16px; margin-top: 6px; max-width: 600px; }
+
+/* Filter & Search Bar */
+.search-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.search-input {
+  flex: 1;
+  min-width: 280px;
+  height: 50px;
+  border-radius: 9999px;
+  background: var(--m-s1);
+  border: 1px solid var(--m-line);
+  padding: 0 20px;
+  font-size: 14.5px;
+  color: var(--m-fg);
+  box-shadow: var(--m-shadow);
+  outline: none;
+}
+.filter-pills {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.f-pill {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 9999px;
+  background: var(--m-s1);
+  border: 1px solid var(--m-line);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+  cursor: pointer;
+  transition: all 0.2s var(--m-spring);
+}
+.f-pill.active {
+  background: var(--m-fg);
+  color: var(--m-bg);
+  box-shadow: var(--m-shadow);
+}
+
+/* Lecturer Directory Grid */
+.lec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+.lec-card {
+  border-radius: 26px;
+  background: var(--m-s1);
+  box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s var(--m-spring), box-shadow 0.3s;
+}
+.lec-card:hover {
+  transform: translateY(-4px);
+  box-shadow: inset 0 0 0 1px var(--m-line2), var(--m-shadow-card);
+}
+.lc-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.lc-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--m-s3);
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px var(--m-line);
+}
+.lc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lc-meta h3 { font-size: 17px; font-weight: 700; letter-spacing: -0.03em; }
+.lc-meta p { font-size: 13px; color: var(--m-fg3); margin-top: 2px; }
+.lc-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--m-s2);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--m-fg2);
+}
+
+.slot-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--m-line);
+}
+.slot-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--m-fg3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+.slots-flow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-chip {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: var(--m-s2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m-fg);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.s-chip:hover {
+  background: var(--m-fg);
+  color: var(--m-bg);
+}
+.btn-book {
+  width: 100%;
+  height: 44px;
+  border-radius: 9999px;
+  background: var(--m-primary);
+  color: var(--m-on-primary);
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: transform 0.2s var(--m-spring), background 0.2s;
+}
+.btn-book:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a href="/previews/index.html" class="brand">
+      <div class="mark-oh">oh</div>
+      <span>officehours · public</span>
+    </a>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="theme-switch">
+        <button type="button" class="theme-btn" id="tLight">Sáng</button>
+        <button type="button" class="theme-btn active" id="tDark">Tối</button>
+      </div>
+      <a href="/login" style="padding:6px 16px; border-radius:9999px; background:var(--m-fg); color:var(--m-bg); font-size:13px; font-weight:700; text-decoration:none;">Đăng nhập</a>
+    </div>
+  </div>
+</header>
+
+<main class="main-wrap">
+  <div class="hero-box">
+    <h1>Lịch tiếp sinh viên công khai</h1>
+    <p>Tra cứu nhanh khung giờ rảnh và địa điểm văn phòng làm việc của giảng viên Đại học Quốc tế Miền Đông.</p>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="search-row">
+    <input type="text" class="search-input" placeholder="Tìm tên giảng viên, mã phòng, môn học...">
+    <div class="filter-pills">
+      <button type="button" class="f-pill active">Tất cả khoa</button>
+      <button type="button" class="f-pill">CNTT</button>
+      <button type="button" class="f-pill">Kinh tế</button>
+      <button type="button" class="f-pill">Kỹ thuật</button>
+    </div>
+  </div>
+
+  <!-- Lecturer Cards Grid -->
+  <div class="lec-grid">
+    <!-- Lecturer 1 -->
+    <article class="lec-card">
+      <div class="lc-top">
+        <div class="lc-avatar"><img src="/avatars/real/khoa.jpg" alt=""></div>
+        <div class="lc-meta">
+          <h3>TS. Nguyễn Minh Khoa</h3>
+          <p>Khoa Công nghệ Thông tin</p>
+          <span class="lc-room">Phòng 306.B11</span>
+        </div>
+      </div>
+      <div class="slot-section">
+        <div class="slot-title"><span>Slot hôm nay (Thứ 4)</span><span>3 slot rảnh</span></div>
+        <div class="slots-flow">
+          <span class="s-chip">14:00 – 14:20</span>
+          <span class="s-chip">14:30 – 14:50</span>
+          <span class="s-chip">15:15 – 15:35</span>
+        </div>
+      </div>
+      <button type="button" class="btn-book">Đặt lịch hẹn</button>
+    </article>
+
+    <!-- Lecturer 2 -->
+    <article class="lec-card">
+      <div class="lc-top">
+        <div class="lc-avatar"><img src="/avatars/real/ha.jpg" alt=""></div>
+        <div class="lc-meta">
+          <h3>TS. Trần Thu Hà</h3>
+          <p>Khoa Kinh tế & Quản lý</p>
+          <span class="lc-room">Phòng 204.B11</span>
+        </div>
+      </div>
+      <div class="slot-section">
+        <div class="slot-title"><span>Slot hôm nay (Thứ 4)</span><span>2 slot rảnh</span></div>
+        <div class="slots-flow">
+          <span class="s-chip">09:30 – 10:00</span>
+          <span class="s-chip">10:15 – 10:45</span>
+        </div>
+      </div>
+      <button type="button" class="btn-book">Đặt lịch hẹn</button>
+    </article>
+
+    <!-- Lecturer 3 -->
+    <article class="lec-card">
+      <div class="lc-top">
+        <div class="lc-avatar"><img src="/avatars/real/hoang.jpg" alt=""></div>
+        <div class="lc-meta">
+          <h3>ThS. Lê Hoàng</h3>
+          <p>Kỹ thuật Phần mềm</p>
+          <span class="lc-room">Phòng 102.B11</span>
+        </div>
+      </div>
+      <div class="slot-section">
+        <div class="slot-title"><span>Slot ngày mai (Thứ 5)</span><span>5 slot rảnh</span></div>
+        <div class="slots-flow">
+          <span class="s-chip">08:00 – 08:30</span>
+          <span class="s-chip">09:00 – 09:30</span>
+          <span class="s-chip">14:00 – 14:30</span>
+        </div>
+      </div>
+      <button type="button" class="btn-book">Đặt lịch hẹn</button>
+    </article>
+
+    <!-- Lecturer 4 -->
+    <article class="lec-card">
+      <div class="lc-top">
+        <div class="lc-avatar"><img src="/avatars/real/dang.jpg" alt=""></div>
+        <div class="lc-meta">
+          <h3>TS. Võ Hải Đăng</h3>
+          <p>Khoa Kỹ thuật - Điện tử</p>
+          <span class="lc-room">Phòng 401.B11</span>
+        </div>
+      </div>
+      <div class="slot-section">
+        <div class="slot-title"><span>Slot Thứ 6</span><span>1 slot rảnh</span></div>
+        <div class="slots-flow">
+          <span class="s-chip">15:30 – 16:00</span>
+        </div>
+      </div>
+      <button type="button" class="btn-book">Đặt lịch hẹn</button>
+    </article>
+  </div>
+</main>
+
+<script>
+const html = document.documentElement;
+document.getElementById('tLight').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'light');
+  document.getElementById('tLight').classList.add('active');
+  document.getElementById('tDark').classList.remove('active');
+});
+document.getElementById('tDark').addEventListener('click', () => {
+  html.setAttribute('data-mochy-theme', 'dark');
+  document.getElementById('tDark').classList.add('active');
+  document.getElementById('tLight').classList.remove('active');
+});
+</script>
+</body>
+</html>
