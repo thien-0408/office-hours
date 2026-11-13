@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LOCALE_COOKIE, LOCALE_META, type Locale, type MessageKey, messages, translate } from "@/i18n";
 
 interface I18nContextValue {
@@ -13,14 +14,15 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ initialLocale, children }: { initialLocale: Locale; children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
+  const router = useRouter();
 
   const setLocale = useCallback((nextLocale: Locale) => {
     if (nextLocale === locale) return;
     document.cookie = `${LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
     document.documentElement.lang = LOCALE_META[nextLocale].htmlLang;
     setLocaleState(nextLocale);
-    window.location.reload();
-  }, [locale]);
+    router.refresh();
+  }, [locale, router]);
 
   const value = useMemo<I18nContextValue>(() => ({
     locale,
