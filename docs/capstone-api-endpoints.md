@@ -361,7 +361,7 @@ The API returns `{ id, type, title, body, createdAt, read, bookingId? }`; `type`
 Backing delivery (not directly called by FE, triggered internally on lifecycle events per §9.1/§9.2):
 - Email via SMTP for the same event set — no separate REST surface, fired server-side alongside the SSE push and `NOTIFICATIONS` row insert. `booking.pending` and `booking.cancelled` have no preference and always send. Mail goes out after commit on a bounded queue, in the locale of `MAIL_DEFAULT_LOCALE` (default `vi`). `POST /auth/forgot-password` prepares its token and email in the background too, so its response time and body do not reveal whether an address has an account.
 - FCM push and a read-only Firestore copy for the mobile app, after commit on one background worker. Email preferences do not apply to pushes. A slow or failing Firebase never affects the request.
-- Realtime Database for the mobile map: after commit the backend writes `/activeBookings/{bookingId}` = `{ studentId, lecturerId, startAt, endAt }` (ISO-8601 UTC strings) for a `CONFIRMED` booking that has not ended, and deletes it, together with `/bookingLive/{bookingId}`, when the booking is cancelled, completed, marked no-show, rescheduled or closed as overdue. Clients never write `/activeBookings`. A job every 10 minutes repairs lost writes for future bookings and for bookings that ended in the last 24 hours. It is best effort and never affects a REST response. Set `app.firebase.database-url`; without it these writes are skipped with one warning.
+- Realtime Database for the mobile map: after commit the backend writes `/activeBookings/{bookingId}` = `{ studentId, lecturerId, startAt, endAt, startAtMs, endAtMs }` (ISO-8601 UTC strings plus epoch milliseconds) for a `CONFIRMED` booking that has not ended, and deletes it, together with `/bookingLive/{bookingId}`, when the booking is cancelled, completed, marked no-show, rescheduled or closed as overdue. Clients never write `/activeBookings`. A job every 10 minutes repairs lost writes for future bookings and for bookings that ended in the last 24 hours. It is best effort and never affects a REST response. Set `app.firebase.database-url`; without it these writes are skipped with one warning.
 - `reminder.upcoming` is sent once per person per booking, by a job running every 5 minutes, for `CONFIRMED` bookings starting within 24 hours. A booking confirmed less than 24 hours ahead is reminded at the next run.
 
 Maps to `NOTIFICATIONS`.
@@ -387,7 +387,7 @@ Postgres stays the source of truth. Firebase gets read-only copies after commit,
 
 | Path | Writer | Content |
 |---|---|---|
-| `/activeBookings/{bookingId}` | Backend only | `{ studentId, lecturerId, startAt, endAt }` (ISO-8601 UTC strings) for a `CONFIRMED` booking that has not ended; see §8 for when it is removed |
+| `/activeBookings/{bookingId}` | Backend only | `{ studentId, lecturerId, startAt, endAt, startAtMs, endAtMs }` for a `CONFIRMED` booking that has not ended: `startAt`/`endAt` are ISO-8601 UTC strings, `startAtMs`/`endAtMs` the same instants in epoch milliseconds so security rules can compare them with `now`. See §8 for when it is removed |
 | `/bookingLive/{bookingId}/{uid}` | The two participants | Live position during the booking window. The backend deletes the whole node when the booking ends. |
 | `/presence/{uid}` | Lecturers | Lecturer status and position. The backend never reads or writes it. |
 
