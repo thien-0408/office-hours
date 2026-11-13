@@ -1,39 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { MOCHY_SPRING } from "@/components/mochy/motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { RegisterPayload } from "@/lib/auth/types";
-import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
-import { PillTag, CapIcon } from "@/components/landing/shared";
+import {
+  AUTH_CARD_CLASS,
+  AUTH_ERROR_CLASS,
+  AUTH_FOOT_CLASS,
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  AUTH_LEAD_CLASS,
+  AUTH_LINK_CLASS,
+  AUTH_SUBMIT_CLASS,
+  AUTH_TITLE_CLASS,
+} from "@/components/mochy/auth-styles";
 import { useI18n } from "@/i18n/provider";
+import type { MessageKey } from "@/i18n";
 
-const ROLES: { value: RegisterPayload["role"]; label: string; sub: string; icon: React.ReactNode }[] = [
-  {
-    value: "STUDENT",
-    label: "Student",
-    sub: "Book hours & queue",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="m2 9 10-5 10 5-10 5-10-5Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 11v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5" />
-      </svg>
-    ),
-  },
-  {
-    value: "LECTURER",
-    label: "Lecturer",
-    sub: "Host & manage slots",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
+// Text-only role choice (docs/DESIGN.md §8.3: no icons on form fields).
+const ROLES: { value: RegisterPayload["role"]; label: MessageKey; sub: string }[] = [
+  { value: "STUDENT", label: "nav.roleStudent", sub: "Book hours & queue" },
+  { value: "LECTURER", label: "nav.roleLecturer", sub: "Host & manage slots" },
 ];
 
 export default function RegisterForm() {
@@ -71,19 +62,29 @@ export default function RegisterForm() {
 
   return (
     <div className={AUTH_CARD_CLASS}>
-      <div className="mb-2">
-        <PillTag icon={<CapIcon />}>Join the campus pilot</PillTag>
-      </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">{t("auth.createAccount")}</h1>
+      <h1 className={AUTH_TITLE_CLASS}>{t("auth.createAccount")}</h1>
+      <p className={AUTH_LEAD_CLASS}>{t("auth.registerLead")}</p>
 
-      {error && (
-        <p className="text-xs text-red-600 mb-3" role="alert">
-          {error}
-        </p>
-      )}
+      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full flex-col gap-4">
+        <div className="grid grid-cols-2 gap-2.5" role="group" aria-label={t("auth.accountType")}>
+          {ROLES.map((r) => (
+            <button
+              key={r.value}
+              type="button"
+              aria-pressed={role === r.value}
+              onClick={() => setRole(r.value)}
+              className="m-chip m-slide m-press"
+            >
+              {role === r.value && (
+                <motion.span layoutId="register-role" transition={MOCHY_SPRING.indicator} className="m-fill" />
+              )}
+              <span className="text-[15px] font-bold tracking-[-0.03em]">{t(r.label)}</span>
+              <span className="text-[12px] font-medium opacity-70">{r.sub}</span>
+            </button>
+          ))}
+        </div>
 
-      <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-2">
           <label htmlFor="fullName" className={AUTH_LABEL_CLASS}>
             {t("profile.fullName")}
           </label>
@@ -92,7 +93,7 @@ export default function RegisterForm() {
             name="fullName"
             type="text"
             autoComplete="name"
-            placeholder="Jordan Alvarez"
+            placeholder="Nguyễn Văn An"
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -100,7 +101,7 @@ export default function RegisterForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-2">
           <label htmlFor="email" className={AUTH_LABEL_CLASS}>
             {t("auth.email")}
           </label>
@@ -109,7 +110,7 @@ export default function RegisterForm() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@school.edu"
+            placeholder="ten@eiu.edu.vn"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -117,7 +118,7 @@ export default function RegisterForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-2">
           <label htmlFor="password" className={AUTH_LABEL_CLASS}>
             {t("auth.password")}
           </label>
@@ -135,41 +136,9 @@ export default function RegisterForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 text-left">
-          <label className={AUTH_LABEL_CLASS}>{t("auth.accountType")}</label>
-          <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="I am a">
-            {ROLES.map((r) => {
-              const isSelected = role === r.value;
-              return (
-                <button
-                  key={r.value}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => setRole(r.value)}
-                  className={`flex flex-col items-center text-center p-2.5 rounded-xl border-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? "bg-[var(--po-text-primary)] text-white border-blue-950 shadow-[3px_3px_0_0_#0b1b49]"
-                      : "bg-white text-[var(--po-text-secondary)] border-[var(--po-border)] hover:border-blue-950/40 hover:text-[var(--po-text-primary)]"
-                  } focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)]`}
-                >
-                  <div className="flex items-center gap-1.5 font-bold text-[12.5px]">
-                    <span className={isSelected ? "text-[var(--po-accent)]" : "text-[var(--po-text-secondary)]"}>
-                      {r.icon}
-                    </span>
-                    <span>{r.label}</span>
-                  </div>
-                  <span className={`text-[10px] mt-0.5 ${isSelected ? "text-white/75" : "text-[var(--po-text-secondary)]"}`}>
-                    {r.sub}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-2">
           <label htmlFor="department" className={AUTH_LABEL_CLASS}>
-            {t("profile.department")} <span className="opacity-60 font-normal">({t("common.optional")})</span>
+            {t("profile.department")} <span className="font-medium text-[var(--m-fg3)]">({t("common.optional")})</span>
           </label>
           <input
             id="department"
@@ -182,13 +151,19 @@ export default function RegisterForm() {
           />
         </div>
 
+        {error && (
+          <p className={AUTH_ERROR_CLASS} role="alert">
+            {error}
+          </p>
+        )}
+
         <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
           {isSubmitting ? t("auth.creatingAccount") : t("auth.createAccount")}
         </button>
       </form>
 
-      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
-        Already have an account?{" "}
+      <p className={AUTH_FOOT_CLASS}>
+        {t("auth.haveAccount")}{" "}
         <Link href="/login" className={AUTH_LINK_CLASS}>
           {t("auth.login")}
         </Link>

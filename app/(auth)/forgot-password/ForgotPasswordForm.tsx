@@ -3,8 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
-import { PillTag, CapIcon } from "@/components/landing/shared";
+import {
+  AUTH_CARD_CLASS,
+  AUTH_FOOT_CLASS,
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  AUTH_LEAD_CLASS,
+  AUTH_LINK_CLASS,
+  AUTH_SUBMIT_CLASS,
+  AUTH_TITLE_CLASS,
+} from "@/components/mochy/auth-styles";
 import { useI18n } from "@/i18n/provider";
 
 export default function ForgotPasswordForm() {
@@ -29,33 +37,31 @@ export default function ForgotPasswordForm() {
 
   return (
     <div className={AUTH_CARD_CLASS}>
-      <div className="mb-2">
-        <PillTag icon={<CapIcon />}>{t("auth.accountRecovery")}</PillTag>
-      </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">{t("auth.forgotPassword")}</h1>
+      <h1 className={AUTH_TITLE_CLASS}>{t("auth.forgotPassword")}</h1>
 
       {submitted ? (
         <>
-          <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
-            If an account exists for <span className="font-bold text-[var(--po-text-primary)]">{email}</span>, we&apos;ve
-            sent a link to reset your password. It expires in 30 minutes.
+          <p className={AUTH_LEAD_CLASS}>
+            If an account exists for <span className="font-semibold text-[var(--m-fg)]">{email}</span>, we&apos;ve sent a link
+            to reset your password. It expires in 30 minutes.
           </p>
-          <button
-            type="button"
-            onClick={() => setSubmitted(false)}
-            className={`text-xs text-left mb-6 w-fit ${AUTH_LINK_CLASS}`}
-          >
-            Didn&apos;t get it? Try another email
-          </button>
+          <div className="mt-8 flex flex-col gap-3">
+            <a href="https://mail.google.com" target="_blank" rel="noreferrer" className="m-btn m-btn-primary w-full">
+              Open Gmail
+            </a>
+            <button type="button" onClick={() => setSubmitted(false)} className="m-btn m-btn-ghost w-full">
+              Try another email
+            </button>
+          </div>
         </>
       ) : (
         <>
-          <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
+          <p className={AUTH_LEAD_CLASS}>
             Enter the email on your account and we&apos;ll send you a link to reset your password.
           </p>
 
-          <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
-            <div className="flex flex-col gap-1.5 text-left">
+          <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full flex-col gap-4">
+            <div className="flex flex-col gap-2">
               <label htmlFor="email" className={AUTH_LABEL_CLASS}>
                 {t("auth.email")}
               </label>
@@ -64,7 +70,7 @@ export default function ForgotPasswordForm() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="username@gmail.com"
+                placeholder="ten@eiu.edu.vn"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -79,9 +85,9 @@ export default function ForgotPasswordForm() {
         </>
       )}
 
-      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
+      <p className={AUTH_FOOT_CLASS}>
         <Link href="/login" className={AUTH_LINK_CLASS}>
-          &larr; {t("auth.backToLogin")}
+          {t("auth.backToLogin")}
         </Link>
       </p>
     </div>

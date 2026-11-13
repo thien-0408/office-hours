@@ -4,8 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
-import { AUTH_CARD_CLASS, AUTH_INPUT_CLASS, AUTH_LABEL_CLASS, AUTH_SUBMIT_CLASS, AUTH_LINK_CLASS } from "@/components/landing/auth-styles";
-import { PillTag, CapIcon } from "@/components/landing/shared";
+import {
+  AUTH_CARD_CLASS,
+  AUTH_ERROR_CLASS,
+  AUTH_FOOT_CLASS,
+  AUTH_INPUT_CLASS,
+  AUTH_LABEL_CLASS,
+  AUTH_LEAD_CLASS,
+  AUTH_LINK_CLASS,
+  AUTH_SUBMIT_CLASS,
+  AUTH_TITLE_CLASS,
+} from "@/components/mochy/auth-styles";
 import { useI18n } from "@/i18n/provider";
 
 export default function ResetPasswordForm() {
@@ -44,14 +53,9 @@ export default function ResetPasswordForm() {
   if (!token) {
     return (
       <div className={AUTH_CARD_CLASS}>
-        <div className="mb-2">
-          <PillTag icon={<CapIcon />}>Security</PillTag>
-        </div>
-        <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-2">{t("auth.invalidResetLink")}</h1>
-        <p className="text-sm text-[var(--po-text-primary)]/70 mb-6 leading-relaxed">
-          This link is missing its reset token. Request a new one below.
-        </p>
-        <Link href="/forgot-password" className={`${AUTH_SUBMIT_CLASS} inline-block`}>
+        <h1 className={AUTH_TITLE_CLASS}>{t("auth.invalidResetLink")}</h1>
+        <p className={AUTH_LEAD_CLASS}>This link is missing its reset token. Request a new one below.</p>
+        <Link href="/forgot-password" className={`${AUTH_SUBMIT_CLASS} mt-8`}>
           {t("auth.requestNewLink")}
         </Link>
       </div>
@@ -60,26 +64,11 @@ export default function ResetPasswordForm() {
 
   return (
     <div className={AUTH_CARD_CLASS}>
-      <div className="mb-2">
-        <PillTag icon={<CapIcon />}>{t("auth.accountSecurity")}</PillTag>
-      </div>
-      <h1 className="text-2xl font-extrabold text-[var(--po-text-primary)] mb-4">{t("auth.setNewPassword")}</h1>
+      <h1 className={AUTH_TITLE_CLASS}>{t("auth.setNewPassword")}</h1>
+      <p className={AUTH_LEAD_CLASS}>8 to 72 characters.</p>
 
-      {error && (
-        <div className="mb-3">
-          <p className="text-xs text-red-600" role="alert">
-            {error}
-          </p>
-          {error.toLowerCase().includes("token") && (
-            <Link href="/forgot-password" className={`text-xs ${AUTH_LINK_CLASS}`}>
-              Request a new reset link &rarr;
-            </Link>
-          )}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} noValidate className="w-full flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5 text-left">
+      <form onSubmit={handleSubmit} noValidate className="mt-8 flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-2">
           <label htmlFor="password" className={AUTH_LABEL_CLASS}>
             {t("profile.newPassword")}
           </label>
@@ -97,7 +86,7 @@ export default function ResetPasswordForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 text-left">
+        <div className="flex flex-col gap-2">
           <label htmlFor="confirmPassword" className={AUTH_LABEL_CLASS}>
             {t("profile.confirmPassword")}
           </label>
@@ -115,14 +104,27 @@ export default function ResetPasswordForm() {
           />
         </div>
 
+        {error && (
+          <div className="flex flex-col gap-1.5">
+            <p className={AUTH_ERROR_CLASS} role="alert">
+              {error}
+            </p>
+            {error.toLowerCase().includes("token") && (
+              <Link href="/forgot-password" className={`w-fit text-[13px] ${AUTH_LINK_CLASS}`}>
+                Request a new reset link
+              </Link>
+            )}
+          </div>
+        )}
+
         <button type="submit" disabled={isSubmitting} className={AUTH_SUBMIT_CLASS}>
           {isSubmitting ? t("auth.resetting") : t("auth.resetPassword")}
         </button>
       </form>
 
-      <p className="text-xs text-[var(--po-text-secondary)] text-center mt-6">
+      <p className={AUTH_FOOT_CLASS}>
         <Link href="/login" className={AUTH_LINK_CLASS}>
-          &larr; {t("auth.backToLogin")}
+          {t("auth.backToLogin")}
         </Link>
       </p>
     </div>
