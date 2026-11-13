@@ -14,7 +14,7 @@
 
 | Surface | Treatment |
 |---|---|
-| Auth pages (Login, Register) | **Full glass**: brand-500→950 gradient background, glass card (`--glass-bg` / `--glass-border` / `backdrop-filter: blur`), white text. This is where the glassmorphism actually performs. Implemented as `app/(auth)/layout.tsx` + `login/` + `register/`, background is `assets/Login-Background.png` (chosen over `Glass Effect Login Page - Blue.png` for its more balanced shape placement around a centered card). The two routes share one persistent layout so Framer Motion can animate the glass card between them — `layout` prop auto-animates the height difference (register is taller), `AnimatePresence` cross-fades/slides the inner content, direction-aware (login→register vs. reverse) via React's "derive state during render" pattern, not a ref mutation (the React Compiler ESLint rule `react-hooks/refs` forbids writing `ref.current` mid-render). Respects `prefers-reduced-motion` via `useReducedMotion()`. |
+| Auth pages (Login, Register, Forgot, Reset) | **Mochy, dark-first** (revised 12/11/2026, see §8). Replaces the earlier glass and neo-brutalist treatments so the web matches the mobile app. |
 | Landing page (`/`) | **Neo-brutalist collage**, referenced from a ProjectOne (Framer template) screenshot: near-black-on-warm-white palette, a self-hosted Satoshi display face, a wide recessed hero circle with rotated Unsplash polaroid photos overlapping its rim, and hard offset-shadow cards (`border-2 border-blue-950` + flat `shadow-[Npx_Npx_0_0_<color>]`, no blur) used everywhere — value-prop cells, process-timeline steps, pricing cards, stat tiles, testimonials, the FAQ panel. See §1.1. |
 | App shell (dashboard, calendars, tables, admin) | **Restrained**, revised — see §1.2: flat `--bg-canvas` / `--bg-surface` structure unchanged, glass still chrome-only. Color is no longer blue-exclusive: a validated decorative accent palette (coral/rose/mint) now carries icon chips, the featured-card CTA, calendar selection, and nav active-state — `--accent` (blue) still owns default buttons/links/focus rings, and booking-status semantics (§4) are untouched. |
 
@@ -337,3 +337,62 @@ themed by the tokens above — no separate palette. Auth pages and the landing p
 - Adding components: `bunx shadcn@latest add <name>`, then run
   `sed -i 's#from "cn"#from "@/lib/utils"#' components/ui/*.tsx && bun remove cn` (the CLI re-adds a wrong `cn` package).
 - Plan and history: `docs/SHADCN-REFACTOR-PLAN.md`.
+
+---
+
+## 8. Mochy style (dark-first, shared with mobile)
+
+Decided 12/11/2026 to bring the web in line with the mobile redesign. The full rule set lives in the mobile repo:
+`office-hours-mobile/docs/STYLE-MOCHY.md` §8; HTML mocks in `office-hours-mobile/docs/mockups-mochy/`.
+This section is a short summary. The full web spec for refactoring (tokens, components, motion, plan) is
+`docs/STYLE-MOCHY-WEB.md`.
+
+**Rollout.** Auth pages first (done on `feature/mochy-auth`). The landing page has a static preview at
+`public/landing-mochy-preview.html`, not wired into `app/page.tsx` yet. The app shell, dashboard and
+admin pages still use §1.2–§7 until they are migrated.
+
+**Where the code is.**
+- Tokens and classes: `app/globals.css`, section "Mochy", inside `@layer components` so Tailwind utilities
+  still override them. Every token is `--m-*` and only exists under a `.mochy` root.
+- `components/mochy/`: `fonts.ts` (Inter with the Vietnamese subset), `OhLogo.tsx` (monochrome mark and
+  lowercase wordmark), `StatusGlyph.tsx` (solid status glyphs), `auth-styles.ts` (class strings for auth forms).
+- `LocaleSwitcher` has a `variant="mochy"` (dark glass pill).
+
+**Light and dark.** Auth supports both (12/11/2026). Light tokens are the default on `.mochy`; dark tokens apply
+under `data-mochy-theme="dark"`, or `"system"` on a dark OS (pure CSS, no flash). The choice (system / light / dark)
+is stored in the `NEXT_THEME` cookie, read by `app/(auth)/layout.tsx` (server) and switched by
+`components/mochy/ThemeSwitcher.tsx`. The attribute sits on the `.mochy` root, not on `<html>`, so the app shell,
+which is still pinned to `data-theme="light"`, is unaffected. Light mode is not an inversion:
+- depth comes from shadows (`--m-shadow`, `.m-card`) on a `#f2f2f2` page with white cards, not from lighter surfaces;
+- "white = focus" becomes "text color = focus": selected chips, the primary pill and the logo tile use `--m-fg`;
+- glows are scaled by `--m-glow` (0.4 in light), grain uses `multiply` at 0.035;
+- error text is `#C62828` in light (`#FF8A80` fails contrast on white);
+- `--m-fg3` is 50 % in both modes (38 % failed AA for small text).
+Never hard-code `text-white`, `bg-white/10` or `bg-black/…` inside a Mochy surface; use the `--m-*` tokens.
+
+**Motion.** Ported from Mochy's source (Compose app + its website), not guessed. Presets live in
+`components/mochy/motion.ts` (Compose springs converted with damping = 2·ζ·√k); CSS pieces in the Mochy section of
+`app/globals.css`.
+- `.m-btn` / `.m-press`: pressBounce, squish in 0.12 s and spring back on `cubic-bezier(.34,1.56,.64,1)`.
+- `Press3D`: lean up to 7° toward the pointer (hover on desktop, press on touch), 0.97 while held, ζ 1 / k 420.
+- `.m-page`: on each route change the form's pieces rise 14 px, 40 ms apart; the old form leaves up 8 px in 0.16 s.
+- Segment highlights (theme switcher, role chips) slide with `layoutId` on ζ 0.82 / k 700.
+- `Odometer`: digit reels for countdowns. `.m-ghost`: outlined words drifting behind a hero.
+- Floating cards arrive like Mochy's TopToast (ζ 0.74, scale from 0.92). Hero cards use the bouncy spring (ζ 0.38).
+- Every piece is off under `prefers-reduced-motion`.
+
+**Rules that matter for the web.**
+- Background `#000`, surfaces `#0d0d0d` → `#2a2a2a`, text white at 100 / 62 / 38 %. Glass (`.m-glass`) only for
+  floating parts: nav, toasts, the booking card on the auth panel.
+- Primary button is a `#E0E0E0` pill with black text (`.m-btn-primary`); secondary is white at 10 % (`.m-btn-ghost`).
+- Fields are dark, 56 px tall, with a 1 px hairline; focus brightens the hairline instead of a colored ring.
+- No icons on form fields, no emoji, no ✨ for AI. Icons only for compact actions (show password, close).
+- Status is a solid glyph (circle with the symbol knocked out), never a colored dot.
+- Color appears only in content: memoji or photos, brand logos on buttons that open that service
+  (Zoom, Google Meet, Google Calendar, Gmail), background glows, and error text `#FF8A80`.
+- No fake third-party sign-in buttons. The backend has no OAuth, so the old Google/GitHub/Facebook
+  buttons were removed from login.
+- Charts stay on the web only (admin analytics, research). Draw them monochrome: white for the series
+  in focus, grey for the rest, values labelled on the chart instead of a legend.
+- Stock photos never ship in the app. The auth panel uses memoji; real lecturer photos come from `photoUrl`.
+

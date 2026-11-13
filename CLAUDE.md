@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `AGENTS.md` (imported above) points to `CODEX.md` — its scope/verification defaults apply here too:
 smallest complete change, don't run builds/lint/tests or start servers unless asked, don't commit
 unless asked. Read the relevant `node_modules/next/dist/docs/` guide before Next.js code (Next 16
-differs from training data) and `docs/DESIGN.md` before any UI/CSS.
+differs from training data) and `docs/DESIGN.md` before any UI/CSS. Pages built or refactored in the new Mochy style
+(dark-first, light and dark themes) follow `docs/STYLE-MOCHY-WEB.md` instead of the older `DESIGN.md` sections.
 
 ## Project map
 
