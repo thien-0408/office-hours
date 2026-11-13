@@ -10,6 +10,19 @@ Trang này nối 3 repo lại với nhau. Bắt đầu từ đây nếu chưa bi
 | [chaunhattang/office-hours](https://github.com/chaunhattang/office-hours) (private) | Backend Spring Boot, dùng chung cho web và mobile | `feature/realtime-hybrid` |
 | [thien-0408/office-hours-mobile](https://github.com/thien-0408/office-hours-mobile) | App React Native cho môn CSW434 | `main` |
 
+### Đặt repo trên máy
+
+Clone cả 3 repo cạnh nhau trong một thư mục cha có đường dẫn **không dấu**, vì build Android lỗi với đường dẫn tiếng Việt như `OneDrive\Máy tính`:
+
+```text
+<thư mục cha>/
+  office-hours/            gh repo clone thien-0408/office-hours
+  office-hours-backend/    gh repo clone chaunhattang/office-hours office-hours-backend, rồi checkout feature/realtime-hybrid
+  office-hours-mobile/     gh repo clone thien-0408/office-hours-mobile
+```
+
+Mỗi repo có `AGENTS.md` (Claude Code đọc qua `CLAUDE.md`) với cùng một bảng đường dẫn `../<repo>`, nên agent mở ở repo nào cũng biết 2 repo còn lại và tài liệu nào cần đọc.
+
 ## Tài liệu ở đâu
 
 | Cần xem | Tài liệu |
