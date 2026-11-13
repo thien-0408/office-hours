@@ -298,3 +298,169 @@ body {
     position: static;
   }
 }
+
+/* ---------- Mochy (docs/DESIGN.md §8) ----------
+   Surface shared with the mobile app. Scoped to a `.mochy` root so the app shell and the
+   landing page keep their own tokens until they move over. The theme is chosen per root
+   with data-mochy-theme="light|dark|system" (cookie NEXT_THEME, read by the server layout):
+   light tokens are the default, dark tokens apply for "dark" and for "system" on a dark OS. */
+@layer components {
+.mochy {
+  --m-bg: #f2f2f2;
+  --m-s1: #ffffff;
+  --m-s2: #ebebeb;
+  --m-s3: #e2e2e2;
+  --m-s4: #d6d6d6;
+  --m-fg: #0a0a0a;
+  --m-fg2: rgba(0, 0, 0, 0.64);
+  --m-fg3: rgba(0, 0, 0, 0.5);
+  --m-fg4: rgba(0, 0, 0, 0.16);
+  --m-line: rgba(0, 0, 0, 0.07);
+  --m-line2: rgba(0, 0, 0, 0.14);
+  --m-focus: rgba(0, 0, 0, 0.4);
+  --m-primary: #111111;
+  --m-primary-hover: #000000;
+  --m-on-primary: #ffffff;
+  --m-glass: rgba(255, 255, 255, 0.72);
+  --m-glass-line: rgba(0, 0, 0, 0.06);
+  --m-glass-hi: rgba(0, 0, 0, 0.06);
+  --m-glass-hi2: rgba(0, 0, 0, 0.1);
+  --m-hover: rgba(0, 0, 0, 0.04);
+  --m-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* Floating cards (showcase, popovers): deeper, softer than --m-shadow. */
+  --m-shadow-card: 0 12px 32px -8px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --m-scrim: rgba(0, 0, 0, 0.32);
+  --m-sheet: #ffffff;
+  --m-err: #c62828;
+  --m-glow: 0.4;
+  --m-grain: 0.035;
+  --m-grain-blend: multiply;
+  --m-selection: rgba(0, 0, 0, 0.14);
+  --m-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* From Mochy's website (site.css, home.css): the overshooting press spring and the sheet curve. */
+  --m-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --m-sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  background: var(--m-bg);
+  color: var(--m-fg);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color-scheme: light;
+}
+.mochy[data-mochy-theme="dark"] {
+  --m-bg: #000000; --m-s1: #0d0d0d; --m-s2: #161616; --m-s3: #1f1f1f; --m-s4: #2a2a2a;
+  --m-fg: #ffffff; --m-fg2: rgba(255, 255, 255, 0.62); --m-fg3: rgba(255, 255, 255, 0.5); --m-fg4: rgba(255, 255, 255, 0.16);
+  --m-line: rgba(255, 255, 255, 0.07); --m-line2: rgba(255, 255, 255, 0.14); --m-focus: rgba(255, 255, 255, 0.34);
+  --m-primary: #e0e0e0; --m-primary-hover: #ffffff; --m-on-primary: #000000;
+  --m-glass: rgba(19, 19, 19, 0.78); --m-glass-line: rgba(255, 255, 255, 0.05);
+  --m-glass-hi: rgba(255, 255, 255, 0.1); --m-glass-hi2: rgba(255, 255, 255, 0.14); --m-hover: rgba(255, 255, 255, 0.06);
+  --m-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.12); --m-shadow-card: 0 16px 48px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08); --m-scrim: rgba(0, 0, 0, 0.7); --m-sheet: #121212;
+  --m-err: #ff8a80; --m-glow: 1; --m-grain: 0.06; --m-grain-blend: overlay; --m-selection: rgba(255, 255, 255, 0.24);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  .mochy[data-mochy-theme="system"] {
+    --m-bg: #000000; --m-s1: #0d0d0d; --m-s2: #161616; --m-s3: #1f1f1f; --m-s4: #2a2a2a;
+    --m-fg: #ffffff; --m-fg2: rgba(255, 255, 255, 0.62); --m-fg3: rgba(255, 255, 255, 0.5); --m-fg4: rgba(255, 255, 255, 0.16);
+    --m-line: rgba(255, 255, 255, 0.07); --m-line2: rgba(255, 255, 255, 0.14); --m-focus: rgba(255, 255, 255, 0.34);
+    --m-primary: #e0e0e0; --m-primary-hover: #ffffff; --m-on-primary: #000000;
+    --m-glass: rgba(19, 19, 19, 0.78); --m-glass-line: rgba(255, 255, 255, 0.05);
+    --m-glass-hi: rgba(255, 255, 255, 0.1); --m-glass-hi2: rgba(255, 255, 255, 0.14); --m-hover: rgba(255, 255, 255, 0.06);
+    --m-shadow: 0 2px 6px 2px rgba(0, 0, 0, 0.12); --m-shadow-card: 0 16px 48px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08); --m-scrim: rgba(0, 0, 0, 0.7); --m-sheet: #121212;
+    --m-err: #ff8a80; --m-glow: 1; --m-grain: 0.06; --m-grain-blend: overlay; --m-selection: rgba(255, 255, 255, 0.24);
+    color-scheme: dark;
+  }
+}
+.mochy ::selection { background: var(--m-selection); }
+.m-glass {
+  background: var(--m-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 0 0 1px var(--m-glass-line), var(--m-shadow);
+}
+.m-card { background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line), var(--m-shadow); }
+/* --o is the glow's strength in dark mode; light mode scales it down by --m-glow. */
+.m-glow { position: absolute; border-radius: 9999px; filter: blur(110px); pointer-events: none; opacity: calc(var(--o, 0.3) * var(--m-glow)); }
+.m-grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: var(--m-grain); mix-blend-mode: var(--m-grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.m-label { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; color: var(--m-fg2); }
+.m-field {
+  display: block; width: 100%; height: 56px; padding: 0 18px;
+  border-radius: 18px; background: var(--m-s1); color: var(--m-fg);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  font-size: 15px; font-weight: 500; letter-spacing: -0.015em;
+  outline: none; transition: box-shadow 0.2s var(--m-ease), background 0.2s var(--m-ease);
+}
+.m-field::placeholder { color: var(--m-fg3); }
+.m-field:hover { box-shadow: inset 0 0 0 1px var(--m-line2); }
+.m-field:focus { background: var(--m-s2); box-shadow: inset 0 0 0 1.5px var(--m-focus); }
+.m-field[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--m-err); }
+.m-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 54px; padding: 0 24px; border-radius: 9999px;
+  font-size: 15.5px; font-weight: 700; letter-spacing: -0.025em; cursor: pointer;
+  transition: transform 0.42s var(--m-spring), background 0.2s var(--m-ease), color 0.2s var(--m-ease);
+}
+/* pressBounce (TouchFeedback.kt / site.js .press): squish fast, spring back past 1 and settle. */
+.m-btn:active:not(:disabled) { transform: scale(0.96); transition: transform 0.12s ease-out, background 0.2s var(--m-ease); }
+.m-press { transition: transform 0.42s var(--m-spring); }
+.m-press:active { transform: scale(0.94); transition: transform 0.12s ease-out; }
+/* Rounded press highlight (TouchFeedback.kt): lights in 90 ms, fades out over 340 ms. */
+.m-hl { transition: background-color 0.34s ease-out; }
+.m-hl:hover, .m-hl:active { background-color: var(--m-hover); transition-duration: 0.09s; }
+/* Page change (site.css .page): each child rises 14 px, 40 ms after the one before. */
+.m-page > *, .m-page form > * { animation: m-rise 0.55s var(--m-sheet-ease) backwards; }
+.m-page > :nth-child(2) { animation-delay: 0.04s; }
+.m-page > :nth-child(3), .m-page form > :nth-child(1) { animation-delay: 0.08s; }
+.m-page > :nth-child(4), .m-page form > :nth-child(2) { animation-delay: 0.12s; }
+.m-page > :nth-child(5), .m-page form > :nth-child(3) { animation-delay: 0.16s; }
+.m-page form > :nth-child(4) { animation-delay: 0.2s; }
+.m-page form > :nth-child(5) { animation-delay: 0.24s; }
+.m-page form > :nth-child(n + 6) { animation-delay: 0.28s; }
+/* Hero lines (home.css rise-in): 40 px, 0.9 s, staggered by the caller with --d. */
+.m-rise-in { animation: m-rise-in 0.9s var(--m-sheet-ease) var(--d, 0s) backwards; }
+/* Outlined words drifting forever (home.css .ghost): two identical halves, slide by half to loop. */
+.m-ghost { color: transparent; -webkit-text-stroke: 1px var(--m-line2); white-space: nowrap; pointer-events: none; user-select: none; }
+.m-ghost-row { display: flex; width: max-content; animation: m-drift 46s linear infinite; }
+.m-ghost-row.rev { animation-direction: reverse; animation-duration: 52s; }
+/* Odometer: one 0–9 reel per digit, faded at both edges. */
+.m-odo { display: inline-flex; font-variant-numeric: tabular-nums; line-height: 1; }
+.m-odo-d { position: relative; display: inline-block; width: 0.62em; height: 1em; overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
+.m-odo-reel { position: absolute; inset: 0 0 auto; display: flex; flex-direction: column; transition: transform 0.55s var(--m-spring); }
+.m-odo-reel > span { height: 1em; text-align: center; }
+.m-odo-sep { display: inline-block; width: 0.32em; text-align: center; }
+@keyframes m-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes m-rise-in { from { opacity: 0; transform: translateY(40px); } }
+@keyframes m-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+.m-btn:focus-visible, .m-link:focus-visible, .m-chip:focus-visible { outline: 2px solid var(--m-focus); outline-offset: 3px; }
+.m-btn-primary { background: var(--m-primary); color: var(--m-on-primary); }
+.m-btn-primary:hover:not(:disabled) { background: var(--m-primary-hover); }
+.m-btn-primary:disabled { background: var(--m-s4); color: var(--m-fg3); cursor: not-allowed; }
+.m-btn-ghost { background: var(--m-glass-hi); color: var(--m-fg); }
+.m-btn-ghost:hover { background: var(--m-glass-hi2); }
+.m-link { color: var(--m-fg); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--m-fg4); transition: text-decoration-color 0.2s; }
+.m-link:hover { text-decoration-color: var(--m-fg); }
+.m-chip {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 14px 16px; border-radius: 18px; text-align: left; cursor: pointer;
+  background: var(--m-s1); box-shadow: inset 0 0 0 1px var(--m-line); color: var(--m-fg2);
+  transition: background 0.2s var(--m-ease), box-shadow 0.2s var(--m-ease), color 0.2s var(--m-ease);
+}
+.m-chip:hover { box-shadow: inset 0 0 0 1px var(--m-line2); }
+/* "Selected" uses the text color as fill, so it is white on dark and black on light. */
+.m-chip[aria-pressed="true"] { background: var(--m-fg); color: var(--m-bg); box-shadow: none; }
+/* Sliding variant: the fill is a shared-layout element that springs between chips. */
+.m-slide { position: relative; isolation: isolate; }
+.m-chip.m-slide[aria-pressed="true"] { background: transparent; }
+.m-slide > .m-fill { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--m-fg); }
+@supports (corner-shape: squircle) {
+  .mochy .m-field, .mochy .m-chip { corner-shape: squircle; border-radius: 29px; }
+  .mochy .m-sq { corner-shape: squircle; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-btn, .m-field, .m-chip, .m-press, .m-odo-reel { transition: none; }
+  .m-btn:active:not(:disabled), .m-press:active { transform: none; }
+  .m-page > *, .m-page form > *, .m-rise-in, .m-ghost-row { animation: none; }
+}
+}
